@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <!-- 区域C: 操作按钮 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_pickup"
+            android:layout_width="200dp"
+            android:layout_height="60dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="@string/pickup"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btn_complete"
+            android:layout_width="200dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="@string/complete"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <!-- 区域D: 验证区域（预留） -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@android:color/darker_gray"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- 这里可以添加验证组件，例如：指纹、密码等 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="验证区域"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+    <!-- 右上角倒计时 -->
+    <TextView
+        android:id="@+id/tv_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:text="150s"
+        android:textSize="18sp" />
+
+</LinearLayout>

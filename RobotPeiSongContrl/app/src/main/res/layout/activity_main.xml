@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:padding="16dp">
+
+    <!-- 开始配送按钮 -->
+    <Button
+        android:id="@+id/btn_start_delivery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/button_mint_green_rect"
+        android:padding="16dp"
+        android:text="@string/start_delivery"
+        android:textAllCaps="false" />
+
+    <!-- 右上角透明按钮 -->
+    <Button
+        android:id="@+id/secret_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/secret_button" />
+
+</RelativeLayout>

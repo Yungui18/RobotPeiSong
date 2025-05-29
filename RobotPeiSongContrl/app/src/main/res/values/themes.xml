@@ -1,8 +1,15 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.RobotPeiSongContrl" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.RobotPeiSongContrl" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/mint_green</item>
+        <item name="colorPrimaryDark">@color/mint_green</item>
+        <item name="colorAccent">@color/mint_green</item>
+    </style>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/mint_green</item>
         <item name="colorPrimaryDark">@color/mint_green</item>
         <item name="colorAccent">@color/mint_green</item>

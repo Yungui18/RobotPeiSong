@@ -73,7 +73,7 @@
             android:layout_width="300dp"
             android:layout_height="60dp"
             android:layout_margin="10dp"
-            android:backgroundTint="@color/mint_green"
+            android:background="@drawable/button_mint_green_rect"
             android:text="@string/start" />
     </LinearLayout>
 

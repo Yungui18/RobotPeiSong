@@ -1,11 +1,13 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import com.silan.robotpeisongcontrl.model.Poi;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
 public class TaskManager {
     private static TaskManager instance;
-    private final Queue<String> taskQueue = new LinkedList<>();
+    private final Queue<Poi> taskQueue = new LinkedList<>(); // 现在存储Poi对象
 
     private TaskManager() {}
 
@@ -16,11 +18,11 @@ public class TaskManager {
         return instance;
     }
 
-    public void addTask(String poiName) {
-        taskQueue.add(poiName);
+    public void addTask(Poi poi) {
+        taskQueue.add(poi);
     }
 
-    public String getNextTask() {
+    public Poi getNextTask() {
         return taskQueue.poll();
     }
 

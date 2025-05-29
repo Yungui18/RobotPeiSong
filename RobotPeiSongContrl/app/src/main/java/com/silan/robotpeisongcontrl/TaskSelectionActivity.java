@@ -13,24 +13,37 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.model.Poi;
+import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TaskSelectionActivity extends AppCompatActivity {
-
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
     private int currentSelectedButtonIndex = -1;
-    private List<String> poiList = new ArrayList<>(); // 模拟POI列表
+    private List<Poi> poiList = new ArrayList<>();
     private final Button[] taskButtons = new Button[4];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
+
+        // 获取从MainActivity传递过来的POI列表
+        Intent intent = getIntent();
+        String poiListJson = intent.getStringExtra("poi_list");
+        if (poiListJson != null) {
+            Gson gson = new Gson();
+            Type type = new TypeToken<ArrayList<Poi>>(){}.getType();
+            poiList = gson.fromJson(poiListJson, type);
+        }
 
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
@@ -40,12 +53,6 @@ public class TaskSelectionActivity extends AppCompatActivity {
         taskButtons[1] = findViewById(R.id.btn_task2);
         taskButtons[2] = findViewById(R.id.btn_task3);
         taskButtons[3] = findViewById(R.id.btn_task4);
-
-        // 初始化模拟POI列表
-        poiList.add("A101");
-        poiList.add("A102");
-        poiList.add("A103");
-        poiList.add("A104");
 
         // 任务按钮点击事件
         for (int i = 0; i < taskButtons.length; i++) {
@@ -103,16 +110,21 @@ public class TaskSelectionActivity extends AppCompatActivity {
         }
     }
 
-    private void validatePoint(String pointId) {
+    private void validatePoint(String pointName) {
         if (currentSelectedButtonIndex == -1) {
             Toast.makeText(this, "请先选择一个任务按钮", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (poiList.contains(pointId)) {
-            taskManager.addTask(pointId);
-            taskButtons[currentSelectedButtonIndex].setText(pointId);
-            // 设置验证通过的按钮为绿色直角
+        // 查找对应的POI
+        Poi poi = RobotController.findPoiByName(pointName, poiList);
+
+        if (poi != null) {
+            // 添加POI对象到任务队列
+            taskManager.addTask(poi);
+
+            // 在按钮上显示POI的显示名称
+            taskButtons[currentSelectedButtonIndex].setText(poi.getDisplayName());
             taskButtons[currentSelectedButtonIndex].setBackgroundResource(R.drawable.button_green_rect);
         } else {
             Toast.makeText(this, "点位不存在", Toast.LENGTH_SHORT).show();
@@ -120,13 +132,13 @@ public class TaskSelectionActivity extends AppCompatActivity {
     }
 
     private void selectTask(int index) {
-        // 重置所有按钮状态
+        // 重置所有按钮状态为蓝色直角
         for (Button button : taskButtons) {
-            button.setBackgroundColor(getResources().getColor(R.color.blue));
+            button.setBackgroundResource(R.drawable.button_blue_rect);
         }
 
-        // 设置选中按钮状态
-        taskButtons[index].setBackgroundColor(getResources().getColor(R.color.red));
+        // 设置选中按钮状态为红色直角
+        taskButtons[index].setBackgroundResource(R.drawable.button_red_rect);
         currentSelectedButtonIndex = index;
     }
 
@@ -143,6 +155,8 @@ public class TaskSelectionActivity extends AppCompatActivity {
         if (taskManager.hasTasks()) {
             timer.cancel();
             Intent intent = new Intent(this, MovingActivity.class);
+            // 传递POI列表
+            intent.putExtra("poi_list", new Gson().toJson(poiList));
             startActivity(intent);
             finish();
         } else {

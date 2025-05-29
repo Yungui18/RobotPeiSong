@@ -3,7 +3,6 @@ package com.silan.robotpeisongcontrl.model;
 public class Poi {
     private String id;
     private String displayName;
-    private String type;
     private double x;
     private double y;
     private double yaw;
@@ -26,14 +25,6 @@ public class Poi {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public double getX() {

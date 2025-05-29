@@ -1,5 +1,7 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import android.util.Log;
+
 import java.io.IOException;
 
 import okhttp3.Call;
@@ -26,6 +28,7 @@ public class OkHttpUtils {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                Log.d("TAG", "onFailure: 失败1"+e);
                 callback.onFailure(e);
             }
 
@@ -33,8 +36,10 @@ public class OkHttpUtils {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     callback.onSuccess(response.body().string());
+                    Log.d("TAG", "onResponse: 成功");
                 } else {
                     callback.onFailure(new IOException("Unexpected code " + response));
+                    Log.d("TAG", "onResponse: 失败2");
                 }
             }
         });

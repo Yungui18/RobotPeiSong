@@ -1,10 +1,14 @@
 package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -26,14 +30,19 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private int clickCount = 0;
     private CountDownTimer resetTimer;
+    private Button startDeliveryBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button startDelivery = findViewById(R.id.btn_start_delivery);
-        startDelivery.setOnClickListener(v -> {
+        startDeliveryBtn = findViewById(R.id.btn_start_delivery);
+
+        // 调整按钮大小以适应屏幕
+        adjustButtonSize();
+
+        startDeliveryBtn.setOnClickListener(v -> {
             // 获取机器人状态
             getRobotStatus();
         });
@@ -64,18 +73,78 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // 屏幕方向或尺寸变化时重新调整按钮
+        adjustButtonSize();
+    }
+
+    private void adjustButtonSize() {
+        // 获取屏幕尺寸
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int screenWidth = displayMetrics.widthPixels;
+        int screenHeight = displayMetrics.heightPixels;
+
+        // 计算按钮尺寸（基于屏幕尺寸的比例）
+        int buttonWidth = (int) (screenWidth * 0.5);  // 按钮宽度为屏幕宽度的50%
+        int buttonHeight = (int) (screenHeight * 0.1); // 按钮高度为屏幕高度的10%
+
+        // 设置最小和最大尺寸限制
+        int minWidth = dpToPx(200); // 200dp
+        int maxWidth = dpToPx(400); // 400dp
+        int minHeight = dpToPx(80); // 80dp
+        int maxHeight = dpToPx(120); // 120dp
+
+        // 应用尺寸限制
+        buttonWidth = Math.max(minWidth, Math.min(buttonWidth, maxWidth));
+        buttonHeight = Math.max(minHeight, Math.min(buttonHeight, maxHeight));
+
+        // 设置按钮尺寸
+        ViewGroup.LayoutParams params = startDeliveryBtn.getLayoutParams();
+        params.width = buttonWidth;
+        params.height = buttonHeight;
+        startDeliveryBtn.setLayoutParams(params);
+
+        // 计算内边距（宽度8%，高度4%）
+        int horizontalPadding = (int) (buttonWidth * 0.08);
+        int verticalPadding = (int) (buttonHeight * 0.04);
+        startDeliveryBtn.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+
+        // 根据屏幕尺寸调整文字大小
+        float textSize = Math.min(screenWidth, screenHeight) * 0.03f; // 文字大小为屏幕最小尺寸的3%
+        textSize = Math.max(spToPx(18), Math.min(textSize, spToPx(32))); // 限制在18sp到32sp之间
+        startDeliveryBtn.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+    }
+
+    // 将dp值转换为px值
+    private int dpToPx(int dp) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dp,
+                getResources().getDisplayMetrics()
+        );
+    }
+
+    // 将sp值转换为px值
+    private float spToPx(int sp) {
+        return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_SP,
+                sp,
+                getResources().getDisplayMetrics()
+        );
+    }
+
     private void getRobotStatus() {
         RobotController.getRobotStatus(new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(String response) {
-                // 解析机器人状态
                 RobotStatus status = RobotController.parseRobotStatus(response);
                 if (status != null) {
-                    // 检查电量是否足够
                     if (status.getBatteryPercentage() < 20) {
                         Toast.makeText(MainActivity.this, "电量不足，请充电", Toast.LENGTH_SHORT).show();
                     } else {
-                        // 获取POI信息
                         getPoiList();
                     }
                 }
@@ -93,9 +162,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(String response) {
                 List<Poi> poiList = RobotController.parsePoiList(response);
-                // 跳转到任务选择页面，并传递POI列表
                 Intent intent = new Intent(MainActivity.this, TaskSelectionActivity.class);
-                // 将poiList转换为JSON字符串传递
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 startActivity(intent);
             }

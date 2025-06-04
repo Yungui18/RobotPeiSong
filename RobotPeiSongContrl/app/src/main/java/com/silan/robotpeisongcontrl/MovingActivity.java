@@ -3,6 +3,7 @@ package com.silan.robotpeisongcontrl;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -93,6 +94,7 @@ public class MovingActivity extends AppCompatActivity {
                 handler.postDelayed(() -> {
                     Intent intent = new Intent(MovingActivity.this, MainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    Log.d("TAG", "onSuccess: 回桩成功");
                     startActivity(intent);
                     finish();
                 }, 5000);

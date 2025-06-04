@@ -30,18 +30,25 @@ public class TaskSelectionActivity extends AppCompatActivity {
     private int currentSelectedButtonIndex = -1;
     private List<Poi> poiList = new ArrayList<>();
     private final Button[] taskButtons = new Button[4];
+    private final boolean[] taskAssigned = new boolean[4];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
 
+        // 初始化任务状态数组
+        for (int i = 0; i < taskAssigned.length; i++) {
+            taskAssigned[i] = false;
+        }
+
         // 获取从MainActivity传递过来的POI列表
         Intent intent = getIntent();
         String poiListJson = intent.getStringExtra("poi_list");
         if (poiListJson != null) {
             Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Poi>>(){}.getType();
+            Type type = new TypeToken<ArrayList<Poi>>() {
+            }.getType();
             poiList = gson.fromJson(poiListJson, type);
         }
 
@@ -126,6 +133,8 @@ public class TaskSelectionActivity extends AppCompatActivity {
             // 在按钮上显示POI的显示名称
             taskButtons[currentSelectedButtonIndex].setText(poi.getDisplayName());
             taskButtons[currentSelectedButtonIndex].setBackgroundResource(R.drawable.button_green_rect);
+            taskAssigned[currentSelectedButtonIndex] = true;
+            currentSelectedButtonIndex = -1;
         } else {
             Toast.makeText(this, "点位不存在", Toast.LENGTH_SHORT).show();
         }
@@ -133,8 +142,13 @@ public class TaskSelectionActivity extends AppCompatActivity {
 
     private void selectTask(int index) {
         // 重置所有按钮状态为蓝色直角
-        for (Button button : taskButtons) {
-            button.setBackgroundResource(R.drawable.button_blue_rect);
+        for (int i = 0; i < taskButtons.length; i++) {
+            if (!taskAssigned[i]) { // 只重置未分配任务的按钮
+                taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+            }
+        }
+        if (taskAssigned[index]) {
+            Toast.makeText(this, "该任务已分配，不能修改", Toast.LENGTH_SHORT).show();
         }
 
         // 设置选中按钮状态为红色直角
@@ -143,10 +157,10 @@ public class TaskSelectionActivity extends AppCompatActivity {
     }
 
     private void clearTaskButtons() {
-        for (Button button : taskButtons) {
-            button.setText("");
-            // 重置为蓝色直角
-            button.setBackgroundResource(R.drawable.button_blue_rect);
+        for (int i = 0; i < taskButtons.length; i++) {
+            taskButtons[i].setText("");
+            taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+            taskAssigned[i] = false; // 重置任务状态
         }
         currentSelectedButtonIndex = -1;
     }
@@ -158,6 +172,9 @@ public class TaskSelectionActivity extends AppCompatActivity {
             // 传递POI列表
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             startActivity(intent);
+            for (Button button : taskButtons) {
+                button.setBackgroundResource(R.drawable.button_green_rect);
+            }
             finish();
         } else {
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();

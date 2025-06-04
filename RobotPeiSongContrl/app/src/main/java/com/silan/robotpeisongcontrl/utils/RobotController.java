@@ -1,5 +1,7 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -76,6 +78,7 @@ public class RobotController {
         try {
             json.put("action_name", "slamtec.agent.actions.MultiFloorBackHomeAction");
             json.put("options", new JSONObject());
+            Log.d("TAG", "createReturnHomeAction: 回桩成功");
         } catch (JSONException e) {
             e.printStackTrace();
         }

@@ -5,16 +5,18 @@
     android:background="@color/white"
     android:padding="16dp">
 
-    <!-- 开始配送按钮 -->
+    <!-- 开始配送按钮 - 自适应大小 -->
     <Button
         android:id="@+id/btn_start_delivery"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:background="@drawable/button_mint_green_rect"
-        android:padding="16dp"
         android:text="@string/start_delivery"
-        android:textAllCaps="false" />
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:minWidth="200dp"
+        android:minHeight="80dp"/>
 
     <!-- 右上角透明按钮 -->
     <Button

@@ -16,18 +16,39 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import okio.ByteString;
+
 public class RobotController {
-    private static final String BASE_URL = "http://192.168.11.1:1448";
+    private static final String TAG = "RobotController";
+    public static final String BASE_URL = "http://192.168.11.1:1448";
     private static final Gson gson = new Gson();
 
     // 获取机器人状态
     public static void getRobotStatus(OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/system/v1/power/status";
-        OkHttpUtils.get(url, callback);
+        OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String json = responseData.string(StandardCharsets.UTF_8);
+                    RobotStatus status = gson.fromJson(json, RobotStatus.class);
+                    callback.onSuccess(responseData);
+                } catch (Exception e) {
+                    callback.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
+
 
     // 获取POI信息
     public static void getPoiList(OkHttpUtils.ResponseCallback callback) {
@@ -39,35 +60,62 @@ public class RobotController {
     public static void createMoveAction(Poi poi, OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/motion/v1/actions";
 
-        JSONObject json = new JSONObject();
-        try {
-            json.put("action_name", "slamtec.agent.actions.MoveToAction");
+        // 构建JSON但不转换为字符串
+        JsonObject json = new JsonObject();
+        json.addProperty("action_name", "slamtec.agent.actions.MoveToAction");
 
-            JSONObject options = new JSONObject();
+        JsonObject options = new JsonObject();
+        JsonObject target = new JsonObject();
+        target.addProperty("x", poi.getX());
+        target.addProperty("y", poi.getY());
+        target.addProperty("z", 0);
+        options.add("target", target);
 
-            // 目标坐标
-            JSONObject target = new JSONObject();
-            target.put("x", poi.getX());
-            target.put("y", poi.getY());
-            target.put("z", 0); // 通常z坐标为0
-            options.put("target", target);
+        JsonObject moveOptions = new JsonObject();
+        moveOptions.addProperty("mode", 0);// 自由导航模式
+        moveOptions.add("flags", new JsonArray());
+        JSONArray flags = new JSONArray();
+        flags.put("precise"); // 精确到点模式
+        flags.put("with_yaw"); // 启用精确朝向
+        moveOptions.addProperty("yaw", poi.getYaw());// 目标朝向角
+        moveOptions.addProperty("acceptable_precision", 0.1);// 可接受的精度
+        moveOptions.addProperty("fail_retry_count", 3);// 失败重试次数
+        moveOptions.addProperty("speed_ratio", 2.0); // 速度比例
+        options.add("move_options", moveOptions);
 
-            // 移动选项
-            JSONObject moveOptions = new JSONObject();
-            moveOptions.put("mode", 0); // 自由导航模式
-            moveOptions.put("flags", new JSONArray()); // 空标志数组
-            moveOptions.put("yaw", 0); // 目标朝向角
-            moveOptions.put("acceptable_precision", 0.1); // 可接受的精度
-            moveOptions.put("fail_retry_count", 0); // 失败重试次数
-            moveOptions.put("speed_ratio", 1.0); // 速度比例（1.0表示100%速度）
-            options.put("move_options", moveOptions);
-
-            json.put("options", options);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        json.add("options", options);
 
         OkHttpUtils.post(url, json.toString(), callback);
+    }
+    public static void pollActionStatus(String actionId, OkHttpUtils.ResponseCallback callback) {
+        String url = BASE_URL + "/api/core/motion/v1/actions/" + actionId;
+        OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String json = responseData.string(StandardCharsets.UTF_8);
+                    JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+
+                    // 直接处理JSON对象，避免额外转换
+                    if (jsonObject.has("state")) {
+                        JsonObject state = jsonObject.getAsJsonObject("state");
+                        int status = state.get("status").getAsInt();
+                        int result = state.get("result").getAsInt();
+
+                        // 在这里处理状态逻辑...
+                    }
+
+                    callback.onSuccess(responseData);
+                } catch (Exception e) {
+                    callback.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     // 创建回桩任务
@@ -76,9 +124,12 @@ public class RobotController {
 
         JSONObject json = new JSONObject();
         try {
+            JSONObject gohomeOptions = new JSONObject();
+            gohomeOptions.put("mode", 2); // 轨道优先模式
+            JSONObject options = new JSONObject();
+            options.put("gohome_options", gohomeOptions);
             json.put("action_name", "slamtec.agent.actions.MultiFloorBackHomeAction");
-            json.put("options", new JSONObject());
-            Log.d("TAG", "createReturnHomeAction: 回桩成功");
+//            json.put("options", new JSONObject());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -86,7 +137,7 @@ public class RobotController {
         OkHttpUtils.post(url, json.toString(), callback);
     }
 
-    // 解析POI列表 - 根据新的API响应格式修改
+    // 解析POI列表
     public static List<Poi> parsePoiList(String jsonResponse) {
         List<Poi> poiList = new ArrayList<>();
         try {

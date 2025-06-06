@@ -78,7 +78,7 @@ public class TaskSelectionActivity extends AppCompatActivity {
     }
 
     private void startCountdown() {
-        timer = new CountDownTimer(150000, 1000) {
+        timer = new CountDownTimer(60000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 countdownText.setText(String.format("%ds", millisUntilFinished / 1000));

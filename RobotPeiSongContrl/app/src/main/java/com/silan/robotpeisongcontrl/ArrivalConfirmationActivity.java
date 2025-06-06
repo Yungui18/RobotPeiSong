@@ -45,8 +45,8 @@ public class ArrivalConfirmationActivity extends AppCompatActivity {
         Button btnPickup = findViewById(R.id.btn_pickup);
         Button btnComplete = findViewById(R.id.btn_complete);
 
-        // 倒计时150秒
-        timer = new CountDownTimer(150000, 1000) {
+        // 倒计时60秒
+        timer = new CountDownTimer(60000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 countdownText.setText(String.format("%ds", millisUntilFinished / 1000));

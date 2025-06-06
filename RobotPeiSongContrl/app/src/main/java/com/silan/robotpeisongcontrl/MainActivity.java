@@ -25,7 +25,10 @@ import com.silan.robotpeisongcontrl.model.RobotStatus;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import okio.ByteString;
 
 public class MainActivity extends AppCompatActivity {
     private int clickCount = 0;
@@ -138,9 +141,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void getRobotStatus() {
         RobotController.getRobotStatus(new OkHttpUtils.ResponseCallback() {
+
             @Override
-            public void onSuccess(String response) {
-                RobotStatus status = RobotController.parseRobotStatus(response);
+            public void onSuccess(ByteString responseData) {
+                String json = responseData.string(StandardCharsets.UTF_8);
+                RobotStatus status = RobotController.parseRobotStatus(json);
                 if (status != null) {
                     if (status.getBatteryPercentage() < 20) {
                         Toast.makeText(MainActivity.this, "电量不足，请充电", Toast.LENGTH_SHORT).show();
@@ -152,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(MainActivity.this, "获取机器人状态失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.d("TAG", "onFailure: 获取机器人状态失败");
             }
         });
     }
@@ -160,8 +165,9 @@ public class MainActivity extends AppCompatActivity {
     private void getPoiList() {
         RobotController.getPoiList(new OkHttpUtils.ResponseCallback() {
             @Override
-            public void onSuccess(String response) {
-                List<Poi> poiList = RobotController.parsePoiList(response);
+            public void onSuccess(ByteString responseData) {
+                String json = responseData.string(StandardCharsets.UTF_8);
+                List<Poi> poiList = RobotController.parsePoiList(json);
                 Intent intent = new Intent(MainActivity.this, TaskSelectionActivity.class);
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 startActivity(intent);
@@ -169,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                Toast.makeText(MainActivity.this, "获取POI信息失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.d("TAG", "onFailure: 获取POI信息失败"+e);
             }
         });
     }

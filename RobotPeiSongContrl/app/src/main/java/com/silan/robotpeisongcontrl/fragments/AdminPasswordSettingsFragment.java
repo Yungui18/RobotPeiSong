@@ -116,5 +116,6 @@ public class AdminPasswordSettingsFragment extends Fragment {
         tvStatus.setText("");
 
         Toast.makeText(getContext(), "密码已重置为1234", Toast.LENGTH_SHORT).show();
+
     }
 }

@@ -1,5 +1,7 @@
 package com.silan.robotpeisongcontrl.fragments;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -8,12 +10,17 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +37,9 @@ public class DeliverySettingsFragment extends Fragment {
     private Button btnDoor2Open, btnDoor2Close;
     private Button btnDoor3Open, btnDoor3Close;
     private Button btnDoor4Open, btnDoor4Close;
+    private Switch switchVerification;
+    private LinearLayout layoutPasswordSettings;
+    private EditText etPickupPassword, etDeliveryPassword;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -42,6 +52,29 @@ public class DeliverySettingsFragment extends Fragment {
 
         // 初始化视图
         initViews(view);
+        // 读取并应用保存的设置
+        loadVerificationSettings();
+        // 设置开关监听器
+        switchVerification.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            layoutPasswordSettings.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            saveVerificationSettings();
+        });
+        // 设置密码输入监听器
+        etPickupPassword.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                saveVerificationSettings();
+            }
+        });
+
+        etDeliveryPassword.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                saveVerificationSettings();
+            }
+        });
 
         // 设置按钮点击监听器
         setupButtonListeners();
@@ -71,6 +104,37 @@ public class DeliverySettingsFragment extends Fragment {
         door4Indicator = view.findViewById(R.id.door4_indicator);
         btnDoor4Open = view.findViewById(R.id.btn_door4_open);
         btnDoor4Close = view.findViewById(R.id.btn_door4_close);
+        // 初始化配送验证设置控件
+        switchVerification = view.findViewById(R.id.switch_verification);
+        layoutPasswordSettings = view.findViewById(R.id.layout_password_settings);
+        etPickupPassword = view.findViewById(R.id.et_pickup_password);
+        etDeliveryPassword = view.findViewById(R.id.et_delivery_password);
+    }
+
+    /**
+     * 加载配送验证设置
+     */
+    private void loadVerificationSettings() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("delivery_prefs", Context.MODE_PRIVATE);
+        boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
+        String pickupPassword = prefs.getString("pickup_password", "");
+        String deliveryPassword = prefs.getString("delivery_password", "");
+
+        switchVerification.setChecked(verificationEnabled);
+        etPickupPassword.setText(pickupPassword);
+        etDeliveryPassword.setText(deliveryPassword);
+        layoutPasswordSettings.setVisibility(verificationEnabled ? View.VISIBLE : View.GONE);
+    }
+    /**
+     * 保存配送验证设置
+     */
+    private void saveVerificationSettings() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("delivery_prefs", Context.MODE_PRIVATE);
+        prefs.edit()
+                .putBoolean("verification_enabled", switchVerification.isChecked())
+                .putString("pickup_password", etPickupPassword.getText().toString().trim())
+                .putString("delivery_password", etDeliveryPassword.getText().toString().trim())
+                .apply();
     }
 
     private void setupButtonListeners() {

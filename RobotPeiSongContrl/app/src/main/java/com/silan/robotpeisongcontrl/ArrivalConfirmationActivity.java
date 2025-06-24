@@ -82,7 +82,7 @@ public class ArrivalConfirmationActivity extends AppCompatActivity {
      * 根据设置决定是否显示密码验证对话框
      */
     private void handlePickupAction() {
-        // 检查是否启用了配送验证
+        /// 检查是否启用了配送验证
         SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
         boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
 

@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="配送设置"
+            android:text="操作设置"
             android:textSize="24sp"
             android:textColor="@color/black"
             android:textStyle="bold"
@@ -200,6 +200,78 @@
             android:gravity="center"
             android:layout_marginTop="16dp"/>
 
+        <!-- 配送验证设置 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="24dp">
+
+            <!-- 启用配送验证开关 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="启用配送验证"
+                    android:textSize="18sp"
+                    android:textColor="@color/black"/>
+
+                <Switch
+                    android:id="@+id/switch_verification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <!-- 密码设置区域，默认隐藏 -->
+            <LinearLayout
+                android:id="@+id/layout_password_settings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp">
+
+                <!-- 取物密码 -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="取物密码"
+                    android:textSize="16sp"/>
+
+                <EditText
+                    android:id="@+id/et_pickup_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberPassword"
+                    android:maxLength="4"
+                    android:hint="请输入4位取物密码"
+                    android:background="@drawable/edittext_border"/>
+
+                <!-- 送物密码 -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="送物密码"
+                    android:textSize="16sp"
+                    android:layout_marginTop="16dp"/>
+
+                <EditText
+                    android:id="@+id/et_delivery_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberPassword"
+                    android:maxLength="4"
+                    android:hint="请输入4位送物密码"
+                    android:background="@drawable/edittext_border"/>
+            </LinearLayout>
+        </LinearLayout>
         <!-- 模拟操作提示 -->
         <TextView
             android:layout_width="match_parent"
@@ -210,4 +282,5 @@
             android:gravity="center"
             android:layout_marginTop="24dp"/>
     </LinearLayout>
+
 </ScrollView>

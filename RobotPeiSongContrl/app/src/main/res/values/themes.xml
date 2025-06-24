@@ -21,6 +21,13 @@
         <item name="android:minHeight">80dp</item>
         <item name="android:background">@drawable/button_password_bg</item>
     </style>
+    <style name="BackButtonStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:src">@drawable/ic_arrow_back</item>
+        <item name="android:background">?selectableItemBackgroundBorderless</item>
+        <item name="android:layout_margin">8dp</item>
+    </style>
 
     <style name="Theme.RobotPeiSongContrl" parent="Base.Theme.RobotPeiSongContrl" />
 </resources>

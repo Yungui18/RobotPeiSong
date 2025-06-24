@@ -1,16 +1,14 @@
 package com.silan.robotpeisongcontrl;
 
-import android.content.Intent;
-import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
+import android.os.Bundle;
+import android.widget.ImageButton;
+
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
 
 import com.silan.robotpeisongcontrl.fragments.AdminPasswordSettingsFragment;
-import com.silan.robotpeisongcontrl.fragments.DeliveryPasswordSettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliverySettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.PersonalizationSettingsFragment;
 
@@ -25,6 +23,8 @@ public class GeneralSettingsMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_general_settings_main);
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
         // 设置按钮点击事件
         findViewById(R.id.btn_volume_settings).setOnClickListener(v -> {

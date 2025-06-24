@@ -21,6 +21,9 @@
     <string name="patrol_settings">巡游设置</string>
     <string name="delivery_settings">配送设置</string>
     <string name="general_settings">通用设置</string>
+    <string name="enable_delivery_verification">启用配送验证</string>
+    <string name="pickup_password">取物密码</string>
+    <string name="delivery_password">送物密码</string>
     <string-array name="scheme_array">
         <item>方案1</item>
         <item>方案2</item>
@@ -32,6 +35,4 @@
         <item>方案8</item>
         <item>方案9</item>
     </string-array>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

@@ -2,18 +2,9 @@ package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.MenuItem;
+import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-
-import com.google.android.material.navigation.NavigationView;
 import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
 
 /**
@@ -37,6 +28,9 @@ public class SettingsMainActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings_main);
+
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
         ListView listView = findViewById(R.id.settings_list);
         SettingsAdapter adapter = new SettingsAdapter(this, SETTINGS_MENU);

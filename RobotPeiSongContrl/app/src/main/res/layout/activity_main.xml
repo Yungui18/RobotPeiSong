@@ -5,27 +5,41 @@
     android:background="@color/white"
     android:padding="16dp">
 
-    <!-- 开始配送按钮 - 自适应大小 -->
+    <!-- 配送按钮 -->
     <Button
         android:id="@+id/btn_start_delivery"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:background="@drawable/button_mint_green_rect"
-        android:text="@string/start_delivery"
+        android:text="开始配送"
         android:textAllCaps="false"
         android:textSize="18sp"
         android:minWidth="200dp"
         android:minHeight="80dp"/>
 
-    <!-- 右上角透明按钮 -->
+    <!-- 巡游模式按钮 -->
     <Button
-        android:id="@+id/secret_button"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:id="@+id/btn_patrol_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_start_delivery"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/button_mint_green_rect"
+        android:text="巡游模式"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:minWidth="200dp"
+        android:minHeight="80dp"/>
+
+    <!-- 设置按钮 -->
+    <ImageButton
+        android:id="@+id/btn_settings"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
         android:layout_alignParentEnd="true"
         android:layout_alignParentTop="true"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/secret_button" />
-
+        android:src="@drawable/ic_settings"
+        android:background="?selectableItemBackgroundBorderless"/>
 </RelativeLayout>

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +17,52 @@
         android:theme="@style/Theme.RobotPeiSongContrl"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".PatrolSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DeliverySettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminPasswordSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PersonalizationSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VolumeSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdImplantActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TimeDisplayActivity"
+            android:exported="false" />
+        <activity
+            android:name=".BackgroundChoiceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AboutDeviceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SoundSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LanguageSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GeneralSettingsMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SettingsMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PatrolActivity"
+            android:exported="false" />
+        <activity android:name=".SuperAdminActivity" />
+        <activity android:name=".PatrollingActivity" />
+        <activity android:name=".SettingsActivity" />
+        <activity android:name=".PasswordAuthActivity" />
         <activity android:name=".ArrivalConfirmationActivity" />
         <activity android:name=".MovingActivity" />
         <activity android:name=".TaskSelectionActivity" />

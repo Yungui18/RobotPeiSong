@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_general_settings"
+            android:title="通用设置"/>
+        <item
+            android:id="@+id/nav_language_settings"
+            android:title="语言选择"/>
+        <item
+            android:id="@+id/nav_sound_settings"
+            android:title="声音选择"/>
+        <item
+            android:id="@+id/nav_about_device"
+            android:title="关于本机"/>
+    </group>
+</menu>

@@ -49,6 +49,25 @@ public class RobotController {
         });
     }
 
+    // 打开指定仓门
+    public static void openCargoDoor(int doorId, OkHttpUtils.ResponseCallback callback) {
+        Log.d(TAG, "模拟打开仓门: " + doorId);
+        // 模拟成功
+        callback.onSuccess(ByteString.EMPTY);
+
+//        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/open";
+//        OkHttpUtils.put(url, "", callback);
+    }
+
+    // 关闭指定仓门
+    public static void closeCargoDoor(int doorId, OkHttpUtils.ResponseCallback callback) {
+        Log.d(TAG, "模拟关闭仓门: " + doorId);
+        // 模拟成功
+        callback.onSuccess(ByteString.EMPTY);
+
+//        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/close";
+//        OkHttpUtils.put(url, "", callback);
+    }
 
     // 获取POI信息
     public static void getPoiList(OkHttpUtils.ResponseCallback callback) {
@@ -72,7 +91,7 @@ public class RobotController {
         options.add("target", target);
 
         JsonObject moveOptions = new JsonObject();
-        moveOptions.addProperty("mode", 0);// 自由导航模式
+        moveOptions.addProperty("mode", 2);// 自由导航模式
         moveOptions.add("flags", new JsonArray());
         JSONArray flags = new JSONArray();
         flags.put("precise"); // 精确到点模式
@@ -80,7 +99,7 @@ public class RobotController {
         moveOptions.addProperty("yaw", poi.getYaw());// 目标朝向角
         moveOptions.addProperty("acceptable_precision", 0.1);// 可接受的精度
         moveOptions.addProperty("fail_retry_count", 3);// 失败重试次数
-        moveOptions.addProperty("speed_ratio", 2.0); // 速度比例
+        moveOptions.addProperty("speed_ratio", 1.0); // 速度比例
         options.add("move_options", moveOptions);
 
         json.add("options", options);
@@ -135,6 +154,11 @@ public class RobotController {
         }
 
         OkHttpUtils.post(url, json.toString(), callback);
+    }
+    // 取消当前任务
+    public static void cancelCurrentAction(OkHttpUtils.ResponseCallback callback) {
+        String url = BASE_URL + "/api/core/motion/v1/actions/:current";
+        OkHttpUtils.delete(url, callback);
     }
 
     // 解析POI列表

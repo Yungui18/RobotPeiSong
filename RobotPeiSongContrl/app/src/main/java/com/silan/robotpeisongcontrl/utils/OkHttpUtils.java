@@ -1,5 +1,7 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.IOException;
@@ -89,6 +91,34 @@ public class OkHttpUtils {
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
+                .build();
+
+        client.newCall(request).enqueue(new StreamHandlingCallback(callback));
+    }
+
+    public static void put(String url, String json, ResponseCallback callback) {
+        // 模拟实现
+        Log.d(TAG, "模拟PUT请求: " + url);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            callback.onSuccess(ByteString.EMPTY);
+        }, 1000);
+
+        /*
+        // 实际实现（设备到位后启用）
+        MediaType JSON = MediaType.get("application/json; charset=utf-8");
+        RequestBody body = RequestBody.create(json, JSON);
+        Request request = new Request.Builder()
+                .url(url)
+                .put(body)
+                .build();
+
+        client.newCall(request).enqueue(new StreamHandlingCallback(callback));
+        */
+    }
+    public static void delete(String url, ResponseCallback callback) {
+        Request request = new Request.Builder()
+                .url(url)
+                .delete()  // 使用 DELETE 方法
                 .build();
 
         client.newCall(request).enqueue(new StreamHandlingCallback(callback));

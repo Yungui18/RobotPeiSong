@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 电量信息 -->
+    <TextView
+        android:id="@+id/tv_battery_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="电量: --%"
+        android:textSize="18sp"/>
+
+    <!-- 方案选择下拉框 -->
+    <Spinner
+        android:id="@+id/scheme_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"/>
+
+    <!-- POI按钮容器 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择点位:"
+        android:layout_marginTop="16dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+        <LinearLayout
+            android:id="@+id/poi_buttons_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+    </ScrollView>
+
+    <!-- 已选点位显示 -->
+    <TextView
+        android:id="@+id/tv_selected_pois"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="已选点位:"/>
+
+    <!-- 任务按钮布局 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择任务:"
+        android:layout_marginTop="16dp"/>
+
+    <include layout="@layout/task_buttons_layout"/>
+
+    <!-- 操作按钮 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btn_create_scheme"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="创建路线方案"/>
+
+        <Button
+            android:id="@+id/btn_delete_scheme"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="删除当前方案"/>
+    </LinearLayout>
+</LinearLayout>

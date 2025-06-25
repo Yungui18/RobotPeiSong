@@ -31,23 +31,6 @@
             android:textAllCaps="false" />
     </LinearLayout>
 
-    <!-- 区域D: 验证区域（预留） -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:background="@android:color/darker_gray"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <!-- 这里可以添加验证组件，例如：指纹、密码等 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="验证区域"
-            android:textSize="24sp" />
-
-    </LinearLayout>
 
     <!-- 右上角倒计时 -->
     <TextView

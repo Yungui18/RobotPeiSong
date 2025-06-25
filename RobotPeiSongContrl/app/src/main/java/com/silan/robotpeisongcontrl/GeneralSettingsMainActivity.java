@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.silan.robotpeisongcontrl.fragments.AdminPasswordSettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliverySettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.DeliveryVerificationFragment;
 import com.silan.robotpeisongcontrl.fragments.PersonalizationSettingsFragment;
 
 /**
@@ -48,6 +49,12 @@ public class GeneralSettingsMainActivity extends AppCompatActivity {
             // 直接加载配送设置Fragment
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, new DeliverySettingsFragment())
+                    .commit();
+        });
+
+        findViewById(R.id.btn_delivery_verification).setOnClickListener(v -> {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.content_frame, new DeliveryVerificationFragment())
                     .commit();
         });
     }

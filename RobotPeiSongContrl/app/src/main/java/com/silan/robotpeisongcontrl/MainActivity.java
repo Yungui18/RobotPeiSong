@@ -1,17 +1,25 @@
 package com.silan.robotpeisongcontrl;
 
+
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.CountDownTimer;
+
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,8 +37,11 @@ import java.util.List;
 import okio.ByteString;
 
 public class MainActivity extends AppCompatActivity {
-    private int clickCount = 0;
-    private CountDownTimer resetTimer;
+    private String enteredPassword = "";
+    private LinearLayout dotsContainer;
+    private Button[] numberButtons = new Button[10];
+    private Button btnDelete;
+    private AlertDialog passwordDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +59,19 @@ public class MainActivity extends AppCompatActivity {
         // 设置按钮
         ImageButton btnSettings = findViewById(R.id.btn_settings);
 
-        startDeliveryBtn.setOnClickListener(v -> getRobotStatus());
+        startDeliveryBtn.setOnClickListener(v -> {
+            // 检查是否启用了配送验证
+            SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+            boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
+
+            if (verificationEnabled) {
+                // 显示送物密码验证对话框
+                showDeliveryPasswordDialog();
+            } else {
+                // 直接开始配送流程
+                getRobotStatus();
+            }
+        });
 
         patrolModeBtn.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, PatrolActivity.class);
@@ -60,6 +83,152 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
             startActivity(intent);
         });
+    }
+
+    // 将密码验证相关方法重构为通用方法
+    private void showPasswordDialog(String title, String passwordType) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_password_auth, null);
+        builder.setView(dialogView);
+
+        // 设置标题
+        TextView tvTitle = dialogView.findViewById(R.id.tv_title);
+        tvTitle.setText(title);
+
+        // 初始化视图
+        dotsContainer = dialogView.findViewById(R.id.dots_container);
+        numberButtons[0] = dialogView.findViewById(R.id.btn_0);
+        numberButtons[1] = dialogView.findViewById(R.id.btn_1);
+        numberButtons[2] = dialogView.findViewById(R.id.btn_2);
+        numberButtons[3] = dialogView.findViewById(R.id.btn_3);
+        numberButtons[4] = dialogView.findViewById(R.id.btn_4);
+        numberButtons[5] = dialogView.findViewById(R.id.btn_5);
+        numberButtons[6] = dialogView.findViewById(R.id.btn_6);
+        numberButtons[7] = dialogView.findViewById(R.id.btn_7);
+        numberButtons[8] = dialogView.findViewById(R.id.btn_8);
+        numberButtons[9] = dialogView.findViewById(R.id.btn_9);
+        btnDelete = dialogView.findViewById(R.id.btn_delete);
+
+        // 初始化密码圆点
+        createPasswordDots();
+
+        // 设置数字按钮点击事件
+        for (int i = 0; i < numberButtons.length; i++) {
+            final int digit = i;
+            numberButtons[i].setOnClickListener(v -> addDigit(String.valueOf(digit)));
+        }
+        // 设置删除按钮点击事件
+        btnDelete.setOnClickListener(v -> removeDigit());
+
+        // 创建对话框
+        passwordDialog = builder.create();
+        passwordDialog.setCanceledOnTouchOutside(false);
+        passwordDialog.show();
+
+        // 重置输入状态
+        enteredPassword = "";
+        updateDotsDisplay();
+    }
+
+    /**
+     * 显示送物密码验证对话框
+     */
+    private void showDeliveryPasswordDialog() {
+        showPasswordDialog("送物验证", "delivery_password");
+    }
+
+    /**
+     * 验证送物密码是否正确
+     */
+    private boolean validateDeliveryPassword(String enteredPassword) {
+        SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+        String correctPassword = prefs.getString("delivery_password", "");
+        return enteredPassword.equals(correctPassword);
+    }
+
+    /**
+     * 创建密码圆点指示器
+     */
+    private void createPasswordDots() {
+        dotsContainer.removeAllViews();
+
+        int dotSize = getResources().getDimensionPixelSize(R.dimen.password_dot_size);
+        int margin = getResources().getDimensionPixelSize(R.dimen.password_dot_margin);
+
+        for (int i = 0; i < 4; i++) {
+            View dot = new View(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dotSize, dotSize);
+            params.setMargins(margin, 0, margin, 0);
+            dot.setLayoutParams(params);
+
+            // 创建圆形背景
+            GradientDrawable bg = new GradientDrawable();
+            bg.setShape(GradientDrawable.OVAL);
+            bg.setColor(Color.TRANSPARENT);
+            bg.setStroke(getResources().getDimensionPixelSize(R.dimen.password_dot_stroke), Color.GRAY);
+            dot.setBackground(bg);
+
+            dotsContainer.addView(dot);
+        }
+    }
+
+    /**
+     * 添加数字到密码
+     */
+    private void addDigit(String digit) {
+        if (enteredPassword.length() < 4) {
+            enteredPassword += digit;
+            updateDotsDisplay();
+            // 自动检查密码
+            if (enteredPassword.length() == 4) {
+                if (validateDeliveryPassword(enteredPassword)) {
+                    // 验证通过，开始配送流程
+                    getRobotStatus();
+
+                    // 关闭对话框
+                    if (passwordDialog != null && passwordDialog.isShowing()) {
+                        passwordDialog.dismiss();
+                        }
+
+                } else {
+                    Toast.makeText(MainActivity.this, "密码错误", Toast.LENGTH_SHORT).show();
+                    enteredPassword = "";
+                    updateDotsDisplay();
+                }
+            }
+        }
+    }
+
+    /**
+     * 删除最后一个数字
+     */
+    private void removeDigit() {
+        if (enteredPassword.length() > 0) {
+            enteredPassword = enteredPassword.substring(0, enteredPassword.length() - 1);
+            updateDotsDisplay();
+        }
+    }
+
+    /**
+     * 更新圆点显示状态
+     */
+    private void updateDotsDisplay() {
+        for (int i = 0; i < dotsContainer.getChildCount(); i++) {
+            View dot = dotsContainer.getChildAt(i);
+            if (dot != null) {
+                GradientDrawable bg = (GradientDrawable) dot.getBackground();
+                if (i < enteredPassword.length()) {
+                    // 填充的圆点
+                    bg.setColor(Color.BLACK);
+                    bg.setStroke(0, Color.TRANSPARENT);
+                } else {
+                    // 空心的圆点
+                    bg.setColor(Color.TRANSPARENT);
+                    bg.setStroke(getResources().getDimensionPixelSize(R.dimen.password_dot_stroke), Color.GRAY);
+                }
+            }
+        }
     }
 
     @Override

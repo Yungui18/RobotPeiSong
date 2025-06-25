@@ -1,9 +1,14 @@
 package com.silan.robotpeisongcontrl;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.text.InputType;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,6 +65,8 @@ public class TaskSelectionActivity extends AppCompatActivity {
         taskButtons[1] = findViewById(R.id.btn_task2);
         taskButtons[2] = findViewById(R.id.btn_task3);
         taskButtons[3] = findViewById(R.id.btn_task4);
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
         // 任务按钮点击事件
         for (int i = 0; i < taskButtons.length; i++) {
@@ -76,6 +83,45 @@ public class TaskSelectionActivity extends AppCompatActivity {
         // 倒计时150秒
         startCountdown();
     }
+
+    /**
+     * 显示送物密码验证对话框
+     */
+    private void showDeliveryPasswordDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("送物验证");
+
+        // 创建密码输入框
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setHint("请输入4位密码");
+        builder.setView(input);
+
+        // 确定按钮
+        builder.setPositiveButton("确定", (dialog, which) -> {
+            String enteredPassword = input.getText().toString();
+            if (validateDeliveryPassword(enteredPassword)) {
+                startTasks(); // 验证通过，开始任务
+            } else {
+                Toast.makeText(TaskSelectionActivity.this, "密码错误", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 取消按钮
+        builder.setNegativeButton("取消", (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
+    /**
+     * 验证送物密码是否正确
+     */
+    private boolean validateDeliveryPassword(String enteredPassword) {
+        SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+        String correctPassword = prefs.getString("delivery_password", "");
+        return enteredPassword.equals(correctPassword);
+    }
+
 
     private void startCountdown() {
         timer = new CountDownTimer(60000, 1000) {
@@ -169,7 +215,6 @@ public class TaskSelectionActivity extends AppCompatActivity {
         if (taskManager.hasTasks()) {
             timer.cancel();
             Intent intent = new Intent(this, MovingActivity.class);
-            // 传递POI列表
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             startActivity(intent);
             for (Button button : taskButtons) {

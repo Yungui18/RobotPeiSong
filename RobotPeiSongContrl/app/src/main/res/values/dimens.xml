@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 密码圆点尺寸 -->
+    <dimen name="password_dot_size">20dp</dimen>
+    <dimen name="password_dot_margin">8dp</dimen>
+    <dimen name="password_dot_stroke">2dp</dimen>
+</resources>

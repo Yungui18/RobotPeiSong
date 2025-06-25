@@ -73,6 +73,15 @@
             android:background="@drawable/menu_item_background"
 
             android:textColor="@color/black"/>
+
+        <Button
+            android:id="@+id/btn_delivery_verification"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="配送验证设置"
+            android:textAllCaps="false"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"/>
     </LinearLayout>
 
     <!-- 右侧内容区 -->

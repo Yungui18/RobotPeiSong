@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- 天空 -->
+    <path
+        android:fillColor="#64B5F6"
+        android:pathData="M0,0 L200,0 L200,200 L0,200 Z"/>
+
+    <!-- 建筑1 -->
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M20,200 L20,100 L40,100 L40,200 Z"/>
+
+    <!-- 建筑2 -->
+    <path
+        android:fillColor="#455A64"
+        android:pathData="M50,200 L50,80 L70,80 L70,200 Z"/>
+
+    <!-- 建筑3 -->
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M80,200 L80,60 L100,60 L100,200 Z"/>
+
+    <!-- 建筑4 -->
+    <path
+        android:fillColor="#455A64"
+        android:pathData="M110,200 L110,90 L130,90 L130,200 Z"/>
+
+    <!-- 建筑5 -->
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M140,200 L140,120 L160,120 L160,200 Z"/>
+
+    <!-- 建筑6 -->
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M170,200 L170,70 L190,70 L190,200 Z"/>
+</vector>

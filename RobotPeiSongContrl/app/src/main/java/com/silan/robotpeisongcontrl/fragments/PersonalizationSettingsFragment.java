@@ -1,5 +1,6 @@
 package com.silan.robotpeisongcontrl.fragments;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -56,34 +57,23 @@ public class PersonalizationSettingsFragment extends Fragment {
         view.findViewById(R.id.btn_ad_implant).setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), AdImplantActivity.class));
         });
-
-        // 设置主题颜色选择监听
-        view.findViewById(R.id.color_mint_green).setOnClickListener(this::onThemeColorSelected);
-        view.findViewById(R.id.color_blue).setOnClickListener(this::onThemeColorSelected);
-        view.findViewById(R.id.color_purple).setOnClickListener(this::onThemeColorSelected);
-        view.findViewById(R.id.color_teal).setOnClickListener(this::onThemeColorSelected);
-
-        // 设置字体大小滑块
-        SeekBar seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
-        // 从SharedPreferences加载保存的字体大小设置，默认为2
-        seekbarFontSize.setProgress(prefs.getInt("font_size", 2));
-        seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // 保存字体大小设置
-                prefs.edit().putInt("font_size", progress).apply();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                Toast.makeText(getContext(), "字体大小设置已保存", Toast.LENGTH_SHORT).show();
-            }
-        });
-
         return view;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == getActivity().RESULT_OK) {
+            if (requestCode == 100) {
+                Toast.makeText(getContext(), "背景已设置", Toast.LENGTH_SHORT).show();
+            } else if (requestCode == 101) {
+                Toast.makeText(getContext(), "时区已设置", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+    private void saveBackgroundPreference(int bgResId) {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("personalization_prefs", Context.MODE_PRIVATE);
+        prefs.edit().putInt("background_res", bgResId).apply();
     }
 
     /**

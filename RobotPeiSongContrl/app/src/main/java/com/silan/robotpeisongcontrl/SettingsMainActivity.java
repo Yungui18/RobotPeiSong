@@ -14,7 +14,7 @@ import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
  * 2. 提供垂直排列导航菜单列表
  * 3. 处理导航项点击事件
  */
-public class SettingsMainActivity extends AppCompatActivity{
+public class SettingsMainActivity extends BaseActivity{
 
     private static final String[] SETTINGS_MENU = {
             "通用设置",

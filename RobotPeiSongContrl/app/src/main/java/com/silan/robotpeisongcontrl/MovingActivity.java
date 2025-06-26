@@ -30,7 +30,7 @@ import java.util.List;
 
 import okio.ByteString;
 
-public class MovingActivity extends AppCompatActivity {
+public class MovingActivity extends BaseActivity {
     private static final int POLLING_INTERVAL = 2000; // 2秒轮询一次
 
     private TextView statusText;

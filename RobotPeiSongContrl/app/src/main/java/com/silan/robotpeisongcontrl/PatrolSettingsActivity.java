@@ -31,7 +31,7 @@ import java.util.List;
 
 import okio.ByteString;
 
-public class PatrolSettingsActivity extends AppCompatActivity {
+public class PatrolSettingsActivity extends BaseActivity {
 
     private List<Poi> poiList = new ArrayList<>();
     private List<PatrolPoint> selectedPoints = new ArrayList<>();

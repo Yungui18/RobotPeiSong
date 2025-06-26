@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -102,6 +103,13 @@ public class DeliveryVerificationFragment extends Fragment {
         // 设置标题
         TextView tvTitle = dialogView.findViewById(R.id.tv_title);
         tvTitle.setText(title);
+        // 关闭按钮
+        ImageButton btnClose = dialogView.findViewById(R.id.btn_close);
+        btnClose.setOnClickListener(v -> {
+            if (passwordDialog != null && passwordDialog.isShowing()) {
+                passwordDialog.dismiss();
+            }
+        });
 
         // 初始化视图
         LinearLayout dotsContainer = dialogView.findViewById(R.id.dots_container);

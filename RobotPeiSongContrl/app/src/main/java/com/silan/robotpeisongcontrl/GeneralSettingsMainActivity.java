@@ -18,7 +18,7 @@ import com.silan.robotpeisongcontrl.fragments.PersonalizationSettingsFragment;
  * 主要功能：
  * 1. 提供音量设置、个性化设置、管理员密码设置、配送设置入口
  */
-public class GeneralSettingsMainActivity extends AppCompatActivity {
+public class GeneralSettingsMainActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

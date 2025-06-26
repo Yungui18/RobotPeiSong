@@ -39,7 +39,7 @@ import java.util.List;
  * 3. 根据设置决定是否进行密码验证
  * 4. 处理配送流程中的密码验证逻辑
  */
-public class ArrivalConfirmationActivity extends AppCompatActivity {
+public class ArrivalConfirmationActivity extends BaseActivity {
 
     private CountDownTimer timer;
     private List<Poi> poiList;

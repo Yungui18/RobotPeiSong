@@ -80,14 +80,6 @@ public class DeliverySettingsFragment extends Fragment {
         door4Indicator = view.findViewById(R.id.door4_indicator);
         btnDoor4Open = view.findViewById(R.id.btn_door4_open);
         btnDoor4Close = view.findViewById(R.id.btn_door4_close);
-        // 初始化配送验证设置控件
-        switchVerification = view.findViewById(R.id.switch_verification);
-        layoutPasswordSettings = view.findViewById(R.id.layout_password_settings);
-        etPickupPassword = view.findViewById(R.id.et_pickup_password);
-        etDeliveryPassword = view.findViewById(R.id.et_delivery_password);
-        // 设置密码输入提示文本
-        etPickupPassword.setHint("请输入4位取物密码");
-        etDeliveryPassword.setHint("请输入4位送物密码");
     }
 
     private void setupButtonListeners() {

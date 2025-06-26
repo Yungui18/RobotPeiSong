@@ -1,40 +1,33 @@
 package com.silan.robotpeisongcontrl;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.text.Editable;
-import android.text.InputType;
-import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
+
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-public class PasswordAuthActivity extends AppCompatActivity {
+import com.silan.robotpeisongcontrl.utils.PasswordManager;
+
+public class PasswordAuthActivity extends BaseActivity {
 
     public static final int AUTH_TYPE_SETTINGS = 1;  // 4位密码
     public static final int AUTH_TYPE_SUPER_ADMIN = 2; // 6位密码
-
-    private static final String SETTINGS_PASSWORD = "1234";
-    private static final String SUPER_ADMIN_PASSWORD = "123456";
 
     private int passwordLength;
     private String enteredPassword = "";
     private int clickCount = 0;
     private CountDownTimer resetTimer;
+    private AlertDialog passwordDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,8 +178,12 @@ public class PasswordAuthActivity extends AppCompatActivity {
         if (resetTimer != null) resetTimer.cancel();
 
         resetTimer = new CountDownTimer(3000, 1000) {
-            public void onFinish() { clickCount = 0; }
-            public void onTick(long millisUntilFinished) {}
+            public void onFinish() {
+                clickCount = 0;
+            }
+
+            public void onTick(long millisUntilFinished) {
+            }
         }.start();
 
         if (clickCount >= 5) {
@@ -237,8 +234,15 @@ public class PasswordAuthActivity extends AppCompatActivity {
 
     private void checkPassword() {
         int authType = getIntent().getIntExtra("auth_type", AUTH_TYPE_SETTINGS);
-        String correctPassword = (authType == AUTH_TYPE_SETTINGS) ?
-                SETTINGS_PASSWORD : SUPER_ADMIN_PASSWORD;
+        String correctPassword;
+
+        if (authType == AUTH_TYPE_SETTINGS) {
+            // 使用PasswordManager获取设置密码
+            correctPassword = PasswordManager.getSettingsPassword(this);
+        } else {
+            // 超级管理员密码保持固定
+            correctPassword = "123456";
+        }
 
         if (enteredPassword.equals(correctPassword)) {
             // 验证成功
@@ -259,5 +263,13 @@ public class PasswordAuthActivity extends AppCompatActivity {
 
     private int dpToPx(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (resetTimer != null) {
+            resetTimer.cancel();
+        }
     }
 }

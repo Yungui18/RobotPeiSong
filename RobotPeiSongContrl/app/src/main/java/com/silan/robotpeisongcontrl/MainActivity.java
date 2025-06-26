@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -19,6 +20,7 @@ import android.widget.Button;
 
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,21 +34,35 @@ import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import okio.ByteString;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends  BaseActivity{
     private String enteredPassword = "";
     private LinearLayout dotsContainer;
     private Button[] numberButtons = new Button[10];
     private Button btnDelete;
     private AlertDialog passwordDialog;
+    private TextView tvTime;
+    private RelativeLayout mainLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // 初始化时间显示
+        tvTime = findViewById(R.id.tv_time);
+        startTimeUpdater();
+
+        mainLayout = findViewById(R.id.main_layout);
+
+        // 应用背景
+        applyBackground();
 
         // 配送按钮
         Button startDeliveryBtn = findViewById(R.id.btn_start_delivery);
@@ -85,6 +101,39 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //应用背景
+    private void applyBackground() {
+        SharedPreferences prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
+        int bgResId = prefs.getInt("background_res", R.drawable.bg_default);
+        mainLayout.setBackgroundResource(bgResId);
+    }
+
+    //时区更新
+    private void startTimeUpdater() {
+        final Handler handler = new Handler();
+        final Runnable timeUpdater = new Runnable() {
+            @Override
+            public void run() {
+                updateTime();
+                handler.postDelayed(this, 1000);
+            }
+        };
+        handler.post(timeUpdater);
+    }
+
+    private void updateTime() {
+        SharedPreferences prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
+        String timezoneId = prefs.getString("selected_timezone", "Asia/Shanghai");
+
+        TimeZone tz = TimeZone.getTimeZone(timezoneId);
+        Calendar calendar = Calendar.getInstance(tz);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+        sdf.setTimeZone(tz);
+
+        tvTime.setText(sdf.format(calendar.getTime()));
+    }
+
     // 将密码验证相关方法重构为通用方法
     private void showPasswordDialog(String title, String passwordType) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -95,6 +144,14 @@ public class MainActivity extends AppCompatActivity {
         // 设置标题
         TextView tvTitle = dialogView.findViewById(R.id.tv_title);
         tvTitle.setText(title);
+
+        // 关闭按钮
+        ImageButton btnClose = dialogView.findViewById(R.id.btn_close);
+        btnClose.setOnClickListener(v -> {
+            if (passwordDialog != null && passwordDialog.isShowing()) {
+                passwordDialog.dismiss();
+            }
+        });
 
         // 初始化视图
         dotsContainer = dialogView.findViewById(R.id.dots_container);

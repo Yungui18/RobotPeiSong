@@ -15,7 +15,7 @@ import com.silan.robotpeisongcontrl.utils.PatrolSchemeManager;
 
 import java.util.Map;
 
-public class PatrolActivity extends AppCompatActivity {
+public class PatrolActivity extends BaseActivity {
 
     private LinearLayout patrolSchemeContainer;
     private int selectedSchemeId = -1;

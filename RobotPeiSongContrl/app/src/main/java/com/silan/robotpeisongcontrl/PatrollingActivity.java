@@ -29,7 +29,7 @@ import java.util.List;
 
 import okio.ByteString;
 
-public class PatrollingActivity extends AppCompatActivity {
+public class PatrollingActivity extends BaseActivity {
 
     private static final String TAG = "PatrollingActivity";
     private int currentPointIndex = 0;

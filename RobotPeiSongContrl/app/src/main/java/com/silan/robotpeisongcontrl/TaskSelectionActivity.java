@@ -28,7 +28,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TaskSelectionActivity extends AppCompatActivity {
+public class TaskSelectionActivity extends BaseActivity {
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();

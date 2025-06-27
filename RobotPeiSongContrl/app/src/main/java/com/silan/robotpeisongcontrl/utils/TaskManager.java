@@ -26,8 +26,10 @@ public class TaskManager {
     }
 
     public void addTask(Poi poi) {
-        taskQueue.add(poi);
-        assignedPointNames.add(poi.getDisplayName());
+        if (!assignedPointNames.contains(poi.getDisplayName())) {
+            taskQueue.add(poi);
+            assignedPointNames.add(poi.getDisplayName());
+        }
     }
     public void removeTask(Poi poi) {
         taskQueue.remove(poi);
@@ -40,6 +42,7 @@ public class TaskManager {
 
     public void clearTasks() {
         taskQueue.clear();
+        assignedPointNames.clear();
     }
 
     public boolean hasTasks() {

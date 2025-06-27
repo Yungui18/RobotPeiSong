@@ -107,6 +107,13 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      * 处理完成操作 - 不再需要验证送物密码
      */
     private void handleCompleteAction() {
+        // 移除当前点位的所有任务
+        TaskManager taskManager = TaskManager.getInstance();
+        if (poiList != null) {
+            for (Poi poi : poiList) {
+                taskManager.removeTask(poi);
+            }
+        }
         proceedToNextTask(); // 直接继续下一个任务
     }
 

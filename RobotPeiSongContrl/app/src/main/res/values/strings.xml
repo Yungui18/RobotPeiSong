@@ -3,6 +3,7 @@
     <string name="start_delivery">开始配送</string>
     <string name="secret_button">透明按钮</string>
     <string name="start">出发</string>
+    <string name="multi_delivery_start">多点配送出发</string>
     <string name="clear">清除</string>
     <string name="done">完成</string>
     <string name="pickup">取物</string>

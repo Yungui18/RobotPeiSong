@@ -44,6 +44,21 @@
         android:textAllCaps="false"
         android:textSize="18sp" />
 
+    <!-- 多点配送按钮 -->
+    <Button
+        android:id="@+id/btn_multi_delivery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_patrol_mode"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/button_mint_green_rect"
+        android:minWidth="200dp"
+        android:minHeight="80dp"
+        android:text="多点配送"
+        android:textAllCaps="false"
+        android:textSize="18sp" />
+
     <!-- 设置按钮 -->
     <ImageButton
         android:id="@+id/btn_settings"

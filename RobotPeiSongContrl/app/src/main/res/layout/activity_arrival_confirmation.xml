@@ -29,7 +29,29 @@
             android:background="@drawable/button_mint_green_rect"
             android:text="@string/complete"
             android:textAllCaps="false" />
+        <TextView
+            android:id="@+id/tv_point_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/tv_door_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:padding="10dp" />
+
+        <TextView
+            android:id="@+id/tv_current_door"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:padding="10dp"
+            android:textStyle="bold" />
     </LinearLayout>
+
 
 
     <!-- 右上角倒计时 -->

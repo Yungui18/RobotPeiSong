@@ -184,15 +184,10 @@ public class MovingActivity extends BaseActivity {
         Log.d(TAG, "移动任务完成");
         handler.removeCallbacks(statusPollingRunnable);
         if (isReturningHome) {
-
-// 回桩任务完成，回到主页面
-
+            // 回桩任务完成，回到主页面
             Intent intent = new Intent(MovingActivity.this, MainActivity.class);
-
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // 清除栈中所有中间的Activity
-
             startActivity(intent);
-
         } else {
             // 跳转到到达确认页面
             Intent intent = new Intent(MovingActivity.this, ArrivalConfirmationActivity.class);
@@ -215,7 +210,6 @@ public class MovingActivity extends BaseActivity {
         isReturningHome = true; // 标记当前是回桩任务
         statusText.setText("正在前往充电桩");
         RobotController.createReturnHomeAction(new OkHttpUtils.ResponseCallback() {
-
             @Override
             public void onSuccess(ByteString responseData) {
                 try {

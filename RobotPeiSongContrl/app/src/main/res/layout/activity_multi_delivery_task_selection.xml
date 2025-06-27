@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <!-- 返回按钮 -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_arrow_back"
+        android:background="?selectableItemBackgroundBorderless"
+        android:layout_margin="8dp"/>
+
+    <!-- 区域A: 任务按钮 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- 使用 task_buttons_layout.xml 中的按钮 -->
+        <include
+            layout="@layout/task_buttons_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btn_start_multi_delivery"
+            android:layout_width="300dp"
+            android:layout_height="60dp"
+            android:layout_margin="10dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="@string/multi_delivery_start" />
+    </LinearLayout>
+
+    <!-- 区域B: 输入点位区域 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="200dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_display"
+            android:layout_width="256dp"
+            android:layout_height="60dp"
+            android:background="@color/white"
+            android:elevation="4dp"
+            android:gravity="center"
+            android:padding="8dp"
+            android:textColor="@color/black"
+            android:textSize="24sp" />
+
+        <GridLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:columnCount="3"
+            android:rowCount="4">
+
+            <!-- 数字按钮1-9, 清除, 0, 完成 -->
+            <Button
+                android:id="@+id/btn_1"
+                android:backgroundTint="@color/mint_green"
+                android:text="1" />
+
+            <Button
+                android:id="@+id/btn_2"
+                android:backgroundTint="@color/mint_green"
+                android:text="2" />
+
+            <Button
+                android:id="@+id/btn_3"
+                android:backgroundTint="@color/mint_green"
+                android:text="3" />
+
+            <Button
+                android:id="@+id/btn_4"
+                android:backgroundTint="@color/mint_green"
+                android:text="4" />
+
+            <Button
+                android:id="@+id/btn_5"
+                android:backgroundTint="@color/mint_green"
+                android:text="5" />
+
+            <Button
+                android:id="@+id/btn_6"
+                android:backgroundTint="@color/mint_green"
+                android:text="6" />
+
+            <Button
+                android:id="@+id/btn_7"
+                android:backgroundTint="@color/mint_green"
+                android:text="7" />
+
+            <Button
+                android:id="@+id/btn_8"
+                android:backgroundTint="@color/mint_green"
+                android:text="8" />
+
+            <Button
+                android:id="@+id/btn_9"
+                android:backgroundTint="@color/mint_green"
+                android:text="9" />
+
+            <Button
+                android:id="@+id/btn_clear"
+                android:backgroundTint="@color/mint_green"
+                android:text="清除" />
+
+            <Button
+                android:id="@+id/btn_0"
+                android:backgroundTint="@color/mint_green"
+                android:text="0" />
+
+            <Button
+                android:id="@+id/btn_done"
+                android:backgroundTint="@color/mint_green"
+                android:text="完成" />
+        </GridLayout>
+        <LinearLayout
+            android:id="@+id/task_details_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp"/>
+    </LinearLayout>
+
+    <!-- 右上角倒计时 -->
+    <TextView
+        android:id="@+id/tv_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:text="150s"
+        android:textSize="18sp" />
+
+</LinearLayout>

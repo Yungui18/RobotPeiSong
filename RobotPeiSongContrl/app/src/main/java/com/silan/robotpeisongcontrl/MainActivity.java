@@ -24,8 +24,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.gson.Gson;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
@@ -72,6 +70,10 @@ public class MainActivity extends  BaseActivity{
         Button patrolModeBtn = findViewById(R.id.btn_patrol_mode);
         adjustButtonSize(patrolModeBtn);
 
+        // 多点配送按钮
+        Button multiDeliveryBtn = findViewById(R.id.btn_multi_delivery);
+        adjustButtonSize(multiDeliveryBtn);
+
         // 设置按钮
         ImageButton btnSettings = findViewById(R.id.btn_settings);
 
@@ -82,10 +84,24 @@ public class MainActivity extends  BaseActivity{
 
             if (verificationEnabled) {
                 // 显示送物密码验证对话框
-                showDeliveryPasswordDialog();
+                showDeliveryPasswordDialog(false);
             } else {
                 // 直接开始配送流程
-                getRobotStatus();
+                getRobotStatus(false);
+            }
+        });
+
+        multiDeliveryBtn.setOnClickListener(v -> {
+            // 检查是否启用了配送验证
+            SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+            boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
+
+            if (verificationEnabled) {
+                // 显示送物密码验证对话框
+                showDeliveryPasswordDialog(true);
+            } else {
+                // 直接开始多点配送流程
+                getRobotStatus(true);
             }
         });
 
@@ -135,7 +151,7 @@ public class MainActivity extends  BaseActivity{
     }
 
     // 将密码验证相关方法重构为通用方法
-    private void showPasswordDialog(String title, String passwordType) {
+    private void showPasswordDialog(String title, String passwordType, boolean isMultiDelivery) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_password_auth, null);
@@ -173,7 +189,7 @@ public class MainActivity extends  BaseActivity{
         // 设置数字按钮点击事件
         for (int i = 0; i < numberButtons.length; i++) {
             final int digit = i;
-            numberButtons[i].setOnClickListener(v -> addDigit(String.valueOf(digit)));
+            numberButtons[i].setOnClickListener(v -> addDigit(String.valueOf(digit),isMultiDelivery));
         }
         // 设置删除按钮点击事件
         btnDelete.setOnClickListener(v -> removeDigit());
@@ -191,8 +207,8 @@ public class MainActivity extends  BaseActivity{
     /**
      * 显示送物密码验证对话框
      */
-    private void showDeliveryPasswordDialog() {
-        showPasswordDialog("送物验证", "delivery_password");
+    private void showDeliveryPasswordDialog(boolean isMultiDelivery) {
+        showPasswordDialog("送物验证", "delivery_password",isMultiDelivery);
     }
 
     /**
@@ -233,7 +249,7 @@ public class MainActivity extends  BaseActivity{
     /**
      * 添加数字到密码
      */
-    private void addDigit(String digit) {
+    private void addDigit(String digit, boolean isMultiDelivery) {
         if (enteredPassword.length() < 4) {
             enteredPassword += digit;
             updateDotsDisplay();
@@ -241,13 +257,12 @@ public class MainActivity extends  BaseActivity{
             if (enteredPassword.length() == 4) {
                 if (validateDeliveryPassword(enteredPassword)) {
                     // 验证通过，开始配送流程
-                    getRobotStatus();
+                    getRobotStatus(isMultiDelivery);
 
                     // 关闭对话框
                     if (passwordDialog != null && passwordDialog.isShowing()) {
                         passwordDialog.dismiss();
-                        }
-
+                    }
                 } else {
                     Toast.makeText(MainActivity.this, "密码错误", Toast.LENGTH_SHORT).show();
                     enteredPassword = "";
@@ -293,6 +308,7 @@ public class MainActivity extends  BaseActivity{
         super.onConfigurationChanged(newConfig);
         adjustButtonSize(findViewById(R.id.btn_start_delivery));
         adjustButtonSize(findViewById(R.id.btn_patrol_mode));
+        adjustButtonSize(findViewById(R.id.btn_multi_delivery));
     }
 
     private void adjustButtonSize(Button button) {
@@ -316,14 +332,14 @@ public class MainActivity extends  BaseActivity{
         );
     }
 
-    private void getRobotStatus() {
+    private void getRobotStatus(boolean isMultiDelivery) {
         RobotController.getRobotStatus(new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 String json = responseData.string(StandardCharsets.UTF_8);
                 RobotStatus status = RobotController.parseRobotStatus(json);
                 if (status != null && status.getBatteryPercentage() >= 20) {
-                    getPoiList();
+                    getPoiList(isMultiDelivery);
                 } else {
                     Toast.makeText(MainActivity.this, "电量不足，请充电", Toast.LENGTH_SHORT).show();
                 }
@@ -336,20 +352,25 @@ public class MainActivity extends  BaseActivity{
         });
     }
 
-    private void getPoiList() {
+    private void getPoiList(boolean isMultiDelivery) {
         RobotController.getPoiList(new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 String json = responseData.string(StandardCharsets.UTF_8);
                 List<Poi> poiList = RobotController.parsePoiList(json);
-                Intent intent = new Intent(MainActivity.this, TaskSelectionActivity.class);
+                Intent intent;
+                if (isMultiDelivery) {
+                    intent = new Intent(MainActivity.this, MultiDeliveryTaskSelectionActivity.class);
+                } else {
+                    intent = new Intent(MainActivity.this, TaskSelectionActivity.class);
+                }
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 startActivity(intent);
             }
 
             @Override
             public void onFailure(Exception e) {
-                Log.d("TAG", "获取POI信息失败"+e);
+                Log.d("TAG", "获取POI信息失败" + e);
             }
         });
     }

@@ -161,6 +161,11 @@ public class RobotController {
         OkHttpUtils.delete(url, callback);
     }
 
+    // 恢复任务
+    public static void resumeTask(Poi poi, OkHttpUtils.ResponseCallback callback) {
+        createMoveAction(poi, callback);
+    }
+
     // 解析POI列表
     public static List<Poi> parsePoiList(String jsonResponse) {
         List<Poi> poiList = new ArrayList<>();

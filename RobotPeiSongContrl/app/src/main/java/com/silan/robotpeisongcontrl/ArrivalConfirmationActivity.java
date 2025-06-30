@@ -108,7 +108,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      */
     private void handleCompleteAction() {
         // 移除当前点位的所有任务
-        TaskManager taskManager = TaskManager.getInstance();
+        TaskManager taskManager = TaskManager.getInstance(this);
         if (poiList != null) {
             for (Poi poi : poiList) {
                 taskManager.removeTask(poi);
@@ -273,7 +273,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private void proceedToNextTask() {
         timer.cancel(); // 停止倒计时
 
-        if (TaskManager.getInstance().hasTasks()) {
+        if (TaskManager.getInstance(this).hasTasks()) {
             // 还有任务，继续下一个
             Intent intent = new Intent(this, MovingActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));

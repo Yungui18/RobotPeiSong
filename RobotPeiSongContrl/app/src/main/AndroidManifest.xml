@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".App"
@@ -19,6 +20,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".ScheduledTasksActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ExistingTasksActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ScheduledDeliveryActivity"
+            android:exported="false" />
+        <activity
             android:name=".MultiDeliveryTaskSelectionActivity"
             android:exported="false" />
         <activity
@@ -26,18 +36,6 @@
             android:exported="false" />
         <activity
             android:name=".PatrolSettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".DeliverySettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AdminPasswordSettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".PersonalizationSettingsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".VolumeSettingsActivity"
             android:exported="false" />
         <activity
             android:name=".AdImplantActivity"
@@ -68,7 +66,6 @@
             android:exported="false" />
         <activity android:name=".SuperAdminActivity" />
         <activity android:name=".PatrollingActivity" />
-        <activity android:name=".SettingsActivity" />
         <activity android:name=".PasswordAuthActivity" />
         <activity android:name=".ArrivalConfirmationActivity" />
         <activity android:name=".MovingActivity" />
@@ -82,6 +79,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".service.ScheduledTaskService"
+            android:enabled="true"
+            android:exported="false"/>
+        <receiver
+            android:name=".adapter.ScheduledTaskReceiver"
+            android:enabled="true"
+            android:exported="false"/>
     </application>
 
 </manifest>

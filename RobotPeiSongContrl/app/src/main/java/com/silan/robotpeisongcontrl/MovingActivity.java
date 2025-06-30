@@ -35,7 +35,7 @@ public class MovingActivity extends BaseActivity {
 
     private TextView statusText;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final TaskManager taskManager = TaskManager.getInstance();
+    private final TaskManager taskManager = TaskManager.getInstance(this);
     private List<Poi> poiList;
     private String currentActionId;
     private static final String TAG = "MovingActivity";

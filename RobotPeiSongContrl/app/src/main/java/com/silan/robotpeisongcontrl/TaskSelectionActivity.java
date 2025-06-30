@@ -31,7 +31,7 @@ import java.util.List;
 public class TaskSelectionActivity extends BaseActivity {
     private TextView countdownText;
     private CountDownTimer timer;
-    private final TaskManager taskManager = TaskManager.getInstance();
+    private final TaskManager taskManager = TaskManager.getInstance(this);
     private int currentSelectedButtonIndex = -1;
     private List<Poi> poiList = new ArrayList<>();
     private final Button[] taskButtons = new Button[4];

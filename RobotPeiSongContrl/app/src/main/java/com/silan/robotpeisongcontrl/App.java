@@ -2,9 +2,12 @@ package com.silan.robotpeisongcontrl;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+
+import com.silan.robotpeisongcontrl.service.ScheduledTaskService;
 
 import java.util.Locale;
 
@@ -14,6 +17,15 @@ public class App extends Application {
         super.onCreate();
         // 应用启动时设置语言
         updateLanguage();
+        // 只在开关开启时启动服务
+        if (isScheduledDeliveryEnabled()) {
+            startService(new Intent(this, ScheduledTaskService.class));
+        }
+    }
+
+    private boolean isScheduledDeliveryEnabled() {
+        SharedPreferences prefs = getSharedPreferences("ScheduledDeliveryPrefs", MODE_PRIVATE);
+        return prefs.getBoolean("enabled", false);
     }
 
     private void updateLanguage() {
@@ -48,4 +60,5 @@ public class App extends Application {
             default: return Locale.getDefault();
         }
     }
+
 }

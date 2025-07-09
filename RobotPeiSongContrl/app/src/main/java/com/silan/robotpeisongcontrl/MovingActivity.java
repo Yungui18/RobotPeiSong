@@ -18,7 +18,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.Poi;
+import com.silan.robotpeisongcontrl.model.ScheduledDeliveryTask;
+import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
@@ -35,11 +38,13 @@ public class MovingActivity extends BaseActivity {
 
     private TextView statusText;
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final TaskManager taskManager = TaskManager.getInstance(this);
+    private final TaskManager taskManager = TaskManager.getInstance();
     private List<Poi> poiList;
     private String currentActionId;
     private static final String TAG = "MovingActivity";
     private boolean isReturningHome = false;
+    private boolean isScheduledTask = false;
+    private boolean[] selectedDoors = new boolean[4];
 
 
     @Override
@@ -58,9 +63,36 @@ public class MovingActivity extends BaseActivity {
             poiList = gson.fromJson(poiListJson, type);
         }
 
+        isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
+        if (getIntent().hasExtra("selected_doors")) {
+            selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
+        }
+
+        // 确保 selectedDoors 不为 null
+        if (selectedDoors == null) {
+            selectedDoors = new boolean[4]; // 默认4个false值
+        }
+
+
         startNextTask();
+
+        // 检查是否有配送失败的任务
+        boolean hasFailures = checkForFailures();
+        if (hasFailures) {
+            showFailureScreen();
+        }
     }
 
+    private boolean checkForFailures() {
+        // 这里简化处理，实际应根据任务执行情况判断
+        return false;
+    }
+
+    private void showFailureScreen() {
+        Intent intent = new Intent(this, DeliveryFailureActivity.class);
+        startActivity(intent);
+        finish();
+    }
     private void startNextTask() {
         Poi nextPoi = taskManager.getNextTask();
 
@@ -155,6 +187,10 @@ public class MovingActivity extends BaseActivity {
 
     private void handleActionStatus(int status, int result) {
         switch (status) {
+            case -2://被取消
+                statusText.setText("任务被取消");
+                continuePolling();
+                break;
             case 0: // 新创建
                 statusText.setText("准备出发...");
                 continuePolling();
@@ -184,18 +220,63 @@ public class MovingActivity extends BaseActivity {
         Log.d(TAG, "移动任务完成");
         handler.removeCallbacks(statusPollingRunnable);
         if (isReturningHome) {
-            // 回桩任务完成，回到主页面
-            Intent intent = new Intent(MovingActivity.this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); // 清除栈中所有中间的Activity
-            startActivity(intent);
+            // 回桩任务完成，检查是否有配送失败的任务
+            checkForDeliveryFailures();
         } else {
             // 跳转到到达确认页面
             Intent intent = new Intent(MovingActivity.this, ArrivalConfirmationActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));
+            intent.putExtra("scheduled_task", isScheduledTask);
+            intent.putExtra("selected_doors", selectedDoors); // 传递默认值
             startActivity(intent);
         }
+
         finish();
     }
+
+    private void checkForDeliveryFailures() {
+        List<DeliveryFailure> failures = DeliveryFailureManager.loadAllFailures(this);
+        if (!failures.isEmpty()) {
+            showFailureScreen(failures);
+        } else {
+            finishAndReturnToMain();
+        }
+    }
+
+    private void showFailureScreen(List<DeliveryFailure> failures) {
+        Intent intent = new Intent(this, DeliveryFailureActivity.class);
+        intent.putExtra("failures", new Gson().toJson(failures));
+        startActivity(intent);
+        finish();
+    }
+
+    private void returnToMain() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+        finish();
+    }
+
+    private void finishAndReturnToMain() {
+        // 在回桩完成并回到主界面之前，检查等待队列
+        if (TaskManager.hasPendingScheduledTask()) {
+            ScheduledDeliveryTask task = TaskManager.getNextPendingScheduledTask();
+            startScheduledTask(task);
+        } else {
+            Intent intent = new Intent(MovingActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    private void startScheduledTask(ScheduledDeliveryTask task) {
+        Intent intent = new Intent(this, ScheduledDeliveryExecutionActivity.class);
+        intent.putExtra("task_id", task.getId());
+        startActivity(intent);
+        finish();
+    }
+
 
     private void handleMoveFailure(String errorMessage) {
         Log.e(TAG, "移动失败: " + errorMessage);

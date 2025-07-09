@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Handler;
@@ -24,9 +25,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
 import com.google.gson.Gson;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
+import com.silan.robotpeisongcontrl.utils.ExactAlarmPermissionHelper;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 
 import com.silan.robotpeisongcontrl.utils.RobotController;
@@ -47,11 +52,26 @@ public class MainActivity extends  BaseActivity{
     private AlertDialog passwordDialog;
     private TextView tvTime;
     private RelativeLayout mainLayout;
+    private ActivityResultLauncher<Intent> alarmPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // 初始化权限请求
+        alarmPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> ExactAlarmPermissionHelper.handlePermissionResult(this)
+        );
+
+        // 检查精确闹钟权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !ExactAlarmPermissionHelper.canScheduleExactAlarms(this)) {
+
+            // 请求权限
+            ExactAlarmPermissionHelper.requestExactAlarmPermission(this, alarmPermissionLauncher);
+        }
 
         // 初始化时间显示
         tvTime = findViewById(R.id.tv_time);

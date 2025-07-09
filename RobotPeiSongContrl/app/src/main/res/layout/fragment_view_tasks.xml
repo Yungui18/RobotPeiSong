@@ -8,13 +8,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="定时配送任务"
-        android:textSize="24sp"
-        android:textAlignment="center"
+        android:text="定时配送任务列表"
+        android:textSize="20sp"
         android:layout_marginBottom="16dp"/>
 
     <ListView
-        android:id="@+id/list_view_tasks"
+        android:id="@+id/list_tasks"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 </LinearLayout>

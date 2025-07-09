@@ -2,14 +2,10 @@ package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 设置主设置界面，包含导航
@@ -25,8 +21,8 @@ public class SettingsMainActivity extends BaseActivity{
             "语言选择",
             "声音选择",
             "巡航配送设置",
-            "关于本机",
-            "定时配送设置"
+            "定时配送",
+            "关于本机"
     };
 
     @Override
@@ -52,14 +48,14 @@ public class SettingsMainActivity extends BaseActivity{
                 case 2: // 声音选择
                     startActivity(new Intent(this, SoundSettingsActivity.class));
                     break;
-                case 3://巡游配送设置
+                case 3:
                     startActivity(new Intent(this, PatrolSettingsActivity.class));
                     break;
-                case 4: // 关于本机
-                    startActivity(new Intent(this, AboutDeviceActivity.class));
-                    break;
-                case 5: // 定时配送设置
+                case 4: // 定时配送
                     startActivity(new Intent(this, ScheduledDeliveryActivity.class));
+                    break;
+                case 5: // 关于本机
+                    startActivity(new Intent(this, AboutDeviceActivity.class));
                     break;
             }
         });

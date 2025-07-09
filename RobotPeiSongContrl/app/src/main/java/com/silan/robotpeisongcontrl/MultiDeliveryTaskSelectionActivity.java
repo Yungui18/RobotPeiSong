@@ -31,7 +31,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
     private TextView countdownText;
     private CountDownTimer timer;
-    private final TaskManager taskManager = TaskManager.getInstance(this);
+    private final TaskManager taskManager = TaskManager.getInstance();
     private List<Poi> poiList = new ArrayList<>();
     private final Button[] taskButtons = new Button[4];
     private Set<Integer> selectedButtonIndices = new HashSet<>();

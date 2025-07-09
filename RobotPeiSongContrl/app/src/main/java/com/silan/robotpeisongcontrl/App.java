@@ -6,8 +6,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-
-import com.silan.robotpeisongcontrl.service.ScheduledTaskService;
+import android.net.Uri;
+import android.os.Build;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.util.Log;
 
 import java.util.Locale;
 
@@ -17,15 +20,27 @@ public class App extends Application {
         super.onCreate();
         // 应用启动时设置语言
         updateLanguage();
-        // 只在开关开启时启动服务
-        if (isScheduledDeliveryEnabled()) {
-            startService(new Intent(this, ScheduledTaskService.class));
-        }
+        // 清理无效的定时任务数据
+        clearInvalidScheduledData();
     }
+    private void clearInvalidScheduledData() {
+        SharedPreferences prefs = getSharedPreferences("scheduled_tasks", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
 
-    private boolean isScheduledDeliveryEnabled() {
-        SharedPreferences prefs = getSharedPreferences("ScheduledDeliveryPrefs", MODE_PRIVATE);
-        return prefs.getBoolean("enabled", false);
+        // 删除旧的错误格式数据
+        for (String key : prefs.getAll().keySet()) {
+            if (!key.equals("tasks")) {
+                editor.remove(key);
+            }
+        }
+
+        // 尝试修复任务列表
+        String tasksJson = prefs.getString("tasks", "[]");
+        if (!tasksJson.startsWith("[")) {
+            editor.putString("tasks", "[]");
+        }
+
+        editor.apply();
     }
 
     private void updateLanguage() {
@@ -60,5 +75,4 @@ public class App extends Application {
             default: return Locale.getDefault();
         }
     }
-
 }

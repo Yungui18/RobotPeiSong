@@ -21,13 +21,6 @@ import com.silan.robotpeisongcontrl.BackgroundChoiceActivity;
 import com.silan.robotpeisongcontrl.R;
 import com.silan.robotpeisongcontrl.TimeDisplayActivity;
 
-/**
- * 个性化设置页面
- * 主要功能：
- * 1. 提供背景选择、时间显示方式、广告植入入口
- * 2. 提供主题颜色选择
- * 3. 提供字体大小调整
- */
 public class PersonalizationSettingsFragment extends Fragment {
 
     private SharedPreferences prefs;

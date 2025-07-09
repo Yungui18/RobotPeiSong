@@ -7,7 +7,9 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -24,7 +26,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.Poi;
+import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -48,6 +52,10 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private Button[] numberButtons = new Button[10];
     private Button btnDelete;
     private AlertDialog passwordDialog;
+    private boolean isScheduledTask;
+    private boolean[] selectedDoors;
+    private boolean isDeliveryFailed = false;
+    private int currentDoorTask = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,15 +84,65 @@ public class ArrivalConfirmationActivity extends BaseActivity {
 
             @Override
             public void onFinish() {
+                // 记录配送失败
+                isDeliveryFailed = true;
+                recordDeliveryFailure();
                 proceedToNextTask();
             }
         }.start();
+        isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
+        selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
+        if (selectedDoors == null) {
+            selectedDoors = new boolean[4]; // 默认4个false值
+        }
+
+        if (isScheduledTask) {
+            performPickupAction();
+        }
 
         // 取物按钮点击事件
         btnPickup.setOnClickListener(v -> handlePickupAction());
 
         // 完成按钮点击事件
         btnComplete.setOnClickListener(v -> handleCompleteAction());
+        currentDoorTask = getIntent().getIntExtra("current_door_task", 0);
+    }
+
+    private void recordDeliveryFailure() {
+        // 获取当前点位信息
+        Poi currentPoi = TaskManager.getInstance().getCurrentPoi();
+
+        if (currentPoi == null) {
+            Log.e("ArrivalConfirmation", "Current Poi is null");
+            return;
+        }
+
+        // 创建失败任务
+        DeliveryFailure failure = new DeliveryFailure(
+                currentPoi.getDisplayName(),
+                getDoorsToOpen(),
+                System.currentTimeMillis()
+        );
+
+        // 保存到失败任务管理器
+        DeliveryFailureManager.addFailure(getApplicationContext(), failure);
+    }
+
+    private boolean[] getDoorsToOpen() {
+        boolean[] doors = new boolean[4];
+
+        if (currentDoorTask > 0) {
+            // 巡游配送模式：使用任务指定的仓门
+            doors[currentDoorTask - 1] = true;
+        } else if (selectedDoors != null) {
+            // 定时配送模式：使用选中的仓门
+            System.arraycopy(selectedDoors, 0, doors, 0, selectedDoors.length);
+        } else {
+            // 普通配送模式：默认打开仓门1
+            doors[0] = true;
+        }
+
+        return doors;
     }
 
     /**
@@ -108,7 +166,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      */
     private void handleCompleteAction() {
         // 移除当前点位的所有任务
-        TaskManager taskManager = TaskManager.getInstance(this);
+        TaskManager taskManager = TaskManager.getInstance();
         if (poiList != null) {
             for (Poi poi : poiList) {
                 taskManager.removeTask(poi);
@@ -264,7 +322,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      */
     private void performPickupAction() {
         // 模拟取物操作
-        Toast.makeText(this, "取物操作", Toast.LENGTH_SHORT).show();
+        if (isScheduledTask) {
+            for (int i = 0; i < selectedDoors.length; i++) {
+                if (selectedDoors[i]) {
+                    Log.d("ScheduledDelivery", "Opening door " + (i + 1));
+                    // 实际项目中这里应该调用打开仓门的接口
+             }
+            }
+        } else {
+            // 非定时任务，执行普通取物操作
+            // 这里可以调用普通配送的打开仓门逻辑
+            Log.d("ArrivalConfirmation", "Performing regular pickup action");
+        }
     }
 
     /**
@@ -273,7 +342,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private void proceedToNextTask() {
         timer.cancel(); // 停止倒计时
 
-        if (TaskManager.getInstance(this).hasTasks()) {
+        if (TaskManager.getInstance().hasTasks()) {
             // 还有任务，继续下一个
             Intent intent = new Intent(this, MovingActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));

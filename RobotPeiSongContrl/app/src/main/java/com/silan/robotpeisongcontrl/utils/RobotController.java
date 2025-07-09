@@ -1,5 +1,7 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -49,21 +51,28 @@ public class RobotController {
         });
     }
 
+    public interface SimpleCallback {
+        void onSuccess();
+        void onFailure(String error);
+    }
+
     // 打开指定仓门
-    public static void openCargoDoor(int doorId, OkHttpUtils.ResponseCallback callback) {
-        Log.d(TAG, "模拟打开仓门: " + doorId);
-        // 模拟成功
-        callback.onSuccess(ByteString.EMPTY);
+    public static void openCargoDoor(int doorId, SimpleCallback callback) {
+        Log.d("RobotController", "Simulating opening door: " + doorId);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            callback.onSuccess();
+        }, 1000);
 
 //        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/open";
 //        OkHttpUtils.put(url, "", callback);
     }
 
     // 关闭指定仓门
-    public static void closeCargoDoor(int doorId, OkHttpUtils.ResponseCallback callback) {
-        Log.d(TAG, "模拟关闭仓门: " + doorId);
-        // 模拟成功
-        callback.onSuccess(ByteString.EMPTY);
+    public static void closeCargoDoor(int doorId, SimpleCallback callback) {
+        Log.d("RobotController", "Simulating closing door: " + doorId);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            callback.onSuccess();
+        }, 1000);
 
 //        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/close";
 //        OkHttpUtils.put(url, "", callback);
@@ -159,11 +168,6 @@ public class RobotController {
     public static void cancelCurrentAction(OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/motion/v1/actions/:current";
         OkHttpUtils.delete(url, callback);
-    }
-
-    // 恢复任务
-    public static void resumeTask(Poi poi, OkHttpUtils.ResponseCallback callback) {
-        createMoveAction(poi, callback);
     }
 
     // 解析POI列表

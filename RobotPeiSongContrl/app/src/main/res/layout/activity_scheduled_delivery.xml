@@ -1,223 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="@color/light_gray"
     android:padding="16dp">
 
+    <!-- 左侧菜单栏 -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/white"
+        android:elevation="4dp">
 
-        <!-- 启用定时配送开关 -->
-        <LinearLayout
+        <!-- 标题栏 -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp">
+            android:layout_height="50dp"
+            android:background="@color/mint_green">
+
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_arrow_back"
+                android:background="?selectableItemBackgroundBorderless"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="8dp"/>
 
             <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="启用定时配送"
-                android:textSize="18sp"/>
-
-            <Switch
-                android:id="@+id/switch_enable"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
+                android:layout_height="wrap_content"
+                android:text="定时配送设置"
+                android:textColor="@color/white"
+                android:textSize="20sp"
+                android:layout_centerInParent="true"/>
+        </RelativeLayout>
 
-        <!-- 查看已有任务按钮 -->
+        <!-- 菜单项 -->
+        <Button
+            android:id="@+id/btn_enable"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="启用定时配送"
+            android:textAllCaps="false"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="8dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="16dp"/>
+
+        <Button
+            android:id="@+id/btn_point_delivery"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="点位配送"
+            android:textAllCaps="false"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="8dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="16dp"/>
+
+        <Button
+            android:id="@+id/btn_route_delivery"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="路线配送"
+            android:textAllCaps="false"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="8dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="16dp"/>
+
         <Button
             android:id="@+id/btn_view_tasks"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="查看已有配送任务"
-            android:background="@drawable/button_blue_rect"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 创建任务表单 -->
-        <LinearLayout
-            android:id="@+id/layout_form"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone"
-            android:paddingTop="16dp">
-
-            <!-- 配送类型选择 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="配送类型"
-                android:textSize="16sp"
-                android:layout_marginBottom="8dp"/>
-
-            <RadioGroup
-                android:id="@+id/rg_delivery_type"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/rb_point_delivery"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="点位配送"
-                    android:checked="true"/>
-
-                <RadioButton
-                    android:id="@+id/rb_route_delivery"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="路线配送"/>
-            </RadioGroup>
-
-            <!-- 点位配送内容 -->
-            <LinearLayout
-                android:id="@+id/layout_point_delivery"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="选择配送点位"
-                    android:textSize="16sp"
-                    android:layout_marginTop="8dp"/>
-
-                <Spinner
-                    android:id="@+id/spinner_pois"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"/>
-
-                <TextView
-                    android:id="@+id/tv_selected_poi"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="未选择"
-                    android:textSize="16sp"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- 路线配送内容 -->
-            <LinearLayout
-                android:id="@+id/layout_route_delivery"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone"
-                android:padding="8dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="选择巡游方案"
-                    android:textSize="16sp"/>
-
-                <Spinner
-                    android:id="@+id/spinner_schemes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- 仓门选择 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="选择负责仓门"
-                android:textSize="16sp"
-                android:layout_marginTop="16dp"/>
-
-            <LinearLayout
-                android:id="@+id/layout_doors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="8dp">
-                <!-- 动态添加仓门按钮 -->
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tv_doors_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="已选仓门: 无"
-                android:textSize="14sp"
-                android:layout_marginTop="4dp"/>
-
-            <!-- 时间选择 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="选择触发时间"
-                android:textSize="16sp"
-                android:layout_marginTop="16dp"/>
-
-            <Button
-                android:id="@+id/btn_select_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="选择时间"
-                android:layout_marginTop="8dp"/>
-
-            <TextView
-                android:id="@+id/tv_selected_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="未选择"
-                android:textSize="16sp"
-                android:layout_marginTop="8dp"/>
-
-            <!-- 优先级选择 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="优先级"
-                android:textSize="16sp"
-                android:layout_marginTop="16dp"/>
-
-            <RadioGroup
-                android:id="@+id/rg_priority"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
-
-                <RadioButton
-                    android:id="@+id/rb_priority_a"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="优先级A"
-                    android:checked="true"/>
-
-                <RadioButton
-                    android:id="@+id/rb_priority_b"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="优先级B"/>
-            </RadioGroup>
-
-            <!-- 创建按钮 -->
-            <Button
-                android:id="@+id/btn_create_task"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="创建定时任务"
-                android:layout_marginTop="24dp"
-                android:background="@drawable/button_green_rect"/>
-        </LinearLayout>
+            android:layout_height="60dp"
+            android:text="查看已有任务"
+            android:textAllCaps="false"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="8dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="16dp"/>
     </LinearLayout>
-</ScrollView>
+
+    <!-- 右侧内容区 -->
+    <FrameLayout
+        android:id="@+id/content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"/>
+</LinearLayout>

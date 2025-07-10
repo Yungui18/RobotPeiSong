@@ -72,6 +72,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
     private boolean standbyEnabled = true;
     private boolean isStandbyActive = false;
     private MediaController mediaController;
+    private boolean isMainActivityActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -232,7 +233,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
 
     private void initStandbyDetection() {
         standbyRunnable = () -> {
-            if (standbyEnabled && !isStandbyActive) {
+            if (isMainActivityActive && standbyEnabled && !isStandbyActive) {
                 enterStandbyMode();
             }
         };
@@ -292,7 +293,9 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         });
         fadeOut.start();
 
-        resetStandbyTimer();
+        if (isMainActivityActive) {
+            resetStandbyTimer();
+        }
     }
 
     @Override
@@ -301,21 +304,16 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
             exitStandbyMode();
             return true;
         }
-        resetStandbyTimer();
-        return super.dispatchTouchEvent(ev);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (standbyAnimationView != null && standbyAnimationView.isPlaying()) {
-            standbyAnimationView.pause();  // 暂停播放
+        if (isMainActivityActive) {
+            resetStandbyTimer();
         }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        isMainActivityActive = true;
         if (isStandbyActive && standbyAnimationView != null) {
             standbyAnimationView.seekTo(0);
             standbyAnimationView.start();
@@ -324,6 +322,15 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         resetStandbyTimer();
         applyBackground();
         applyServiceSettings();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        isMainActivityActive = false;
+        if (standbyAnimationView != null && standbyAnimationView.isPlaying()) {
+            standbyAnimationView.pause();  // 暂停播放
+        }
     }
 
     @Override

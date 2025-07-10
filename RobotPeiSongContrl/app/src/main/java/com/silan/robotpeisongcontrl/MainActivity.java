@@ -1,12 +1,17 @@
 package com.silan.robotpeisongcontrl;
 
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -16,20 +21,25 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.google.gson.Gson;
+import com.silan.robotpeisongcontrl.fragments.StandbySettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
 import com.silan.robotpeisongcontrl.utils.ExactAlarmPermissionHelper;
@@ -37,6 +47,7 @@ import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 
 import com.silan.robotpeisongcontrl.utils.RobotController;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -45,7 +56,7 @@ import java.util.TimeZone;
 
 import okio.ByteString;
 
-public class MainActivity extends  BaseActivity{
+public class MainActivity extends  BaseActivity implements StandbySettingsFragment.OnStandbySettingsChangedListener {
     private String enteredPassword = "";
     private LinearLayout dotsContainer;
     private Button[] numberButtons = new Button[10];
@@ -54,6 +65,13 @@ public class MainActivity extends  BaseActivity{
     private TextView tvTime;
     private RelativeLayout mainLayout;
     private ActivityResultLauncher<Intent> alarmPermissionLauncher;
+    private VideoView standbyAnimationView;
+    private Handler standbyHandler = new Handler();
+    private Runnable standbyRunnable;
+    private long standbyTimeout = 60000; // 默认1分钟
+    private boolean standbyEnabled = true;
+    private boolean isStandbyActive = false;
+    private MediaController mediaController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +103,17 @@ public class MainActivity extends  BaseActivity{
 
         // 应用服务设置
         applyServiceSettings();
+
+        // 初始化待机动画视图
+        standbyAnimationView = findViewById(R.id.standby_animation);
+
+        initVideoView();
+
+        // 加载待机设置
+        loadStandbySettings();
+
+        // 初始化待机检测
+        initStandbyDetection();
 
         // 配送按钮
         Button startDeliveryBtn = findViewById(R.id.btn_start_delivery);
@@ -141,11 +170,176 @@ public class MainActivity extends  BaseActivity{
         });
     }
 
+    private void initVideoView() {
+        // 设置视频源（从raw目录加载）
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.standby_animation);
+        standbyAnimationView.setVideoURI(videoUri);
+
+        // 设置循环播放：监听视频结束事件，重新开始播放
+        standbyAnimationView.setOnPreparedListener(mp -> {
+            mp.setLooping(true); // 关键：设置循环播放
+            if (isStandbyActive) { // 仅在待机状态下播放
+                standbyAnimationView.start();
+            }
+        });
+
+        standbyAnimationView.setOnCompletionListener(mp -> {
+            if (isStandbyActive) {
+                standbyAnimationView.seekTo(0);
+                standbyAnimationView.start();
+            }
+        });
+
+        // 可选：隐藏播放控制条（若不需要用户操作）
+        mediaController = new MediaController(this);
+        standbyAnimationView.setMediaController(mediaController);
+        mediaController.setVisibility(View.GONE);  // 隐藏控制条
+
+        standbyAnimationView.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(SurfaceHolder holder) {
+                if (isStandbyActive) {
+                    // 检查是否已设置过视频源
+                    if (standbyAnimationView.isPlaying()) {
+                        // 如果正在播放，继续播放
+                        standbyAnimationView.resume();
+                    } else {
+                        // 否则重新设置视频源并开始加载
+                        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.standby_animation);
+                        standbyAnimationView.setVideoURI(videoUri);
+                        // 准备完成后会通过 onPrepared 回调自动开始播放
+                    }
+                }
+            }
+
+            @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
+            @Override public void surfaceDestroyed(SurfaceHolder holder) {}
+        });
+    }
+
+    private void loadStandbySettings() {
+        SharedPreferences prefs = getSharedPreferences("standby_prefs", MODE_PRIVATE);
+        boolean newEnabled = prefs.getBoolean("enabled", true);
+        long newTimeout = prefs.getLong("timeout", 60000);
+        Log.d("StandbySettings", "加载设置 - 启用: " + newEnabled + ", 超时: " + newTimeout + "ms");
+        if (!newEnabled && isStandbyActive) {
+            exitStandbyMode();
+        }
+        standbyEnabled = newEnabled;
+        standbyTimeout = prefs.getLong("timeout", 60000);
+    }
+
+
+    private void initStandbyDetection() {
+        standbyRunnable = () -> {
+            if (standbyEnabled && !isStandbyActive) {
+                enterStandbyMode();
+            }
+        };
+        resetStandbyTimer();
+    }
+
+    private void resetStandbyTimer() {
+        standbyHandler.removeCallbacks(standbyRunnable);
+        if (standbyEnabled) {
+            standbyHandler.postDelayed(standbyRunnable, standbyTimeout);
+        }
+    }
+
+    private void enterStandbyMode() {
+        Log.d("Standby", "进入待机模式");
+        if (!standbyEnabled || isStandbyActive) {
+            return;
+        }
+        isStandbyActive = true;
+
+        // 确保视频视图在最上层并可见
+        standbyAnimationView.setVisibility(View.VISIBLE);
+        standbyAnimationView.bringToFront();
+
+        // 触发视频加载/播放（无论之前状态如何）
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.standby_animation);
+        standbyAnimationView.setVideoURI(videoUri); // 重新加载确保资源有效
+        standbyAnimationView.requestFocus(); // 获取焦点确保播放
+
+        // 淡入动画（在视图可见后执行）
+        ObjectAnimator fadeIn = ObjectAnimator.ofFloat(standbyAnimationView, "alpha", 0f, 1f);
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(standbyAnimationView, "scaleX", 0.9f, 1f);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(standbyAnimationView, "scaleY", 0.9f, 1f);
+
+        AnimatorSet set = new AnimatorSet();
+        set.playTogether(fadeIn, scaleX, scaleY);
+        set.setDuration(1000);
+        set.start();
+    }
+
+    private void exitStandbyMode() {
+        Log.d("Standby", "退出待机模式");
+        if (!isStandbyActive) {
+            return;
+        }
+        isStandbyActive = false;
+
+        // 淡出动画（结束后隐藏并停止视频）
+        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(standbyAnimationView, "alpha", 1f, 0f);
+        fadeOut.setDuration(500);
+        fadeOut.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                standbyAnimationView.setVisibility(View.GONE);
+                standbyAnimationView.stopPlayback(); // 完全停止播放释放资源
+            }
+        });
+        fadeOut.start();
+
+        resetStandbyTimer();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (isStandbyActive) {
+            exitStandbyMode();
+            return true;
+        }
+        resetStandbyTimer();
+        return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (standbyAnimationView != null && standbyAnimationView.isPlaying()) {
+            standbyAnimationView.pause();  // 暂停播放
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        // 每次返回主界面时更新服务设置
+        if (isStandbyActive && standbyAnimationView != null) {
+            standbyAnimationView.seekTo(0);
+            standbyAnimationView.start();
+        }
+        loadStandbySettings();
+        resetStandbyTimer();
+        applyBackground();
         applyServiceSettings();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (standbyAnimationView != null && standbyAnimationView.isPlaying()) {
+            standbyAnimationView.pause();
+        }
+    }
+
+
+
+    @Override
+    public void onStandbySettingsChanged() {
+        loadStandbySettings();
+        resetStandbyTimer();
     }
 
     private void applyServiceSettings() {
@@ -440,5 +634,18 @@ public class MainActivity extends  BaseActivity{
                 Log.d("TAG", "获取POI信息失败" + e);
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mediaController != null) {
+            mediaController.setAnchorView(null);
+            mediaController = null;
+        }
+        standbyHandler.removeCallbacksAndMessages(null);
+        if (standbyAnimationView != null) {
+            standbyAnimationView.stopPlayback();  // 停止播放并释放资源
+        }
     }
 }

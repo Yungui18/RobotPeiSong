@@ -70,4 +70,17 @@
         android:layout_alignParentEnd="true"
         android:background="?selectableItemBackgroundBorderless"
         android:src="@drawable/ic_settings" />
+
+    <!-- 待机动画资源 -->
+    <VideoView
+        android:id="@+id/standby_animation"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:visibility="gone"
+        android:contentDescription="待机动画视频"/>
+
 </RelativeLayout>

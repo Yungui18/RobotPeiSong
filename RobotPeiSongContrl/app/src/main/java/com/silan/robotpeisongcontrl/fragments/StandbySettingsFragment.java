@@ -11,18 +11,30 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.R;
 
 public class StandbySettingsFragment extends Fragment {
-    private Switch switchAutoSleep;
-    private EditText etSleepDelay;
-    private SharedPreferences prefs;
+    private Switch switchStandbyEnabled;
+    private Spinner spinnerTimeout;
+    private View rootView;
+    private TextView tvSettings;
+    private final long[] timeoutValues = {
+            30000,    //30秒
+            60000,    // 1分钟
+            180000,   // 3分钟
+            300000,   // 5分钟
+            600000,   // 10分钟
+            1200000   // 20分钟
+    };
 
     @Nullable
     @Override
@@ -31,41 +43,113 @@ public class StandbySettingsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_standby_settings, container, false);
 
-        prefs = requireActivity().getSharedPreferences("service_prefs", Context.MODE_PRIVATE);
+        switchStandbyEnabled = view.findViewById(R.id.switch_standby_enabled);
+        spinnerTimeout = view.findViewById(R.id.spinner_timeout);
 
-        switchAutoSleep = view.findViewById(R.id.switch_auto_sleep);
-        etSleepDelay = view.findViewById(R.id.et_sleep_delay);
-        Button btnSave = view.findViewById(R.id.btn_save_settings);
+        // 设置下拉选项
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                requireContext(),
+                R.array.standby_timeout_options,
+                android.R.layout.simple_spinner_item
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTimeout.setAdapter(adapter);
 
-        // 加载设置
-        boolean autoSleep = prefs.getBoolean("auto_sleep", false);
-        int sleepDelay = prefs.getInt("sleep_delay", 30); // 默认30分钟
+        spinnerTimeout.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                saveSettings();
+            }
 
-        switchAutoSleep.setChecked(autoSleep);
-        etSleepDelay.setText(String.valueOf(sleepDelay));
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // 不需要处理
+            }
+        });
 
-        // 保存按钮
-        btnSave.setOnClickListener(v -> saveSettings());
+        switchStandbyEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            saveSettings();
+        });
+
+        // 加载保存的设置
+        loadSettings();
 
         return view;
     }
 
-    private void saveSettings() {
-        try {
-            int delay = Integer.parseInt(etSleepDelay.getText().toString());
-            if (delay < 5 || delay > 120) {
-                Toast.makeText(getContext(), "延时需在5-120分钟之间", Toast.LENGTH_SHORT).show();
-                return;
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        switchStandbyEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            saveSettings(); // 立即保存设置
+        });
+
+        spinnerTimeout.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                saveSettings(); // 立即保存设置
             }
 
-            prefs.edit()
-                    .putBoolean("auto_sleep", switchAutoSleep.isChecked())
-                    .putInt("sleep_delay", delay)
-                    .apply();
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
 
-            Toast.makeText(getContext(), "设置已保存", Toast.LENGTH_SHORT).show();
-        } catch (NumberFormatException e) {
-            Toast.makeText(getContext(), "请输入有效的数字", Toast.LENGTH_SHORT).show();
+    private void loadSettings() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("standby_prefs", Context.MODE_PRIVATE);
+        boolean enabled = prefs.getBoolean("enabled", true);
+        long timeout = prefs.getLong("timeout", 60000);
+
+        switchStandbyEnabled.setChecked(enabled);
+
+        // 查找对应的索引
+        int position = 0;
+        for (int i = 0; i < timeoutValues.length; i++) {
+            if (timeoutValues[i] == timeout) {
+                position = i;
+                break;
+            }
         }
+        spinnerTimeout.setSelection(position);
+
+        // 更新设置显示
+        updateCurrentSettingsDisplay();
+    }
+
+    private void updateCurrentSettingsDisplay() {
+        if (tvSettings == null) return;
+
+        String status = switchStandbyEnabled.isChecked() ? "启用" : "禁用";
+        int position = spinnerTimeout.getSelectedItemPosition();
+        String timeoutText = getResources().getStringArray(R.array.standby_timeout_options)[position];
+
+        String displayText = status + " | " + timeoutText;
+        tvSettings.setText(displayText);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        saveSettings();
+    }
+
+    private void saveSettings() {
+        SharedPreferences prefs = requireActivity().getSharedPreferences("standby_prefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putBoolean("enabled", switchStandbyEnabled.isChecked());
+        editor.putLong("timeout", timeoutValues[spinnerTimeout.getSelectedItemPosition()]);
+
+        editor.apply();
+
+        if (requireActivity() instanceof OnStandbySettingsChangedListener) {
+            ((OnStandbySettingsChangedListener) requireActivity()).onStandbySettingsChanged();
+        }
+        updateCurrentSettingsDisplay();
+    }
+
+    public interface OnStandbySettingsChangedListener {
+        void onStandbySettingsChanged();
     }
 }

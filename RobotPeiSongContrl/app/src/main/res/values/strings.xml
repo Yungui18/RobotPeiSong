@@ -61,6 +61,15 @@
         <item>方案9</item>
     </string-array>
 
+    <string-array name="standby_timeout_options">
+        <item>30秒</item>
+        <item>1分钟</item>
+        <item>3分钟</item>
+        <item>5分钟</item>
+        <item>10分钟</item>
+        <item>20分钟</item>
+    </string-array>
+
     <!-- 时区名称 -->
     <string name="timezone_china">中国</string>
     <string name="timezone_korea">韩国</string>

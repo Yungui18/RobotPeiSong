@@ -3,16 +3,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center">
-
-    <TextView
-        android:id="@+id/tv_super_admin"
+    android:padding="16dp">
+    <ImageButton
+        android:id="@+id/btn_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="超级管理员界面"
-        android:textSize="24sp"/>
-
-    <!-- 这里可以添加超级管理员功能的具体内容 -->
-
+        android:src="@drawable/ic_arrow_back"
+        android:background="?selectableItemBackgroundBorderless"
+        android:layout_margin="8dp"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="超级管理员设置"
+        android:textSize="24sp"
+        android:textAlignment="center"
+        android:layout_marginBottom="24dp"/>
+    <ListView
+        android:id="@+id/super_admin_menu"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:divider="@color/gray"
+        android:dividerHeight="1dp"
+        android:background="@android:color/white"/>
 </LinearLayout>

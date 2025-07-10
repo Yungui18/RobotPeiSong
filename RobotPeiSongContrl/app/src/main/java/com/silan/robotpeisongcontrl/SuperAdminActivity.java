@@ -2,16 +2,12 @@ package com.silan.robotpeisongcontrl;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
 import com.silan.robotpeisongcontrl.utils.PasswordManager;
@@ -30,26 +26,24 @@ public class SuperAdminActivity extends BaseActivity  {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_super_admin);
 
-        // 标题
-        TextView title = findViewById(R.id.tv_super_admin_title);
-        title.setText("超级管理员设置");
+        // 返回按钮
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
-        // 菜单列表
-        ListView listView = findViewById(R.id.super_admin_list);
+        ListView listView = findViewById(R.id.super_admin_menu);
         SettingsAdapter adapter = new SettingsAdapter(this, SUPER_ADMIN_MENU);
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             switch (position) {
                 case 0: // 服务设置
-                    startActivity(new Intent(this, ServiceSettingsActivity.class));
+                    startActivity(new Intent(SuperAdminActivity.this, ServiceSettingsActivity.class));
                     break;
                 case 1: // 密码设置
-                    startActivity(new Intent(this, AdminPasswordSettingsActivity.class)
-                            .putExtra("is_super_admin", true));
+                    startActivity(new Intent(SuperAdminActivity.this, SuperAdminPasswordActivity.class));
                     break;
                 case 2: // 硬件版本
-                    showHardwareInfo();
+                    showHardwareVersion();
                     break;
                 case 3: // 恢复出厂设置
                     performFactoryReset();
@@ -58,11 +52,15 @@ public class SuperAdminActivity extends BaseActivity  {
         });
     }
 
-    private void showHardwareInfo() {
-        // 获取硬件信息并显示
+    private void showHardwareVersion() {
+        // 获取硬件版本信息
+        String hardwareInfo = "机器人型号: R1\n" +
+                "硬件版本: v2.0\n" +
+                "序列号: SN-202405001";
+
         new AlertDialog.Builder(this)
-                .setTitle("硬件信息")
-                .setMessage("机器人型号: RPA-3000\n硬件版本: v2.1\n序列号: SN-20230704-001")
+                .setTitle("硬件版本")
+                .setMessage(hardwareInfo)
                 .setPositiveButton("确定", null)
                 .show();
     }
@@ -70,21 +68,31 @@ public class SuperAdminActivity extends BaseActivity  {
     private void performFactoryReset() {
         new AlertDialog.Builder(this)
                 .setTitle("恢复出厂设置")
-                .setMessage("确定要恢复出厂设置吗？所有设置将被重置！")
+                .setMessage("确定要恢复出厂设置吗？此操作将清除所有自定义设置。")
                 .setPositiveButton("确定", (dialog, which) -> {
-                    // 清除所有设置
-                    getSharedPreferences("personalization_prefs", MODE_PRIVATE).edit().clear().apply();
-                    getSharedPreferences("delivery_prefs", MODE_PRIVATE).edit().clear().apply();
-                    getSharedPreferences("password_prefs", MODE_PRIVATE).edit().clear().apply();
-                    getSharedPreferences("PatrolSchemes", MODE_PRIVATE).edit().clear().apply();
-
-                    // 重置密码为默认值
-                    PasswordManager.saveSettingsPassword(this, PasswordManager.DEFAULT_PASSWORD);
-                    PasswordManager.saveSuperAdminPassword(this, PasswordManager.DEFAULT_SUPER_ADMIN_PASSWORD);
-
+                    // 执行恢复出厂设置
+                    resetAllSettings();
                     Toast.makeText(this, "已恢复出厂设置", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("取消", null)
                 .show();
+    }
+
+    private void resetAllSettings() {
+        // 重置所有设置
+        SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+
+        prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+
+        prefs = getSharedPreferences("service_prefs", MODE_PRIVATE);
+        prefs.edit().clear().apply();
+
+        // 重置管理员密码
+        PasswordManager.saveSettingsPassword(this, PasswordManager.DEFAULT_PASSWORD);
+
+        // 重置超级管理员密码
+        PasswordManager.saveSuperAdminPassword(this, PasswordManager.DEFAULT_SUPER_ADMIN_PASSWORD);
     }
 }

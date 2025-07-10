@@ -1,13 +1,20 @@
 package com.silan.robotpeisongcontrl.fragments;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.R;
 
@@ -29,33 +36,27 @@ public class ServiceEnableFragment extends Fragment {
         switchMultiDelivery = view.findViewById(R.id.switch_multi_delivery);
 
         // 加载保存的设置
-        switchDelivery.setChecked(prefs.getBoolean("delivery_enabled", true));
-        switchPatrol.setChecked(prefs.getBoolean("patrol_enabled", true));
-        switchMultiDelivery.setChecked(prefs.getBoolean("multi_delivery_enabled", true));
+        loadSettings();
 
         // 设置监听器
-        switchDelivery.setOnCheckedChangeListener(this::saveSetting);
-        switchPatrol.setOnCheckedChangeListener(this::saveSetting);
-        switchMultiDelivery.setOnCheckedChangeListener(this::saveSetting);
+        switchDelivery.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("delivery_enabled", isChecked));
+        switchPatrol.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("patrol_enabled", isChecked));
+        switchMultiDelivery.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("multi_delivery_enabled", isChecked));
 
         return view;
     }
 
-    private void saveSetting(CompoundButton buttonView, boolean isChecked) {
-        SharedPreferences.Editor editor = prefs.edit();
+    private void loadSettings() {
+        boolean deliveryEnabled = prefs.getBoolean("delivery_enabled", true);
+        boolean patrolEnabled = prefs.getBoolean("patrol_enabled", true);
+        boolean multiDeliveryEnabled = prefs.getBoolean("multi_delivery_enabled", true);
 
-        switch (buttonView.getId()) {
-            case R.id.switch_delivery:
-                editor.putBoolean("delivery_enabled", isChecked);
-                break;
-            case R.id.switch_patrol:
-                editor.putBoolean("patrol_enabled", isChecked);
-                break;
-            case R.id.switch_multi_delivery:
-                editor.putBoolean("multi_delivery_enabled", isChecked);
-                break;
-        }
+        switchDelivery.setChecked(deliveryEnabled);
+        switchPatrol.setChecked(patrolEnabled);
+        switchMultiDelivery.setChecked(multiDeliveryEnabled);
+    }
 
-        editor.apply();
+    private void saveSetting(String key, boolean value) {
+        prefs.edit().putBoolean(key, value).apply();
     }
 }

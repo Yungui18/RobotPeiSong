@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,6 +83,9 @@ public class MainActivity extends  BaseActivity{
         // 应用背景
         applyBackground();
 
+        // 应用服务设置
+        applyServiceSettings();
+
         // 配送按钮
         Button startDeliveryBtn = findViewById(R.id.btn_start_delivery);
         adjustButtonSize(startDeliveryBtn);
@@ -135,6 +139,49 @@ public class MainActivity extends  BaseActivity{
             intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
             startActivity(intent);
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 每次返回主界面时更新服务设置
+        applyServiceSettings();
+    }
+
+    private void applyServiceSettings() {
+        SharedPreferences prefs = getSharedPreferences("service_prefs", MODE_PRIVATE);
+
+        // 默认所有服务都启用
+        boolean deliveryEnabled = prefs.getBoolean("delivery_enabled", true);
+        boolean patrolEnabled = prefs.getBoolean("patrol_enabled", true);
+        boolean multiDeliveryEnabled = prefs.getBoolean("multi_delivery_enabled", true);
+
+        // 设置按钮可见性
+        findViewById(R.id.btn_start_delivery).setVisibility(deliveryEnabled ? View.VISIBLE : View.GONE);
+        findViewById(R.id.btn_patrol_mode).setVisibility(patrolEnabled ? View.VISIBLE : View.GONE);
+        findViewById(R.id.btn_multi_delivery).setVisibility(multiDeliveryEnabled ? View.VISIBLE : View.GONE);
+
+        // 调整布局
+        adjustLayoutForServiceSettings();
+    }
+
+    private void adjustLayoutForServiceSettings() {
+        LinearLayout buttonContainer = findViewById(R.id.button_container);
+        int visibleButtonCount = 0;
+
+        for (int i = 0; i < buttonContainer.getChildCount(); i++) {
+            View child = buttonContainer.getChildAt(i);
+            if (child.getVisibility() == View.VISIBLE) {
+                visibleButtonCount++;
+            }
+        }
+
+        // 根据可见按钮数量调整布局
+        if (visibleButtonCount == 1) {
+            buttonContainer.setGravity(Gravity.CENTER);
+        } else {
+            buttonContainer.setGravity(Gravity.CENTER_HORIZONTAL);
+        }
     }
 
     //应用背景
@@ -336,7 +383,7 @@ public class MainActivity extends  BaseActivity{
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int screenWidth = displayMetrics.widthPixels;
         int buttonWidth = (int) (screenWidth * 0.5);
-        buttonWidth = Math.max(dpToPx(200), Math.min(buttonWidth, dpToPx(400)));
+        buttonWidth = Math.max(dpToPx(150), Math.min(buttonWidth, dpToPx(200)));
 
         ViewGroup.LayoutParams params = button.getLayoutParams();
         params.width = buttonWidth;

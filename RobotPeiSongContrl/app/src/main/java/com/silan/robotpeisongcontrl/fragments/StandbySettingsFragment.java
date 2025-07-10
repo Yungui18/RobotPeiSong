@@ -1,22 +1,28 @@
 package com.silan.robotpeisongcontrl.fragments;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.R;
 
 public class StandbySettingsFragment extends Fragment {
+    private Switch switchAutoSleep;
+    private EditText etSleepDelay;
     private SharedPreferences prefs;
-    private SeekBar seekBarTimeout;
-    private TextView tvTimeoutValue;
-    private Spinner spinnerAnimation;
 
     @Nullable
     @Override
@@ -25,50 +31,41 @@ public class StandbySettingsFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_standby_settings, container, false);
 
-        prefs = requireActivity().getSharedPreferences("standby_prefs", Context.MODE_PRIVATE);
+        prefs = requireActivity().getSharedPreferences("service_prefs", Context.MODE_PRIVATE);
 
-        seekBarTimeout = view.findViewById(R.id.seekbar_timeout);
-        tvTimeoutValue = view.findViewById(R.id.tv_timeout_value);
-        spinnerAnimation = view.findViewById(R.id.spinner_animation);
+        switchAutoSleep = view.findViewById(R.id.switch_auto_sleep);
+        etSleepDelay = view.findViewById(R.id.et_sleep_delay);
+        Button btnSave = view.findViewById(R.id.btn_save_settings);
 
-        // 设置超时时间选择器 (1-30分钟)
-        int timeout = prefs.getInt("timeout_minutes", 5);
-        seekBarTimeout.setProgress(timeout - 1);
-        tvTimeoutValue.setText(timeout + " 分钟");
+        // 加载设置
+        boolean autoSleep = prefs.getBoolean("auto_sleep", false);
+        int sleepDelay = prefs.getInt("sleep_delay", 30); // 默认30分钟
 
-        seekBarTimeout.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int minutes = progress + 1;
-                tvTimeoutValue.setText(minutes + " 分钟");
-                prefs.edit().putInt("timeout_minutes", minutes).apply();
-            }
+        switchAutoSleep.setChecked(autoSleep);
+        etSleepDelay.setText(String.valueOf(sleepDelay));
 
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-
-        // 设置动画选择器
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                requireContext(),
-                R.array.standby_animations,
-                android.R.layout.simple_spinner_item
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerAnimation.setAdapter(adapter);
-
-        String selectedAnimation = prefs.getString("animation", "默认动画");
-        spinnerAnimation.setSelection(adapter.getPosition(selectedAnimation));
-
-        spinnerAnimation.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                prefs.edit().putString("animation", parent.getItemAtPosition(position).toString()).apply();
-            }
-
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        // 保存按钮
+        btnSave.setOnClickListener(v -> saveSettings());
 
         return view;
+    }
+
+    private void saveSettings() {
+        try {
+            int delay = Integer.parseInt(etSleepDelay.getText().toString());
+            if (delay < 5 || delay > 120) {
+                Toast.makeText(getContext(), "延时需在5-120分钟之间", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            prefs.edit()
+                    .putBoolean("auto_sleep", switchAutoSleep.isChecked())
+                    .putInt("sleep_delay", delay)
+                    .apply();
+
+            Toast.makeText(getContext(), "设置已保存", Toast.LENGTH_SHORT).show();
+        } catch (NumberFormatException e) {
+            Toast.makeText(getContext(), "请输入有效的数字", Toast.LENGTH_SHORT).show();
+        }
     }
 }

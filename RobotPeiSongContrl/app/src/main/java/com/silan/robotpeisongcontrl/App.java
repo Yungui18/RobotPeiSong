@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
@@ -15,6 +16,9 @@ import android.util.Log;
 import java.util.Locale;
 
 public class App extends Application {
+    private Handler standbyHandler = new Handler();
+    private Runnable standbyRunnable;
+    private long lastInteractionTime = 0;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -23,6 +27,7 @@ public class App extends Application {
         // 清理无效的定时任务数据
         clearInvalidScheduledData();
     }
+
     private void clearInvalidScheduledData() {
         SharedPreferences prefs = getSharedPreferences("scheduled_tasks", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();

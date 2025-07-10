@@ -14,6 +14,17 @@
         <item name="colorPrimaryDark">@color/mint_green</item>
         <item name="colorAccent">@color/mint_green</item>
     </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="FullScreenTheme" parent="AppTheme.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
     <style name="PasswordButton" parent="Widget.MaterialComponents.Button">
         <item name="android:textSize">24sp</item>
         <item name="android:textColor">@android:color/black</item>

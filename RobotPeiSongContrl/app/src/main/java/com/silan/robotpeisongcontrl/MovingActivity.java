@@ -45,6 +45,9 @@ public class MovingActivity extends BaseActivity {
     private boolean isReturningHome = false;
     private boolean isScheduledTask = false;
     private boolean[] selectedDoors = new boolean[4];
+    private int retryCount = 0;
+    private static final int MAX_RETRY_COUNT = 3; // 最大重试次数
+    private Poi currentPoi;
 
 
     @Override
@@ -97,6 +100,7 @@ public class MovingActivity extends BaseActivity {
         Poi nextPoi = taskManager.getNextTask();
 
         if (nextPoi != null) {
+            currentPoi = nextPoi;
             statusText.setText("正在前往点位: " + nextPoi.getDisplayName());
             moveToPoint(nextPoi);
         } else {
@@ -106,6 +110,7 @@ public class MovingActivity extends BaseActivity {
 
     private void moveToPoint(Poi poi) {
         isReturningHome = false; // 普通移动任务，重置标志
+        currentPoi = poi;
         RobotController.createMoveAction(poi, new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
@@ -201,7 +206,10 @@ public class MovingActivity extends BaseActivity {
             case 4: // 已结束
                 if (result == 0) { // 成功
                     onMoveComplete();
-                } else { // 失败
+                } else if (result == -1 && !isReturningHome && retryCount < MAX_RETRY_COUNT) {
+                    // 失败且结果码为-1，且未达最大重试次数
+                    handleRetry();
+                }else { // 其他失败情况
                     handleMoveFailure("任务失败，结果码: " + result);
                 }
                 break;
@@ -210,6 +218,29 @@ public class MovingActivity extends BaseActivity {
                 continuePolling();
         }
     }
+
+    private void handleRetry() {
+        Log.w(TAG, "任务失败（结果码-1），尝试重试... 重试次数: " + (retryCount + 1));
+        retryCount++; // 增加重试计数
+
+        // 停止当前轮询
+        handler.removeCallbacks(statusPollingRunnable);
+
+        // 显示重试状态
+        statusText.setText("任务失败，正在重试(" + retryCount + "/" + MAX_RETRY_COUNT + ")...");
+
+        // 延迟后重试当前任务
+        handler.postDelayed(() -> {
+            if (isReturningHome) {
+                returnToHome(); // 重试回桩任务
+            } else if (currentPoi != null) {
+                moveToPoint(currentPoi); // 重试普通移动任务
+            } else {
+                startNextTask(); // 回退到正常流程
+            }
+        }, 3000); // 3秒后重试
+    }
+
 
     private void continuePolling() {
         // 继续轮询
@@ -289,6 +320,7 @@ public class MovingActivity extends BaseActivity {
 
     private void returnToHome() {
         isReturningHome = true; // 标记当前是回桩任务
+        currentPoi = null;
         statusText.setText("正在前往充电桩");
         RobotController.createReturnHomeAction(new OkHttpUtils.ResponseCallback() {
             @Override

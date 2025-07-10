@@ -39,6 +39,16 @@
     <string name="background_tech">科技风格</string>
     <string name="background_city">城市风光</string>
     <string name="background_gradient">渐变背景</string>
+    <string name="super_admin_settings">超级管理员设置</string>
+    <string name="service_settings">服务设置</string>
+    <string name="password_settings">密码设置</string>
+    <string name="change_super_password">修改超级管理员密码</string>
+    <string name="reset_admin_password">重置普通管理员密码</string>
+    <string name="service_enable">服务启用</string>
+    <string name="standby_settings">待机设置</string>
+    <string name="auto_sleep">自动休眠</string>
+    <string name="sleep_delay">休眠延时(分钟):</string>
+    <string name="save_settings">保存设置</string>
     <string-array name="scheme_array">
         <item>方案1</item>
         <item>方案2</item>
@@ -64,6 +74,7 @@
     <string name="language_english">English</string>
     <string name="language_korean">한국어</string>
     <string name="language_japanese">日本語</string>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

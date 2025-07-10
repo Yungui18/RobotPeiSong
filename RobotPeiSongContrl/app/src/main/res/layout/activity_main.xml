@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_default"
     android:padding="16dp">
-
     <!-- 时间显示 -->
     <TextView
         android:id="@+id/tv_time"
@@ -13,51 +12,54 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="20dp"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textSize="24sp" />
-
-    <!-- 配送按钮 -->
-    <Button
-        android:id="@+id/btn_start_delivery"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/button_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:background="@drawable/button_mint_green_rect"
-        android:minWidth="200dp"
-        android:minHeight="80dp"
-        android:text="开始配送"
-        android:textAllCaps="false"
-        android:textSize="18sp" />
+        android:orientation="horizontal"
+        android:gravity="center">
 
-    <!-- 巡游模式按钮 -->
-    <Button
-        android:id="@+id/btn_patrol_mode"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btn_start_delivery"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
-        android:background="@drawable/button_mint_green_rect"
-        android:minWidth="200dp"
-        android:minHeight="80dp"
-        android:text="巡游模式"
-        android:textAllCaps="false"
-        android:textSize="18sp" />
+        <Button
+            android:id="@+id/btn_start_delivery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="开始配送"
+            android:textAllCaps="false"
+            android:textSize="18sp"
+            android:layout_marginBottom="30dp"/>
 
-    <!-- 多点配送按钮 -->
-    <Button
-        android:id="@+id/btn_multi_delivery"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/btn_patrol_mode"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp"
-        android:background="@drawable/button_mint_green_rect"
-        android:minWidth="200dp"
-        android:minHeight="80dp"
-        android:text="多点配送"
-        android:textAllCaps="false"
-        android:textSize="18sp" />
+        <Button
+            android:id="@+id/btn_patrol_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="巡游模式"
+            android:textAllCaps="false"
+            android:textSize="18sp"
+            android:layout_marginBottom="30dp"/>
+
+        <Button
+            android:id="@+id/btn_multi_delivery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:background="@drawable/button_mint_green_rect"
+            android:text="多点配送"
+            android:textAllCaps="false"
+            android:textSize="18sp"/>
+    </LinearLayout>
 
     <!-- 设置按钮 -->
     <ImageButton

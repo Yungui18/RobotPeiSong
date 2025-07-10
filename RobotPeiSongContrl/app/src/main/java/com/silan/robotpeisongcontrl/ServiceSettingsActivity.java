@@ -2,44 +2,39 @@ package com.silan.robotpeisongcontrl;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.silan.robotpeisongcontrl.fragments.ServiceEnableFragment;
+import com.silan.robotpeisongcontrl.fragments.StandbySettingsFragment;
 
 public class ServiceSettingsActivity extends BaseActivity  {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_general_settings_main);
+        setContentView(R.layout.activity_service_settings);
 
-        // 设置标题
-        TextView title = findViewById(R.id.tv_settings_title);
-        title.setText("服务设置");
+        // 返回按钮
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
-        // 设置菜单项
-        Button btnServiceEnable = findViewById(R.id.btn_volume_settings);
-        btnServiceEnable.setText("服务启用");
+        // 加载服务启用Fragment作为默认
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, new ServiceEnableFragment())
+                .commit();
 
-        Button btnStandbySettings = findViewById(R.id.btn_personalization_settings);
-        btnStandbySettings.setText("待机设置");
-
-        // 隐藏不需要的按钮
-        findViewById(R.id.btn_admin_password_settings).setVisibility(View.GONE);
-        findViewById(R.id.btn_delivery_settings).setVisibility(View.GONE);
-        findViewById(R.id.btn_delivery_verification).setVisibility(View.GONE);
-
-        // 设置点击事件
-        btnServiceEnable.setOnClickListener(v -> {
+        // 设置菜单点击事件
+        findViewById(R.id.btn_service_enable).setOnClickListener(v -> {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, new ServiceEnableFragment())
                     .commit();
         });
 
-        btnStandbySettings.setOnClickListener(v -> {
+        findViewById(R.id.btn_standby_settings).setOnClickListener(v -> {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, new StandbySettingsFragment())
                     .commit();

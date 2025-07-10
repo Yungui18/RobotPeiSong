@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +34,8 @@ public class PasswordAuthActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_password_auth);
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
         int authType = getIntent().getIntExtra("auth_type", AUTH_TYPE_SETTINGS);
         passwordLength = (authType == AUTH_TYPE_SETTINGS) ? 4 : 6;
@@ -159,18 +162,27 @@ public class PasswordAuthActivity extends BaseActivity {
     }
 
     private void setupSecretButton() {
+        // 左侧隐藏按钮
         LinearLayout leftArea = findViewById(R.id.left_area);
-        View secretButton = new View(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+        View leftSecretButton = new View(this);
+        leftSecretButton.setLayoutParams(new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
-        );
-        secretButton.setLayoutParams(params);
-        secretButton.setBackgroundColor(Color.TRANSPARENT);
+        ));
+        leftSecretButton.setBackgroundColor(Color.TRANSPARENT);
+        leftSecretButton.setOnClickListener(v -> handleSecretButtonClick());
+        leftArea.addView(leftSecretButton);
 
-        secretButton.setOnClickListener(v -> handleSecretButtonClick());
-
-        leftArea.addView(secretButton);
+        // 右侧隐藏按钮
+        LinearLayout rightArea = findViewById(R.id.right_area);
+        View rightSecretButton = new View(this);
+        rightSecretButton.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
+        rightSecretButton.setBackgroundColor(Color.TRANSPARENT);
+        rightSecretButton.setOnClickListener(v -> handleSecretButtonClick());
+        rightArea.addView(rightSecretButton);
     }
 
     private void handleSecretButtonClick() {
@@ -237,11 +249,9 @@ public class PasswordAuthActivity extends BaseActivity {
         String correctPassword;
 
         if (authType == AUTH_TYPE_SETTINGS) {
-            // 使用PasswordManager获取设置密码
             correctPassword = PasswordManager.getSettingsPassword(this);
         } else {
-            // 超级管理员密码保持固定
-            correctPassword = "123456";
+            correctPassword = PasswordManager.getSuperAdminPassword(this);
         }
 
         if (enteredPassword.equals(correctPassword)) {

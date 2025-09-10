@@ -62,9 +62,6 @@ public class RobotController {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             callback.onSuccess();
         }, 1000);
-
-//        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/open";
-//        OkHttpUtils.put(url, "", callback);
     }
 
     // 关闭指定仓门
@@ -73,9 +70,6 @@ public class RobotController {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             callback.onSuccess();
         }, 1000);
-
-//        String url = BASE_URL + "/api/delivery/v1/cargos/" + doorId + "/close";
-//        OkHttpUtils.put(url, "", callback);
     }
 
     // 获取POI信息

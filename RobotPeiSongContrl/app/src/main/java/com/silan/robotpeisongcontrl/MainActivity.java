@@ -1,6 +1,8 @@
 package com.silan.robotpeisongcontrl;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
@@ -11,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,6 +28,8 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 
 import android.widget.ImageButton;
@@ -40,23 +45,25 @@ import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.google.gson.Gson;
 import com.silan.robotpeisongcontrl.fragments.StandbySettingsFragment;
+import com.silan.robotpeisongcontrl.model.Constants;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
 import com.silan.robotpeisongcontrl.utils.ExactAlarmPermissionHelper;
+import com.silan.robotpeisongcontrl.utils.FollowModeManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 
 import com.silan.robotpeisongcontrl.utils.RobotController;
 
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
 import java.util.List;
+
 import java.util.TimeZone;
 
 import okio.ByteString;
 
-public class MainActivity extends  BaseActivity implements StandbySettingsFragment.OnStandbySettingsChangedListener {
+public class MainActivity extends BaseActivity implements StandbySettingsFragment.OnStandbySettingsChangedListener {
     private String enteredPassword = "";
     private LinearLayout dotsContainer;
     private Button[] numberButtons = new Button[10];
@@ -73,11 +80,35 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
     private boolean isStandbyActive = false;
     private MediaController mediaController;
     private boolean isMainActivityActive = false;
+    private TextView tvDebugInfo;
+
+    // 监控面板UI元素
+    private LinearLayout debugContainer;
+    private TextView tvPacketCount, tvPacketRate;
+    private TextView tvUwbData, tvCoordTransform;
+    private TextView tvRobotPose, tvTargetPosition;
+    private TextView tvMoveStatus;
+
+    private TextView tvFrontBase, tvRearBase, tvLeftBase, tvRightBase;
+
+    // 跟随模式管理器
+    private FollowModeManager followModeManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // 获取基站指示器视图
+        tvFrontBase = findViewById(R.id.tv_front_base);
+        tvRearBase = findViewById(R.id.tv_rear_base);
+        tvLeftBase = findViewById(R.id.tv_left_base);
+        tvRightBase = findViewById(R.id.tv_right_base);
+
+        // 初始化监控面板
+        initDebugPanel();
+
 
         // 初始化权限请求
         alarmPermissionLauncher = registerForActivityResult(
@@ -108,6 +139,9 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         // 初始化待机动画视图
         standbyAnimationView = findViewById(R.id.standby_animation);
 
+        // 初始化调试视图
+        tvDebugInfo = findViewById(R.id.tv_debug_info);
+
         initVideoView();
 
         // 加载待机设置
@@ -130,6 +164,47 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
 
         // 设置按钮
         ImageButton btnSettings = findViewById(R.id.btn_settings);
+
+        Button btnFollowMode = findViewById(R.id.btn_follow_mode);
+        adjustButtonSize(btnFollowMode);
+        btnFollowMode.setOnClickListener(v -> toggleFollowMode());
+        // 初始化跟随模式管理器
+        followModeManager = new FollowModeManager(this, new FollowModeManager.FollowModeListener() {
+            @Override
+            public void onUwbDataUpdate(double distance, double azimuth, double elevation) {
+                updateUwbDataDisplay(distance, azimuth, elevation);
+            }
+
+            @Override
+            public void onMoveStatusUpdate(String status) {
+                updateMoveStatus(status);
+            }
+
+            @Override
+            public void onTargetUpdate(double globalX, double globalY) {
+                updateTargetDisplay(globalX, globalY);
+            }
+
+            @Override
+            public void onRobotPoseUpdate(double x, double y, double yaw) {
+                updateRobotPoseDisplay(x, y, yaw);
+            }
+
+            @Override
+            public void onCoordTransformUpdate(double baseX, double baseY, double robotX, double robotY) {
+                updateCoordTransformDisplay(baseX, baseY, robotX, robotY);
+            }
+
+            @Override
+            public void onBaseStationUpdate(long anchorId, boolean isActive) {
+                updateBaseStationIndicator(anchorId, isActive);
+            }
+
+            @Override
+            public void onPacketStatsUpdate(int count, float rate) {
+                updatePacketStats(count, rate);
+            }
+        });
 
         startDeliveryBtn.setOnClickListener(v -> {
             // 检查是否启用了配送验证
@@ -168,6 +243,128 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
             Intent intent = new Intent(MainActivity.this, PasswordAuthActivity.class);
             intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
             startActivity(intent);
+        });
+    }
+
+    // 更新基站状态指示器
+    private void updateBaseStationIndicator(long anchorId, boolean isActive) {
+        runOnUiThread(() -> {
+            // 使用FollowModeManager提供的基站配置
+            FollowModeManager.BaseStationConfig config = followModeManager.getBaseStationConfig(anchorId);
+            if (config != null) {
+                TextView indicator = findViewById(config.indicatorViewId);
+                if (indicator != null) {
+                    int bgRes = isActive ? R.drawable.indicator_green : R.drawable.indicator_gray;
+                    indicator.setBackgroundResource(bgRes);
+
+                    // 添加闪烁动画
+                    if (isActive) {
+                        Animation blink = AnimationUtils.loadAnimation(this, R.anim.blink);
+                        indicator.startAnimation(blink);
+                    } else {
+                        indicator.clearAnimation();
+                    }
+                }
+            }
+        });
+    }
+
+    private void initDebugPanel() {
+        // 获取UI引用
+        debugContainer = findViewById(R.id.debug_container);
+        tvPacketCount = findViewById(R.id.tv_packet_count);
+        tvPacketRate = findViewById(R.id.tv_packet_rate);
+        tvUwbData = findViewById(R.id.tv_uwb_data);
+        tvCoordTransform = findViewById(R.id.tv_coord_transform);
+        tvRobotPose = findViewById(R.id.tv_robot_pose);
+        tvTargetPosition = findViewById(R.id.tv_target_position);
+        tvMoveStatus = findViewById(R.id.tv_move_status);
+
+        // 默认在调试模式下显示面板
+        if (Constants.DEBUG_MODE) {
+            debugContainer.setVisibility(View.VISIBLE);
+        }
+        // 初始状态
+        clearDebugLogs();
+        // 切换面板按钮
+        Button btnToggleDebug = findViewById(R.id.btn_toggle_debug);
+        btnToggleDebug.setOnClickListener(v -> {
+            if (debugContainer.getVisibility() == View.VISIBLE) {
+                debugContainer.setVisibility(View.GONE);
+                btnToggleDebug.setText("显示监控面板");
+            } else {
+                debugContainer.setVisibility(View.VISIBLE);
+                btnToggleDebug.setText("隐藏监控面板");
+            }
+        });
+
+        // 清除日志按钮
+        Button btnClearLogs = findViewById(R.id.btn_clear_logs);
+        btnClearLogs.setOnClickListener(v -> clearDebugLogs());
+    }
+
+    private void clearDebugLogs() {
+        runOnUiThread(() -> {
+            tvPacketCount.setText("0");
+            tvPacketRate.setText("0 Hz");
+            tvUwbData.setText("UWB数据: 等待数据...");
+            tvCoordTransform.setText("坐标系转换: 未计算");
+            tvRobotPose.setText("机器人位姿: 未获取");
+            tvTargetPosition.setText("目标位置: 未计算");
+            tvMoveStatus.setText("移动状态: 空闲");
+        });
+    }
+
+
+    // 更新UWB数据显示
+    private void updateUwbDataDisplay(double distance, double azimuth, double elevation) {
+        runOnUiThread(() -> {
+            String text = String.format("UWB数据: 距离=%.2fm, 方位角=%.1f°, 仰角=%.1f°",
+                    distance, azimuth, elevation);
+            tvUwbData.setText(text);
+        });
+    }
+
+    // 更新坐标系转换显示
+    private void updateCoordTransformDisplay(double baseX, double baseY,
+                                             double robotX, double robotY) {
+        runOnUiThread(() -> {
+            String text = String.format("坐标转换: 基站系(%.2f, %.2f) → 机器人系(%.2f, %.2f)",
+                    baseX, baseY, robotX, robotY);
+            tvCoordTransform.setText(text);
+        });
+    }
+
+    // 更新机器人位姿显示
+    private void updateRobotPoseDisplay(double x, double y, double yaw) {
+        runOnUiThread(() -> {
+            String text = String.format("机器人位姿: X=%.2f, Y=%.2f, Yaw=%.1f°",
+                    x, y, Math.toDegrees(yaw));
+            tvRobotPose.setText(text);
+        });
+    }
+
+    // 更新目标位置显示
+    private void updateTargetDisplay(double globalX, double globalY) {
+        runOnUiThread(() -> {
+            String text = String.format("目标位置: 全局系(%.2f, %.2f)", globalX, globalY);
+            tvTargetPosition.setText(text);
+        });
+    }
+
+    // 更新移动状态显示
+    private void updateMoveStatus(String status) {
+        runOnUiThread(() -> {
+            String text = "移动状态: " + status;
+            tvMoveStatus.setText(text);
+        });
+    }
+
+    // 更新数据包统计
+    private void updatePacketStats(int count, float rate) {
+        runOnUiThread(() -> {
+            tvPacketCount.setText(String.valueOf(count));
+            tvPacketRate.setText(String.format("%.1f Hz", rate));
         });
     }
 
@@ -213,9 +410,41 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
                 }
             }
 
-            @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-            @Override public void surfaceDestroyed(SurfaceHolder holder) {}
+            @Override
+            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            }
+
+            @Override
+            public void surfaceDestroyed(SurfaceHolder holder) {
+            }
         });
+    }
+
+    // 切换跟随模式
+    private void toggleFollowMode() {
+        if (followModeManager.isFollowing()) {
+            followModeManager.stopFollowing();
+            // 更新按钮状态
+            Button btn = findViewById(R.id.btn_follow_mode);
+            btn.setBackgroundResource(R.drawable.button_blue_rect);
+            btn.setText("开始跟随");
+
+            // 隐藏监控面板
+            if (debugContainer != null) {
+                debugContainer.setVisibility(View.GONE);
+            }
+        } else {
+            followModeManager.startFollowing();
+            // 更新按钮状态
+            Button btn = findViewById(R.id.btn_follow_mode);
+            btn.setBackgroundResource(R.drawable.button_red_rect);
+            btn.setText("停止跟随");
+
+            // 显示监控面板
+            if (debugContainer != null) {
+                debugContainer.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     private void loadStandbySettings() {
@@ -342,7 +571,6 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
     }
 
 
-
     @Override
     public void onStandbySettingsChanged() {
         loadStandbySettings();
@@ -457,7 +685,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         // 设置数字按钮点击事件
         for (int i = 0; i < numberButtons.length; i++) {
             final int digit = i;
-            numberButtons[i].setOnClickListener(v -> addDigit(String.valueOf(digit),isMultiDelivery));
+            numberButtons[i].setOnClickListener(v -> addDigit(String.valueOf(digit), isMultiDelivery));
         }
         // 设置删除按钮点击事件
         btnDelete.setOnClickListener(v -> removeDigit());
@@ -476,7 +704,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
      * 显示送物密码验证对话框
      */
     private void showDeliveryPasswordDialog(boolean isMultiDelivery) {
-        showPasswordDialog("送物验证", "delivery_password",isMultiDelivery);
+        showPasswordDialog("送物验证", "delivery_password", isMultiDelivery);
     }
 
     /**
@@ -604,7 +832,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         RobotController.getRobotStatus(new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
-                String json = responseData.string(StandardCharsets.UTF_8);
+                String json = responseData.string(UTF_8);
                 RobotStatus status = RobotController.parseRobotStatus(json);
                 if (status != null && status.getBatteryPercentage() >= 20) {
                     getPoiList(isMultiDelivery);
@@ -624,7 +852,7 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         RobotController.getPoiList(new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
-                String json = responseData.string(StandardCharsets.UTF_8);
+                String json = responseData.string(UTF_8);
                 List<Poi> poiList = RobotController.parsePoiList(json);
                 Intent intent;
                 if (isMultiDelivery) {
@@ -654,5 +882,11 @@ public class MainActivity extends  BaseActivity implements StandbySettingsFragme
         if (standbyAnimationView != null) {
             standbyAnimationView.stopPlayback();  // 停止播放并释放资源
         }
+        if (followModeManager != null) {
+            followModeManager.cleanup();
+        }
+
     }
+
 }
+

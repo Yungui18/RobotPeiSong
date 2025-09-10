@@ -115,35 +115,48 @@ public class RobotController {
 
         OkHttpUtils.post(url, json.toString(), callback);
     }
+
     public static void pollActionStatus(String actionId, OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/motion/v1/actions/" + actionId;
+        OkHttpUtils.get(url, callback);
+    }
+
+    public static void getRobotPose(RobotPoseCallback callback) {
+        String url = BASE_URL + "/api/core/slam/v1/localization/pose";
         OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 try {
-                    String json = responseData.string(StandardCharsets.UTF_8);
-                    JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-
-                    // 直接处理JSON对象，避免额外转换
-                    if (jsonObject.has("state")) {
-                        JsonObject state = jsonObject.getAsJsonObject("state");
-                        int status = state.get("status").getAsInt();
-                        int result = state.get("result").getAsInt();
-
-                        // 在这里处理状态逻辑...
-                    }
-
-                    callback.onSuccess(responseData);
+                    String jsonStr = responseData.string(StandardCharsets.UTF_8);
+                    JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+                    double x = json.get("x").getAsDouble();
+                    double y = json.get("y").getAsDouble();
+                    double yaw = json.get("yaw").getAsDouble();
+                    callback.onSuccess(new RobotPose(x, y, yaw));
                 } catch (Exception e) {
                     callback.onFailure(e);
                 }
             }
-
             @Override
             public void onFailure(Exception e) {
                 callback.onFailure(e);
             }
         });
+    }
+    public interface RobotPoseCallback {
+        void onSuccess(RobotPose pose);
+        void onFailure(Exception e);
+    }
+    public static class RobotPose {
+        public double x;
+        public double y;
+        public double yaw;
+        public RobotPose() {}
+        public RobotPose(double x, double y, double yaw) {
+            this.x = x;
+            this.y = y;
+            this.yaw = yaw;
+        }
     }
 
     // 创建回桩任务
@@ -164,11 +177,13 @@ public class RobotController {
 
         OkHttpUtils.post(url, json.toString(), callback);
     }
+
     // 取消当前任务
     public static void cancelCurrentAction(OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/motion/v1/actions/:current";
         OkHttpUtils.delete(url, callback);
     }
+
 
     // 解析POI列表
     public static List<Poi> parsePoiList(String jsonResponse) {

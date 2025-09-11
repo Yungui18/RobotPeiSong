@@ -19,6 +19,11 @@ import okio.Buffer;
 import okio.BufferedSource;
 import okio.ByteString;
 
+/**
+ * 网络请求工具类（基于OkHttp）
+ * 封装OkHttp库的核心功能，提供HTTP请求（GET/POST）的便捷方法
+ * 包含自定义异常处理，支持网络请求的错误反馈和结果解析
+ */
 public class OkHttpUtils {
     private static final String TAG = "OkHttpUtils";
     private static final int MAX_RESPONSE_SIZE = 2 * 1024 * 1024; // 2MB最大响应限制
@@ -208,7 +213,10 @@ public class OkHttpUtils {
         }
     }
 
-    // 自定义协议异常类
+    /**
+     * 自定义协议异常类，继承自IOException
+     * 用于处理网络请求中的协议相关异常
+     */
     public static class ProtocolException extends IOException {
         public ProtocolException(String message) {
             super(message);

@@ -1,5 +1,10 @@
 package com.silan.robotpeisongcontrl.model;
 
+/**
+ * 机器人状态信息实体类
+ * 用于存储和管理机器人的各项实时状态参数，如电池电量、运行状态等
+ * 提供参数的Getter和Setter方法，支持状态数据的读写操作
+ */
 public class RobotStatus {
     private double batteryPercentage;
     private String dockingStatus;
@@ -12,10 +17,18 @@ public class RobotStatus {
     public RobotStatus() {}
 
     // Getter和Setter
+    /**
+     * 获取机器人电池百分比
+     * @return 电池百分比（double类型）
+     */
     public double getBatteryPercentage() {
         return batteryPercentage;
     }
 
+    /**
+     * 设置机器人电池百分比
+     * @param batteryPercentage 电池百分比（double类型）
+     */
     public void setBatteryPercentage(double batteryPercentage) {
         this.batteryPercentage = batteryPercentage;
     }

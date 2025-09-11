@@ -27,6 +27,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 多配送任务选择界面Activity
+ * 负责展示和处理多个配送任务的选择、编辑和提交逻辑
+ * 提供任务列表展示、任务编号更新、任务详情编辑等UI交互功能
+ */
 public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
     private TextView countdownText;
@@ -218,7 +223,10 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         return doorInfo.toString();
     }
 
-    // 更新任务编号显示
+    /**
+     * 更新任务编号显示
+     * 遍历任务详情容器中的子视图，修改每个任务的编号文本（从1开始）
+     */
     private void updateTaskNumbers() {
         int childCount = taskDetailsContainer.getChildCount();
         for (int i = 0; i < childCount; i++) {

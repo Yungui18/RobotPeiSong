@@ -29,6 +29,11 @@ import java.util.List;
 
 import okio.ByteString;
 
+/**
+ * 巡逻功能界面Activity
+ * 负责机器人巡逻任务的管理和执行，包括巡逻点列表加载、路径规划、移动控制等
+ * 支持巡逻流程的开始、暂停、继续和终止，实时更新巡逻状态
+ */
 public class PatrollingActivity extends BaseActivity {
 
     private static final String TAG = "PatrollingActivity";
@@ -112,6 +117,10 @@ public class PatrollingActivity extends BaseActivity {
         moveToNextPoint();
     }
 
+    /**
+     * 移动到下一个巡逻点
+     * 循环遍历巡逻点列表，创建移动任务并轮询任务状态
+     */
     private void moveToNextPoint() {
         if (!shouldContinue) return;
 

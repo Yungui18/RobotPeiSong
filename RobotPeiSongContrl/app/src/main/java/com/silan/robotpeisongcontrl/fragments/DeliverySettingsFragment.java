@@ -25,6 +25,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.R;
+import com.silan.robotpeisongcontrl.adapter.UsbSerialHelper;
+import com.silan.robotpeisongcontrl.utils.ModbusRtuProtocol;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class DeliverySettingsFragment extends Fragment {
 
@@ -41,7 +46,24 @@ public class DeliverySettingsFragment extends Fragment {
     private LinearLayout layoutPasswordSettings;
     private EditText etPickupPassword, etDeliveryPassword;
 
+    private UsbSerialHelper usbSerialHelper;
+    private Handler statusCheckHandler = new Handler(Looper.getMainLooper());
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private Map<Integer, Integer> doorStatus = new HashMap() {{
+        put(1, 0); // 0:空闲, 1:开门中, 2:关门中
+        put(2, 0);
+        put(3, 0);
+        put(4, 0);
+    }};
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        // 初始化串口助手
+        usbSerialHelper = new UsbSerialHelper(getContext());
+        usbSerialHelper.open(null); // 无需UWB监听，传null
+        usbSerialHelper.setModbusListener(this::onModbusStatusReceived);
+    }
 
     @Nullable
     @Override
@@ -56,6 +78,42 @@ public class DeliverySettingsFragment extends Fragment {
         setupButtonListeners();
 
         return view;
+    }
+
+    // 处理Modbus状态响应
+    private void onModbusStatusReceived(int registerAddr, int status) {
+        // 匹配仓门对应的寄存器地址
+        int doorId = -1;
+        for (Map.Entry<Integer, Integer> entry : usbSerialHelper.doorRegisterMap.entrySet()) {
+            if (entry.getValue() == registerAddr) {
+                doorId = entry.getKey();
+                break;
+            }
+        }
+        if (doorId == -1) return;
+
+        // 解析状态码(协议定义)
+        if (status == 0x0101) { // 开门中
+            doorStatus.put(doorId, 1);
+            tvStatus.setText("仓门状态: 仓门" + doorId + "开门中");
+            usbSerialHelper.setLedState(doorId, 2, true, true, true); // LED2:闪烁, RGB全亮
+        } else if (status == 0x0102) { // 开门完成
+            doorStatus.put(doorId, 0);
+            tvStatus.setText("仓门状态: 仓门" + doorId + "已打开");
+            usbSerialHelper.setLedState(doorId, 1, true, false, false); // LED1:常亮(红色)
+            updateDoorIndicator(doorId, true);
+            setDoorOpenButtonEnabled(doorId, false);
+        } else if (status == 0x0201) { // 关门中
+            doorStatus.put(doorId, 2);
+            tvStatus.setText("仓门状态: 仓门" + doorId + "关门中");
+            usbSerialHelper.setLedState(doorId, 2, true, true, true); // LED闪烁
+        } else if (status == 0x0202) { // 关门完成
+            doorStatus.put(doorId, 0);
+            tvStatus.setText("仓门状态: 仓门" + doorId + "已关闭");
+            usbSerialHelper.setLedState(doorId, 0, false, false, false); // LED关闭
+            updateDoorIndicator(doorId, false);
+            setDoorOpenButtonEnabled(doorId, true);
+        }
     }
 
     private void initViews(View view) {
@@ -101,45 +159,53 @@ public class DeliverySettingsFragment extends Fragment {
     }
 
     private void openDoor(int doorId) {
-        // 如果有其他仓门打开，先关闭它
-        if (currentOpenDoor != 0 && currentOpenDoor != doorId) {
-            closeDoor(currentOpenDoor);
+        if (doorStatus.get(doorId) != 0) {
+            Toast.makeText(getContext(), "仓门" + doorId + "正在操作中", Toast.LENGTH_SHORT).show();
+            return;
         }
-
-        // 打开新仓门
-        currentOpenDoor = doorId;
-        updateDoorIndicator(doorId, true);
-
-        // 播放开仓动画
-        playDoorAnimation(doorId, true);
-
-        // 更新状态文本
-        tvStatus.setText("仓门状态: 仓门" + doorId + "已打开");
-
-        // 显示提示
-        Toast.makeText(getContext(), "模拟打开仓门" + doorId, Toast.LENGTH_SHORT).show();
-
-        // 禁用当前仓门的打开按钮
-        setDoorOpenButtonEnabled(doorId, false);
+        // 发送开门指令(协议:0100=开门)
+        Integer registerAddr = usbSerialHelper.doorRegisterMap.get(doorId);
+        if (registerAddr != null) {
+            byte[] command = ModbusRtuProtocol.buildWriteCommand(registerAddr, 0x0100);
+            usbSerialHelper.sendModbusCommand(command);
+            // 启动状态查询(500ms一次)
+            startStatusCheck(doorId);
+        }
     }
 
+
     private void closeDoor(int doorId) {
-        if (currentOpenDoor == doorId) {
-            currentOpenDoor = 0;
-            updateDoorIndicator(doorId, false);
-
-            // 播放关仓动画
-            playDoorAnimation(doorId, false);
-
-            // 更新状态文本
-            tvStatus.setText("仓门状态: 全部关闭");
-
-            // 显示提示
-            Toast.makeText(getContext(), "模拟关闭仓门" + doorId, Toast.LENGTH_SHORT).show();
+        if (doorStatus.get(doorId) != 0) {
+            Toast.makeText(getContext(), "仓门" + doorId + "正在操作中", Toast.LENGTH_SHORT).show();
+            return;
         }
+        // 发送关门指令(协议:0200=关门)
+        Integer registerAddr = usbSerialHelper.doorRegisterMap.get(doorId);
+        if (registerAddr != null) {
+            byte[] command = ModbusRtuProtocol.buildWriteCommand(registerAddr, 0x0200);
+            usbSerialHelper.sendModbusCommand(command);
+            // 启动状态查询
+            startStatusCheck(doorId);
+        }
+    }
 
-        // 启用当前仓门的打开按钮
-        setDoorOpenButtonEnabled(doorId, true);
+    // 定时查询仓门状态
+    private void startStatusCheck(int doorId) {
+        statusCheckHandler.removeCallbacksAndMessages(doorId);
+        statusCheckHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (doorStatus.get(doorId) == 0) return; // 已完成
+                // 发送状态查询指令
+                Integer registerAddr = usbSerialHelper.doorRegisterMap.get(doorId);
+                if (registerAddr != null) {
+                    byte[] command = ModbusRtuProtocol.buildReadCommand(registerAddr);
+                    usbSerialHelper.sendModbusCommand(command);
+                    // 继续查询
+                    statusCheckHandler.postDelayed(this, 500);
+                }
+            }
+        }, 500);
     }
 
     private void updateDoorIndicator(int doorId, boolean isOpen) {
@@ -158,14 +224,14 @@ public class DeliverySettingsFragment extends Fragment {
         }
     }
 
-    private void playDoorAnimation(int doorId, boolean isOpening) {
-        View indicator = getDoorIndicator(doorId);
-        if (indicator != null) {
-            Animation animation = AnimationUtils.loadAnimation(getContext(),
-                    isOpening ? R.anim.door_open : R.anim.door_close);
-            indicator.startAnimation(animation);
-        }
-    }
+//    private void playDoorAnimation(int doorId, boolean isOpening) {
+//        View indicator = getDoorIndicator(doorId);
+//        if (indicator != null) {
+//            Animation animation = AnimationUtils.loadAnimation(getContext(),
+//                    isOpening ? R.anim.door_open : R.anim.door_close);
+//            indicator.startAnimation(animation);
+//        }
+//    }
 
     private View getDoorIndicator(int doorId) {
         switch (doorId) {
@@ -190,6 +256,7 @@ public class DeliverySettingsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        handler.removeCallbacksAndMessages(null);
+        statusCheckHandler.removeCallbacksAndMessages(null);
+        usbSerialHelper.close();
     }
 }

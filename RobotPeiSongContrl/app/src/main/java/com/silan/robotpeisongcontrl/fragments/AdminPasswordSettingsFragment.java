@@ -90,6 +90,11 @@ public class AdminPasswordSettingsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * 显示密码输入对话框
+     * 用于输入当前密码、新密码或确认密码，支持数字输入和删除功能
+     * @param title 对话框标题
+     */
     private void showPasswordInputDialog(String title) {
         // 创建弹窗
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
@@ -215,6 +220,10 @@ public class AdminPasswordSettingsFragment extends Fragment {
         }
     }
 
+    /**
+     * 保存新密码
+     * 验证当前密码正确性、新密码格式及两次输入一致性，验证通过后保存新密码
+     */
     private void savePassword() {
         // 使用存储的实际密码值
         String current = realCurrentPassword;

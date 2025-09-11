@@ -21,6 +21,11 @@ import java.util.concurrent.TimeUnit;
 
 import okio.ByteString;
 
+/**
+ * 跟随模式管理类
+ * 负责处理机器人的跟随模式逻辑，包括基站配置、位置计算、运动控制等
+ * 内置自适应卡尔曼滤波器，用于优化位置测量数据，提高跟随精度
+ */
 public class FollowModeManager {
     private static final String TAG = "FollowModeManager";
 
@@ -146,13 +151,25 @@ public class FollowModeManager {
         private final double rFar; // 远距离测量噪声
         private boolean isFirst = true;
 
+        /**
+         * 构造方法：初始化自适应卡尔曼滤波器
+         * @param processNoise 过程噪声协方差
+         * @param nearNoise 近距离测量噪声
+         * @param farNoise 远距离测量噪声
+         */
         public AdaptiveKalmanFilter(double processNoise, double nearNoise, double farNoise) {
             this.q = processNoise;
             this.rNear = nearNoise;
             this.rFar = farNoise;
         }
 
-        // 根据距离动态选择测量噪声
+        /**
+         * 根据测量值和距离进行卡尔曼滤波
+         * 动态调整测量噪声（距离越近噪声越大），返回滤波后的估计值
+         * @param measurement 测量值
+         * @param distance 距离（用于动态调整噪声）
+         * @return 滤波后的估计值
+         */
         public double filter(double measurement, double distance) {
             if (isFirst) {
                 x = measurement;

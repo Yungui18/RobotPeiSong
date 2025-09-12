@@ -21,7 +21,7 @@
         android:orientation="vertical">
 
         <include
-            layout="@layout/task_buttons_layout"
+            layout="@layout/task_six_buttons_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 

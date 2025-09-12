@@ -78,7 +78,7 @@
             android:textSize="16sp"
             android:layout_marginBottom="8dp"/>
 
-        <include layout="@layout/task_buttons_layout"/>
+        <include layout="@layout/task_six_buttons_layout"/>
 
         <!-- 已选点位 -->
         <TextView

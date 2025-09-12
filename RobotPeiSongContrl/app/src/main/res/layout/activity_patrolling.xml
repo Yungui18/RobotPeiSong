@@ -16,7 +16,7 @@
 
     <!-- 任务按钮布局 -->
     <include
-        layout="@layout/task_buttons_layout"
+        layout="@layout/task_six_buttons_layout"
         android:layout_width="match_parent"
         android:layout_height="275dp"
         android:layout_centerInParent="true"/>

@@ -63,11 +63,6 @@ import java.util.TimeZone;
 
 import okio.ByteString;
 
-/**
- * 应用主界面Activity
- * 作为应用的入口界面，负责统筹全局UI展示和核心功能入口
- * 包含基站状态监控、机器人实时数据展示、调试面板管理等核心功能
- */
 public class MainActivity extends BaseActivity implements StandbySettingsFragment.OnStandbySettingsChangedListener {
     private String enteredPassword = "";
     private LinearLayout dotsContainer;
@@ -251,12 +246,7 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         });
     }
 
-    /**
-     * 更新基站状态指示器UI
-     * 根据基站ID和活跃状态，设置对应指示器的背景和闪烁动画
-     * @param anchorId 基站ID
-     * @param isActive 基站是否活跃（true为活跃，false为不活跃）
-     */
+    // 更新基站状态指示器
     private void updateBaseStationIndicator(long anchorId, boolean isActive) {
         runOnUiThread(() -> {
             // 使用FollowModeManager提供的基站配置
@@ -279,10 +269,6 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         });
     }
 
-    /**
-     * 初始化调试面板UI组件
-     * 获取调试面板相关的TextView引用，用于显示各类调试数据
-     */
     private void initDebugPanel() {
         // 获取UI引用
         debugContainer = findViewById(R.id.debug_container);

@@ -3,11 +3,6 @@ package com.silan.robotpeisongcontrl.model;
 import java.util.Arrays;
 import java.util.UUID;
 
-/**
- * 定时配送任务实体类
- * 用于管理需要按计划执行的配送任务，包含任务ID、执行时间、目标点位等信息
- * 支持任务的创建、状态跟踪和参数管理
- */
 public class ScheduledDeliveryTask {
     public static final int TYPE_POINT = 0;
     public static final int TYPE_ROUTE = 1;
@@ -22,11 +17,7 @@ public class ScheduledDeliveryTask {
     private boolean enabled;
     private long lastModified;
     private long triggerTime; // 任务触发的时间戳
-    // 任务触发的时间戳
-    /**
-     * 构造方法：初始化定时配送任务
-     * 确保每个任务实例都有唯一的UUID作为ID
-     */
+
     public ScheduledDeliveryTask() {
         // 确保每个任务都有ID
         this.id = UUID.randomUUID().toString();
@@ -61,7 +52,6 @@ public class ScheduledDeliveryTask {
     public long getTriggerTime() {
         return triggerTime;
     }
-
     public void setTriggerTime(long triggerTime) {
         this.triggerTime = triggerTime;
     }

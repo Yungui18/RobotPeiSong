@@ -37,11 +37,11 @@ import okio.ByteString;
 public class PointDeliveryFragment extends Fragment {
 
     private Spinner spinnerPoints;
-    private Button[] doorButtons = new Button[4];
+    private Button[] doorButtons = new Button[6];
     private TimePicker timePicker;
     private Button btnConfirm;
     private List<Poi> poiList = new ArrayList<>();
-    private boolean[] selectedDoors = new boolean[4];
+    private boolean[] selectedDoors = new boolean[6];
     private ActivityResultLauncher<Intent> alarmPermissionLauncher;
 
     @Override
@@ -54,10 +54,12 @@ public class PointDeliveryFragment extends Fragment {
         );
         // 初始化UI
         spinnerPoints = view.findViewById(R.id.spinner_points);
-        doorButtons[0] = view.findViewById(R.id.btn_door1);
-        doorButtons[1] = view.findViewById(R.id.btn_door2);
-        doorButtons[2] = view.findViewById(R.id.btn_door3);
-        doorButtons[3] = view.findViewById(R.id.btn_door4);
+        doorButtons[0] = view.findViewById(R.id.btn_task1);
+        doorButtons[1] = view.findViewById(R.id.btn_task2);
+        doorButtons[2] = view.findViewById(R.id.btn_task3);
+        doorButtons[3] = view.findViewById(R.id.btn_task4);
+        doorButtons[4] = view.findViewById(R.id.btn_task5);
+        doorButtons[5] = view.findViewById(R.id.btn_task6);
         timePicker = view.findViewById(R.id.time_picker);
         btnConfirm = view.findViewById(R.id.btn_confirm);
 

@@ -53,7 +53,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private Button btnDelete;
     private AlertDialog passwordDialog;
     private boolean isScheduledTask;
-    private boolean[] selectedDoors;
+    private boolean[] selectedDoors; // 原4个仓门，改为6个
     private boolean isDeliveryFailed = false;
     private int currentDoorTask = 0;
 

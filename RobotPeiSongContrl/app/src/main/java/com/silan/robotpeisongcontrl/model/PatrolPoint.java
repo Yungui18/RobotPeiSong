@@ -1,13 +1,8 @@
 package com.silan.robotpeisongcontrl.model;
 
-/**
- * 巡逻点实体类
- * 用于定义机器人巡逻任务中的单个点位信息，关联基础POI信息和任务属性
- * 支持判断点位是否关联任务，并提供字符串描述格式化功能
- */
 public class PatrolPoint {
     private Poi poi;
-    private int task; // 0:无任务, 1-4:对应仓门
+    private int task; // 0:无任务, 1-6:对应仓门
 
     public PatrolPoint(Poi poi, int task) {
         this.poi = poi;

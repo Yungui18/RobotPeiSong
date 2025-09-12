@@ -29,11 +29,6 @@ import java.util.List;
 
 import okio.ByteString;
 
-/**
- * 巡逻功能界面Activity
- * 负责机器人巡逻任务的管理和执行，包括巡逻点列表加载、路径规划、移动控制等
- * 支持巡逻流程的开始、暂停、继续和终止，实时更新巡逻状态
- */
 public class PatrollingActivity extends BaseActivity {
 
     private static final String TAG = "PatrollingActivity";
@@ -49,7 +44,7 @@ public class PatrollingActivity extends BaseActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     // 任务按钮相关
-    private Button btnTask1, btnTask2, btnTask3, btnTask4;
+    private Button btnTask1, btnTask2, btnTask3, btnTask4, btnTask5, btnTask6;
     private int currentTask = 0;
     private Handler blinkHandler = new Handler();
     private Runnable blinkRunnable;
@@ -65,12 +60,16 @@ public class PatrollingActivity extends BaseActivity {
         btnTask2 = findViewById(R.id.btn_task2);
         btnTask3 = findViewById(R.id.btn_task3);
         btnTask4 = findViewById(R.id.btn_task4);
+        btnTask5 = findViewById(R.id.btn_task5);
+        btnTask6 = findViewById(R.id.btn_task6);
 
         // 禁用任务按钮的点击（仅用于显示状态）
         btnTask1.setClickable(false);
         btnTask2.setClickable(false);
         btnTask3.setClickable(false);
         btnTask4.setClickable(false);
+        btnTask5.setClickable(false);
+        btnTask6.setClickable(false);
 
         // 闪烁动画逻辑
         blinkRunnable = new Runnable() {
@@ -117,10 +116,6 @@ public class PatrollingActivity extends BaseActivity {
         moveToNextPoint();
     }
 
-    /**
-     * 移动到下一个巡逻点
-     * 循环遍历巡逻点列表，创建移动任务并轮询任务状态
-     */
     private void moveToNextPoint() {
         if (!shouldContinue) return;
 
@@ -240,15 +235,20 @@ public class PatrollingActivity extends BaseActivity {
             case 2: return btnTask2;
             case 3: return btnTask3;
             case 4: return btnTask4;
+            case 5: return btnTask5;
+            case 6: return btnTask6;
             default: return null;
         }
     }
 
+    // 重置按钮状态方法
     private void resetTaskButtonsUI() {
         btnTask1.setBackgroundResource(R.drawable.button_blue_rect);
         btnTask2.setBackgroundResource(R.drawable.button_blue_rect);
         btnTask3.setBackgroundResource(R.drawable.button_blue_rect);
         btnTask4.setBackgroundResource(R.drawable.button_blue_rect);
+        btnTask5.setBackgroundResource(R.drawable.button_blue_rect);
+        btnTask6.setBackgroundResource(R.drawable.button_blue_rect);
     }
 
     private void openCargoDoor(int doorId) {

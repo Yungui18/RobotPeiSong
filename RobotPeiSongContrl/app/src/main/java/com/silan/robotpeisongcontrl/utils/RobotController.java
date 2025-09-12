@@ -24,11 +24,6 @@ import java.util.List;
 
 import okio.ByteString;
 
-/**
- * 机器人控制核心类
- * 负责机器人的指令发送、状态接收和核心逻辑控制
- * 支持POI数据解析、任务调度、运动控制等核心功能，是上层界面与底层硬件的控制桥梁
- */
 public class RobotController {
     private static final String TAG = "RobotController";
     public static final String BASE_URL = "http://192.168.11.1:1448";
@@ -184,12 +179,7 @@ public class RobotController {
     }
 
 
-    /**
-     * 解析JSON响应为POI列表
-     * 从JSON数组中提取每个POI的ID、位置信息（x、y、yaw）和显示名称
-     * @param jsonResponse 包含POI信息的JSON字符串
-     * @return 解析后的POI列表，解析失败返回空列表
-     */
+    // 解析POI列表
     public static List<Poi> parsePoiList(String jsonResponse) {
         List<Poi> poiList = new ArrayList<>();
         try {

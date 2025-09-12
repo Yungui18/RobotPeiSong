@@ -48,11 +48,6 @@ public class SuperAdminPasswordActivity extends BaseActivity {
         });
     }
 
-    /**
-     * 显示密码输入对话框
-     * 用于输入当前密码、新密码或确认密码，支持数字输入和删除功能
-     * @param title 对话框标题
-     */
     private void showPasswordInputDialog(String title, String passwordType) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();

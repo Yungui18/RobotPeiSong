@@ -34,8 +34,8 @@ public class TaskSelectionActivity extends BaseActivity {
     private final TaskManager taskManager = TaskManager.getInstance();
     private int currentSelectedButtonIndex = -1;
     private List<Poi> poiList = new ArrayList<>();
-    private final Button[] taskButtons = new Button[4];
-    private final boolean[] taskAssigned = new boolean[4];
+    private final Button[] taskButtons = new Button[6];
+    private final boolean[] taskAssigned = new boolean[6];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +65,9 @@ public class TaskSelectionActivity extends BaseActivity {
         taskButtons[1] = findViewById(R.id.btn_task2);
         taskButtons[2] = findViewById(R.id.btn_task3);
         taskButtons[3] = findViewById(R.id.btn_task4);
+        taskButtons[4] = findViewById(R.id.btn_task5);
+        taskButtons[5] = findViewById(R.id.btn_task6);
+
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> finish());
 

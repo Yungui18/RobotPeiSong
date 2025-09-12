@@ -80,10 +80,6 @@ public class PatrolActivity extends BaseActivity {
         selectedSchemeId = (int) v.getTag();
     }
 
-    /**
-     * 开始巡逻流程
-     * 检查巡逻点列表是否为空，若为空则提示并结束；否则开始移动到下一个点
-     */
     private void startPatrol() {
         if (selectedSchemeId != -1) {
             Intent intent = new Intent(this, PatrollingActivity.class);

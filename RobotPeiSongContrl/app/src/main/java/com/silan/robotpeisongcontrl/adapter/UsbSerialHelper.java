@@ -10,18 +10,12 @@ import android.util.Log;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-import com.silan.robotpeisongcontrl.utils.ModbusRtuProtocol;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * USB串口通信辅助类
- * 负责管理USB串口设备的发现、连接、配置和数据传输
- * 提供串口数据的发送和接收接口，支持调试日志输出（可通过DEBUG_MODE控制）
- */
 public class UsbSerialHelper {
     private static final String TAG = "UsbSerialHelper";
     private static final boolean DEBUG_MODE = true;
@@ -44,41 +38,9 @@ public class UsbSerialHelper {
     public interface UwbDataListener {
         void onUwbData(long anchorId, long tagId, double distance, double azimuth, double elevation);
     }
-    public interface ModbusStatusListener {
-        void onStatusReceived(int registerAddr, int status);
-    }
 
-    private ModbusStatusListener modbusListener;
     public UsbSerialHelper(Context context) {
         this.context = context;
-    }
-
-    public Map<Integer, Integer> doorRegisterMap = new HashMap() {{
-        put(1, 0x40); // 仓门1对应一键指令地址
-        put(2, 0x41); // 仓门2对应一键指令地址
-        put(3, 0x42); // 仓门3对应一键指令地址
-        put(4, 0x43); // 仓门4对应一键指令地址
-    }};
-
-    private Map<Integer, Integer> ledRegisterMap = new HashMap() {{
-        put(1, 0x32); // 仓门1对应LED地址
-        put(2, 0x33); // 仓门2对应LED地址
-        put(3, 0x34); // 仓门3对应LED地址
-        put(4, 0x35); // 仓门4对应LED地址
-    }};
-    // 发送Modbus指令
-
-    public void sendModbusCommand(byte[] command) {
-        if (serialPortList.isEmpty()) {
-            logError("未初始化串口设备，无法发送指令");
-            return;
-        }
-        // 发送到第一个串口设备(根据实际硬件调整)
-        UsbSerialDevice serial = serialPortList.get(0);
-        if (serial != null && serial.isOpen()) {
-            serial.write(command);
-            logDebug("发送Modbus指令: " + bytesToHex(command));
-        }
     }
 
     public void open(UwbDataListener listener) {
@@ -168,16 +130,6 @@ public class UsbSerialHelper {
     }
 
     private void processIncomingData(UsbSerialDevice serial, byte[] data) {
-        // 优先处理Modbus响应(如果是Modbus帧格式)
-        if (data.length >= 7 && modbusListener != null) {
-            int functionCode = data[1] & 0xFF;
-            if (functionCode == ModbusRtuProtocol.FUNCTION_READ) {
-                int registerAddr = ((data[2] & 0xFF) << 8) | (data[3] & 0xFF);
-                int status = ModbusRtuProtocol.parseStatusResponse(data);
-                modbusListener.onStatusReceived(registerAddr, status);
-                return; // 已处理Modbus响应，不再解析UWB数据
-            }
-        }
         if (data == null || data.length < 28) {
             logWarning("无效数据包（长度不足）：" + (data == null ? 0 : data.length) + "字节");
             return;
@@ -246,43 +198,11 @@ public class UsbSerialHelper {
         }
     }
 
-    // 辅助方法：字节数组转16进制字符串
-    private String bytesToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X ", b));
-        }
-        return sb.toString();
-    }
-
-    // 控制LED状态
-    public void setLedState(int doorId, int mode, boolean r, boolean g, boolean b) {
-        Integer ledAddr = ledRegisterMap.get(doorId);
-        if (ledAddr == null) return;
-        // 数据格式：XRGB (X:模式, R/G/B:1=亮,0=灭)
-        int data = (mode << 4)
-                | ((r ? 1 : 0) << 3)
-                | ((g ? 1 : 0) << 2)
-                | ((b ? 1 : 0) << 1);
-        byte[] command = ModbusRtuProtocol.buildWriteCommand(ledAddr, data);
-        sendModbusCommand(command);
-    }
-
-    // getter/setter
-    public void setModbusListener(ModbusStatusListener listener) {
-        this.modbusListener = listener;
-    }
-
     // 日志方法
     private void logInfo(String message) {
         Log.i(TAG, message);
     }
 
-    /**
-     * 打印调试日志
-     * 仅在DEBUG_MODE为true时，通过Log.d打印日志
-     * @param message 调试日志内容
-     */
     private void logDebug(String message) {
         if (DEBUG_MODE) Log.d(TAG, message);
     }

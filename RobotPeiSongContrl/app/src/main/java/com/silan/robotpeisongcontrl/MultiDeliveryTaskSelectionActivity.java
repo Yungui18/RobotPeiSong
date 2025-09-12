@@ -27,18 +27,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * 多配送任务选择界面Activity
- * 负责展示和处理多个配送任务的选择、编辑和提交逻辑
- * 提供任务列表展示、任务编号更新、任务详情编辑等UI交互功能
- */
 public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
     private List<Poi> poiList = new ArrayList<>();
-    private final Button[] taskButtons = new Button[4];
+    private final Button[] taskButtons = new Button[6];
     private Set<Integer> selectedButtonIndices = new HashSet<>();
     private LinearLayout taskDetailsContainer;
 
@@ -52,6 +47,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         taskButtons[1] = findViewById(R.id.btn_task2);
         taskButtons[2] = findViewById(R.id.btn_task3);
         taskButtons[3] = findViewById(R.id.btn_task4);
+        taskButtons[4] = findViewById(R.id.btn_task5);
+        taskButtons[5] = findViewById(R.id.btn_task6);
 
         // 任务按钮点击事件
         for (int i = 0; i < taskButtons.length; i++) {
@@ -218,15 +215,12 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     private String getDoorNames(Set<Integer> selectedButtons) {
         StringBuilder doorInfo = new StringBuilder();
         for (int index : selectedButtons) {
-            doorInfo.append("仓门").append(index + 1).append(" ");
+            doorInfo.append("仓门").append(index + 1).append(" "); // 索引0对应仓门1，以此类推
         }
         return doorInfo.toString();
     }
 
-    /**
-     * 更新任务编号显示
-     * 遍历任务详情容器中的子视图，修改每个任务的编号文本（从1开始）
-     */
+    // 更新任务编号显示
     private void updateTaskNumbers() {
         int childCount = taskDetailsContainer.getChildCount();
         for (int i = 0; i < childCount; i++) {

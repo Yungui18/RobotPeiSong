@@ -6,7 +6,9 @@ import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,6 +18,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.PatrolPoint;
 import com.silan.robotpeisongcontrl.model.PatrolScheme;
 import com.silan.robotpeisongcontrl.model.Poi;
@@ -30,7 +33,6 @@ import java.util.List;
 import okio.ByteString;
 
 public class PatrollingActivity extends BaseActivity {
-
     private static final String TAG = "PatrollingActivity";
     private int currentPointIndex = 0;
     private List<PatrolPoint> patrolPoints;
@@ -44,32 +46,26 @@ public class PatrollingActivity extends BaseActivity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     // 任务按钮相关
-    private Button btnTask1, btnTask2, btnTask3, btnTask4, btnTask5, btnTask6;
+    private Button[] taskButtons;
     private int currentTask = 0;
     private Handler blinkHandler = new Handler();
     private Runnable blinkRunnable;
     private boolean isBlinking = false;
+    private int doorCount;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_patrolling);
 
-        // 初始化任务按钮
-        btnTask1 = findViewById(R.id.btn_task1);
-        btnTask2 = findViewById(R.id.btn_task2);
-        btnTask3 = findViewById(R.id.btn_task3);
-        btnTask4 = findViewById(R.id.btn_task4);
-        btnTask5 = findViewById(R.id.btn_task5);
-        btnTask6 = findViewById(R.id.btn_task6);
+        // 获取仓门数量
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
+        taskButtons = new Button[doorCount + 1]; // 1-based index
 
-        // 禁用任务按钮的点击（仅用于显示状态）
-        btnTask1.setClickable(false);
-        btnTask2.setClickable(false);
-        btnTask3.setClickable(false);
-        btnTask4.setClickable(false);
-        btnTask5.setClickable(false);
-        btnTask6.setClickable(false);
+        // 初始化任务按钮容器
+        LinearLayout taskButtonsContainer = findViewById(R.id.task_buttons_container);
+        loadTaskButtonsLayout(taskButtonsContainer);
 
         // 闪烁动画逻辑
         blinkRunnable = new Runnable() {
@@ -105,6 +101,34 @@ public class PatrollingActivity extends BaseActivity {
         // 停止巡航按钮
         Button btnStopPatrol = findViewById(R.id.btn_stop_patrol);
         btnStopPatrol.setOnClickListener(v -> stopPatrol());
+    }
+
+    private void loadTaskButtonsLayout(LinearLayout container) {
+        // 清空容器
+        container.removeAllViews();
+
+        // 根据仓门数量加载不同的布局
+        LayoutInflater inflater = LayoutInflater.from(this);
+        switch (doorCount) {
+            case 3:
+                inflater.inflate(R.layout.task_three_buttons_layout, container);
+                break;
+            case 4:
+                inflater.inflate(R.layout.task_four_buttons_layout, container);
+                break;
+            case 6:
+                inflater.inflate(R.layout.task_six_buttons_layout, container);
+                break;
+        }
+
+        // 初始化按钮引用
+        for (int i = 1; i <= doorCount; i++) {
+            taskButtons[i] = container.findViewById(getResources().getIdentifier(
+                    "btn_task" + i, "id", getPackageName()));
+            if (taskButtons[i] != null) {
+                taskButtons[i].setClickable(false); // 仅用于显示状态
+            }
+        }
     }
 
     private void startPatrol() {
@@ -217,38 +241,32 @@ public class PatrollingActivity extends BaseActivity {
             currentTask = point.getTask();
             resetTaskButtonsUI();
 
-            if (currentTask > 0) {
+            if (currentTask > 0 && currentTask <= doorCount) {
                 // 更新UI：设置对应按钮为红色
                 getTaskButton(currentTask).setBackgroundResource(R.drawable.button_red_rect);
                 // 执行打开仓门操作
                 openCargoDoor(currentTask);
             } else {
-                // 没有任务，直接前往下一点
+                // 没有任务或任务ID无效，直接前往下一点
                 startWaitingPeriod();
             }
         });
     }
 
     private Button getTaskButton(int taskId) {
-        switch (taskId) {
-            case 1: return btnTask1;
-            case 2: return btnTask2;
-            case 3: return btnTask3;
-            case 4: return btnTask4;
-            case 5: return btnTask5;
-            case 6: return btnTask6;
-            default: return null;
+        if (taskId >= 1 && taskId <= doorCount) {
+            return taskButtons[taskId];
         }
+        return null;
     }
 
     // 重置按钮状态方法
     private void resetTaskButtonsUI() {
-        btnTask1.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask2.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask3.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask4.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask5.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask6.setBackgroundResource(R.drawable.button_blue_rect);
+        for (int i = 1; i <= doorCount; i++) {
+            if (taskButtons[i] != null) {
+                taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+            }
+        }
     }
 
     private void openCargoDoor(int doorId) {
@@ -284,7 +302,10 @@ public class PatrollingActivity extends BaseActivity {
         isBlinking = false;
         blinkHandler.removeCallbacks(blinkRunnable);
         // 停止后恢复为蓝色
-        resetTaskButtonsUI();
+        Button activeButton = getTaskButton(currentTask);
+        if (activeButton != null) {
+            activeButton.setBackgroundResource(R.drawable.button_blue_rect);
+        }
     }
 
     private void startWaitingPeriod() {
@@ -320,6 +341,8 @@ public class PatrollingActivity extends BaseActivity {
                 }
             }.start();
         });
+        currentPointIndex++;
+        handler.postDelayed(this::moveToNextPoint, 5000);
     }
 
     private void stopPatrol() {
@@ -357,6 +380,7 @@ public class PatrollingActivity extends BaseActivity {
         } else {
             returnToDock();
         }
+        finish();
     }
 
     private void returnToDock() {
@@ -390,10 +414,12 @@ public class PatrollingActivity extends BaseActivity {
         finish();
     }
 
-    private void updateStatus(String message) {
+    private void updateStatus(String status) {
         runOnUiThread(() -> {
             TextView statusView = findViewById(R.id.tv_status);
-            statusView.setText(message);
+            if (statusView != null) {
+                statusView.setText(status);
+            }
         });
     }
 
@@ -401,16 +427,10 @@ public class PatrollingActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         shouldContinue = false;
-
-        // 在UI线程中取消计时器
-        runOnUiThread(() -> {
-            if (waitTimer != null) {
-                waitTimer.cancel();
-                waitTimer = null;
-            }
-        });
-        mainHandler.removeCallbacksAndMessages(null);
-        handler.removeCallbacks(statusPollingRunnable);
-        blinkHandler.removeCallbacks(blinkRunnable);
+        handler.removeCallbacksAndMessages(null);
+        blinkHandler.removeCallbacksAndMessages(null);
+        if (waitTimer != null) {
+            waitTimer.cancel();
+        }
     }
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="仓门设置">
+        <ListPreference
+            android:key="door_count"
+            android:title="请选择允许配送的仓门数"
+            android:summary="当前选择: %s"/>
+    </PreferenceCategory>
+</PreferenceScreen>

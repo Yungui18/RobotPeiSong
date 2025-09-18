@@ -26,22 +26,24 @@ import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.R;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class DeliverySettingsFragment extends Fragment {
 
-    private int currentOpenDoor = 0; // 0表示没有打开的仓门，1-4表示打开的仓门编号
+    // 使用Set存储所有打开的仓门
+    private Set<Integer> openDoors = new HashSet<>();
     private TextView tvStatus;
 
-    // 仓门视图
-    private View door1Indicator, door2Indicator, door3Indicator, door4Indicator;
-    private Button btnDoor1Open, btnDoor1Close;
-    private Button btnDoor2Open, btnDoor2Close;
-    private Button btnDoor3Open, btnDoor3Close;
-    private Button btnDoor4Open, btnDoor4Close;
-    private Switch switchVerification;
-    private LinearLayout layoutPasswordSettings;
-    private EditText etPickupPassword, etDeliveryPassword;
+    // 动态存储仓门相关视图
+    private View[] doorIndicators;
+    private Button[] btnDoorOpens;
+    private Button[] btnDoorCloses;
+    private Button[] btnDoorPauses;
 
+    private int doorCount;
     private final Handler handler = new Handler(Looper.getMainLooper());
+
 
     @Nullable
     @Override
@@ -49,7 +51,14 @@ public class DeliverySettingsFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_delivery_settings, container, false);
+        // 获取设置的仓门数量
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(requireContext());
 
+        // 初始化视图容器
+        doorIndicators = new View[doorCount + 1]; // 1-based index
+        btnDoorOpens = new Button[doorCount + 1];
+        btnDoorCloses = new Button[doorCount + 1];
+        btnDoorPauses = new Button[doorCount + 1];
         // 初始化视图
         initViews(view);
         // 设置按钮点击监听器
@@ -60,106 +69,118 @@ public class DeliverySettingsFragment extends Fragment {
 
     private void initViews(View view) {
         tvStatus = view.findViewById(R.id.tv_status);
+        LinearLayout doorsContainer = view.findViewById(R.id.doors_container);
 
-        // 仓门1
-        door1Indicator = view.findViewById(R.id.door1_indicator);
-        btnDoor1Open = view.findViewById(R.id.btn_door1_open);
-        btnDoor1Close = view.findViewById(R.id.btn_door1_close);
+        // 清空容器
+        doorsContainer.removeAllViews();
 
-        // 仓门2
-        door2Indicator = view.findViewById(R.id.door2_indicator);
-        btnDoor2Open = view.findViewById(R.id.btn_door2_open);
-        btnDoor2Close = view.findViewById(R.id.btn_door2_close);
+        // 根据仓门数量动态添加视图
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        for (int i = 1; i <= doorCount; i++) {
+            // 加载单个仓门的布局
+            View doorView = inflater.inflate(R.layout.item_door_control, doorsContainer, false);
 
-        // 仓门3
-        door3Indicator = view.findViewById(R.id.door3_indicator);
-        btnDoor3Open = view.findViewById(R.id.btn_door3_open);
-        btnDoor3Close = view.findViewById(R.id.btn_door3_close);
+            // 设置标题
+            TextView tvDoorTitle = doorView.findViewById(R.id.tv_door_title);
+            tvDoorTitle.setText("仓门" + i);
 
-        // 仓门4
-        door4Indicator = view.findViewById(R.id.door4_indicator);
-        btnDoor4Open = view.findViewById(R.id.btn_door4_open);
-        btnDoor4Close = view.findViewById(R.id.btn_door4_close);
+            // 获取并存储视图引用
+            doorIndicators[i] = doorView.findViewById(R.id.door_indicator);
+            btnDoorOpens[i] = doorView.findViewById(R.id.btn_door_open);
+            btnDoorCloses[i] = doorView.findViewById(R.id.btn_door_close);
+            btnDoorPauses[i] = doorView.findViewById(R.id.btn_door_pause);
+
+            // 初始状态：关闭状态，打开按钮可用，关闭和暂停按钮不可用
+            updateDoorIndicator(i, false);
+            btnDoorCloses[i].setEnabled(false);
+            btnDoorCloses[i].setAlpha(0.5f);
+            btnDoorPauses[i].setEnabled(false);
+            btnDoorPauses[i].setAlpha(0.5f);
+
+            // 添加到容器
+            doorsContainer.addView(doorView);
+        }
     }
 
     private void setupButtonListeners() {
-        // 仓门1开关
-        btnDoor1Open.setOnClickListener(v -> openDoor(1));
-        btnDoor1Close.setOnClickListener(v -> closeDoor(1));
-
-        // 仓门2开关
-        btnDoor2Open.setOnClickListener(v -> openDoor(2));
-        btnDoor2Close.setOnClickListener(v -> closeDoor(2));
-
-        // 仓门3开关
-        btnDoor3Open.setOnClickListener(v -> openDoor(3));
-        btnDoor3Close.setOnClickListener(v -> closeDoor(3));
-
-        // 仓门4开关
-        btnDoor4Open.setOnClickListener(v -> openDoor(4));
-        btnDoor4Close.setOnClickListener(v -> closeDoor(4));
+        for (int i = 1; i <= doorCount; i++) {
+            final int doorId = i;
+            btnDoorOpens[doorId].setOnClickListener(v -> openDoor(doorId));
+            btnDoorCloses[doorId].setOnClickListener(v -> closeDoor(doorId));
+            btnDoorPauses[doorId].setOnClickListener(v -> pauseDoor(doorId));
+        }
     }
 
     private void openDoor(int doorId) {
-        // 如果有其他仓门打开，先关闭它
-        if (currentOpenDoor != 0 && currentOpenDoor != doorId) {
-            closeDoor(currentOpenDoor);
-        }
-
-        // 打开新仓门
-        currentOpenDoor = doorId;
+        // 添加到打开的仓门集合
+        openDoors.add(doorId);
         updateDoorIndicator(doorId, true);
 
         // 播放开仓动画
         playDoorAnimation(doorId, true);
 
         // 更新状态文本
-        tvStatus.setText("仓门状态: 仓门" + doorId + "已打开");
+        updateStatusText();
 
         // 显示提示
         Toast.makeText(getContext(), "模拟打开仓门" + doorId, Toast.LENGTH_SHORT).show();
 
-        // 禁用当前仓门的打开按钮
-        setDoorOpenButtonEnabled(doorId, false);
+        // 更新按钮状态
+        updateDoorButtonStates(doorId);
     }
 
     private void closeDoor(int doorId) {
-        if (currentOpenDoor == doorId) {
-            currentOpenDoor = 0;
+        if (openDoors.contains(doorId)) {
+            openDoors.remove(doorId);
             updateDoorIndicator(doorId, false);
 
             // 播放关仓动画
             playDoorAnimation(doorId, false);
 
             // 更新状态文本
-            tvStatus.setText("仓门状态: 全部关闭");
+            updateStatusText();
 
             // 显示提示
             Toast.makeText(getContext(), "模拟关闭仓门" + doorId, Toast.LENGTH_SHORT).show();
         }
 
-        // 启用当前仓门的打开按钮
-        setDoorOpenButtonEnabled(doorId, true);
+        // 更新按钮状态
+        updateDoorButtonStates(doorId);
+    }
+
+    private void pauseDoor(int doorId) {
+        // 暂停仓门操作逻辑
+        Toast.makeText(getContext(), "模拟暂停仓门" + doorId + "操作", Toast.LENGTH_SHORT).show();
+
+        // 暂停动画（如果有）
+        if (doorIndicators[doorId] != null) {
+            doorIndicators[doorId].clearAnimation();
+        }
     }
 
     private void updateDoorIndicator(int doorId, boolean isOpen) {
-        View indicator = getDoorIndicator(doorId);
+        View indicator = doorIndicators[doorId];
         if (indicator != null) {
             indicator.setBackgroundResource(isOpen ?
                     R.drawable.door_indicator_open : R.drawable.door_indicator_closed);
         }
     }
 
-    private void setDoorOpenButtonEnabled(int doorId, boolean enabled) {
-        Button openButton = getDoorOpenButton(doorId);
-        if (openButton != null) {
-            openButton.setEnabled(enabled);
-            openButton.setAlpha(enabled ? 1.0f : 0.5f);
-        }
+    private void updateDoorButtonStates(int doorId) {
+        boolean isOpen = openDoors.contains(doorId);
+
+        btnDoorOpens[doorId].setEnabled(!isOpen);
+        btnDoorOpens[doorId].setAlpha(!isOpen ? 1.0f : 0.5f);
+
+        btnDoorCloses[doorId].setEnabled(isOpen);
+        btnDoorCloses[doorId].setAlpha(isOpen ? 1.0f : 0.5f);
+
+        btnDoorPauses[doorId].setEnabled(isOpen);
+        btnDoorPauses[doorId].setAlpha(isOpen ? 1.0f : 0.5f);
     }
 
     private void playDoorAnimation(int doorId, boolean isOpening) {
-        View indicator = getDoorIndicator(doorId);
+        View indicator = doorIndicators[doorId];
         if (indicator != null) {
             Animation animation = AnimationUtils.loadAnimation(getContext(),
                     isOpening ? R.anim.door_open : R.anim.door_close);
@@ -167,23 +188,15 @@ public class DeliverySettingsFragment extends Fragment {
         }
     }
 
-    private View getDoorIndicator(int doorId) {
-        switch (doorId) {
-            case 1: return door1Indicator;
-            case 2: return door2Indicator;
-            case 3: return door3Indicator;
-            case 4: return door4Indicator;
-            default: return null;
-        }
-    }
-
-    private Button getDoorOpenButton(int doorId) {
-        switch (doorId) {
-            case 1: return btnDoor1Open;
-            case 2: return btnDoor2Open;
-            case 3: return btnDoor3Open;
-            case 4: return btnDoor4Open;
-            default: return null;
+    private void updateStatusText() {
+        if (openDoors.isEmpty()) {
+            tvStatus.setText("仓门状态: 全部关闭");
+        } else {
+            StringBuilder sb = new StringBuilder("仓门状态: 已打开 ");
+            for (int doorId : openDoors) {
+                sb.append("仓门").append(doorId).append(" ");
+            }
+            tvStatus.setText(sb.toString().trim());
         }
     }
 

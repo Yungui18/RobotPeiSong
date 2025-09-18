@@ -31,7 +31,7 @@
                 android:layout_height="75dp"
                 android:orientation="horizontal">
                 <Button
-                    android:id="@+id/btn_task4"
+                    android:id="@+id/btn_task2"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_margin="5dp"
@@ -49,7 +49,7 @@
             android:orientation="vertical">
 
             <Button
-                android:id="@+id/btn_task5"
+                android:id="@+id/btn_task3"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_margin="5dp"
@@ -57,7 +57,7 @@
                 android:textSize="18sp" />
 
             <Button
-                android:id="@+id/btn_task6"
+                android:id="@+id/btn_task4"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_margin="5dp"

@@ -55,4 +55,5 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     implementation 'com.github.felHR85:UsbSerial:6.1.0'
+    implementation "androidx.preference:preference:1.1.1"
 }

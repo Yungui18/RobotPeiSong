@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -33,48 +34,79 @@ import java.util.Map;
 
 public class RouteDeliveryFragment extends Fragment {
     private Spinner spinnerRoutes;
-    private Button[] doorButtons = new Button[6];
+    private Button[] doorButtons;
     private TimePicker timePicker;
     private Button btnConfirm;
     private List<PatrolScheme> schemeList = new ArrayList<>();
-    private boolean[] selectedDoors = new boolean[6];
+    private boolean[] selectedDoors;
     private ActivityResultLauncher<Intent> alarmPermissionLauncher;
+    private int doorCount;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        // 获取仓门数量
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(requireContext());
+        selectedDoors = new boolean[doorCount];
+
         View view = inflater.inflate(R.layout.fragment_route_delivery, container, false);
         alarmPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> ExactAlarmPermissionHelper.handlePermissionResult(requireContext())
         );
+
         // 初始化UI
         spinnerRoutes = view.findViewById(R.id.spinner_routes);
-        doorButtons[0] = view.findViewById(R.id.btn_task1);
-        doorButtons[1] = view.findViewById(R.id.btn_task2);
-        doorButtons[2] = view.findViewById(R.id.btn_task3);
-        doorButtons[3] = view.findViewById(R.id.btn_task4);
-        doorButtons[4] = view.findViewById(R.id.btn_task5);
-        doorButtons[5] = view.findViewById(R.id.btn_task6);
         timePicker = view.findViewById(R.id.time_picker);
         btnConfirm = view.findViewById(R.id.btn_confirm);
 
+        // 加载任务按钮布局
+        LinearLayout buttonsContainer = view.findViewById(R.id.door_buttons_container);
+        loadDoorButtonsLayout(buttonsContainer);
+
         // 加载路线方案
         loadPatrolSchemes();
-
-        // 设置仓门按钮监听
-        for (int i = 0; i < doorButtons.length; i++) {
-            final int index = i;
-            doorButtons[i].setOnClickListener(v -> {
-                selectedDoors[index] = !selectedDoors[index];
-                updateDoorButtonState(index);
-            });
-        }
 
         // 确认按钮监听
         btnConfirm.setOnClickListener(v -> saveDeliveryTask());
 
         return view;
+    }
+
+    private void loadDoorButtonsLayout(LinearLayout container) {
+        // 清空容器
+        container.removeAllViews();
+
+        // 根据仓门数量初始化按钮数组
+        doorButtons = new Button[doorCount];
+
+        // 根据仓门数量加载不同的布局
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        switch (doorCount) {
+            case 3:
+                inflater.inflate(R.layout.task_three_buttons_layout, container);
+                break;
+            case 4:
+                inflater.inflate(R.layout.task_four_buttons_layout, container);
+                break;
+            case 6:
+                inflater.inflate(R.layout.task_six_buttons_layout, container);
+                break;
+        }
+
+        // 初始化按钮引用并设置点击事件
+        for (int i = 0; i < doorCount; i++) {
+            final int index = i;
+            doorButtons[i] = container.findViewById(getResources().getIdentifier(
+                    "btn_task" + (i + 1), "id", requireContext().getPackageName()));
+
+            if (doorButtons[i] != null) {
+                doorButtons[i].setOnClickListener(v -> {
+                    selectedDoors[index] = !selectedDoors[index];
+                    updateDoorButtonState(index);
+                });
+            }
+        }
     }
 
     private void loadPatrolSchemes() {
@@ -148,12 +180,10 @@ public class RouteDeliveryFragment extends Fragment {
         task.setEnabled(true);
 
         ScheduledDeliveryManager.saveTask(requireContext(), task);
-        Toast.makeText(getContext(), "定时任务已保存", Toast.LENGTH_SHORT).show();
-
         // 设置Alarm
         ScheduledDeliveryManager.scheduleTask(requireContext(), task);
+        Toast.makeText(getContext(), "定时任务已保存", Toast.LENGTH_SHORT).show();
 
-        ScheduledDeliveryManager.saveTask(requireContext(), task);
         try {
             ScheduledDeliveryManager.scheduleTask(requireContext(), task);
         } catch (SecurityException e) {

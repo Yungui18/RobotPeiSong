@@ -31,10 +31,12 @@
             android:textSize="18sp"
             android:layout_marginBottom="8dp"/>
 
-        <include
-            layout="@layout/task_six_buttons_layout"
+        <!-- 仓门按钮容器 - 动态加载 -->
+        <LinearLayout
+            android:id="@+id/door_buttons_container"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
 
         <!-- 时间选择 -->
         <TextView
@@ -47,18 +49,18 @@
 
         <TimePicker
             android:id="@+id/time_picker"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:timePickerMode="spinner"/>
+            android:layout_marginBottom="16dp"/>
 
         <!-- 确认按钮 -->
         <Button
             android:id="@+id/btn_confirm"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="保存任务"
-            android:layout_marginTop="24dp"
-            android:background="@drawable/button_green_rect"/>
+            android:layout_height="wrap_content"
+            android:text="确认"
+            android:background="@drawable/button_blue_rect"
+            android:textColor="@color/white"/>
+
     </LinearLayout>
 </ScrollView>

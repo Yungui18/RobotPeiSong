@@ -22,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.ScheduledDeliveryTask;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
@@ -38,11 +39,15 @@ import okio.ByteString;
 public class DeliveryFailureActivity extends BaseActivity {
 
     private List<DeliveryFailure> failures = new ArrayList<>();
+    private int doorCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_delivery_failure);
+
+        // 获取仓门数量设置
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
 
         // 获取失败任务
         String failuresJson = getIntent().getStringExtra("failures");
@@ -112,9 +117,12 @@ public class DeliveryFailureActivity extends BaseActivity {
         }
 
         private String getDoorsString(boolean[] doors) {
+            // 确保不超过设置的仓门数量
+            int maxDoorIndex = Math.min(doors.length, doorCount);
+
             StringBuilder sb = new StringBuilder("需要打开仓门: ");
             boolean hasDoors = false;
-            for (int i = 0; i < doors.length; i++) {
+            for (int i = 0; i < maxDoorIndex; i++) {
                 if (doors[i]) {
                     if (hasDoors) sb.append(", ");
                     sb.append(i + 1);
@@ -128,9 +136,12 @@ public class DeliveryFailureActivity extends BaseActivity {
         }
 
         private void openDoors(DeliveryFailure failure) {
-            // 打开所有需要打开的仓门
-            for (int i = 0; i < failure.getDoorsToOpen().length; i++) {
-                if (failure.getDoorsToOpen()[i]) {
+            // 打开所有需要打开的仓门，不超过设置的仓门数量
+            boolean[] doorsToOpen = failure.getDoorsToOpen();
+            int maxDoorIndex = Math.min(doorsToOpen.length, doorCount);
+
+            for (int i = 0; i < maxDoorIndex; i++) {
+                if (doorsToOpen[i]) {
                     openCargoDoor(i + 1);
                 }
             }
@@ -140,8 +151,8 @@ public class DeliveryFailureActivity extends BaseActivity {
 
             // 自动关闭仓门（5秒后）
             new Handler().postDelayed(() -> {
-                for (int i = 0; i < failure.getDoorsToOpen().length; i++) {
-                    if (failure.getDoorsToOpen()[i]) {
+                for (int i = 0; i < maxDoorIndex; i++) {
+                    if (doorsToOpen[i]) {
                         closeCargoDoor(i + 1);
                     }
                 }
@@ -154,6 +165,12 @@ public class DeliveryFailureActivity extends BaseActivity {
         }
 
         private void openCargoDoor(int doorId) {
+            // 确保不超过设置的仓门数量
+            if (doorId < 1 || doorId > doorCount) {
+                Log.w("DeliveryFailure", "Invalid door id: " + doorId);
+                return;
+            }
+
             // 实际调用打开仓门接口
             RobotController.openCargoDoor(doorId, new RobotController.SimpleCallback() {
                 @Override
@@ -169,6 +186,12 @@ public class DeliveryFailureActivity extends BaseActivity {
         }
 
         private void closeCargoDoor(int doorId) {
+            // 确保不超过设置的仓门数量
+            if (doorId < 1 || doorId > doorCount) {
+                Log.w("DeliveryFailure", "Invalid door id: " + doorId);
+                return;
+            }
+
             // 实际调用关闭仓门接口
             RobotController.closeCargoDoor(doorId, new RobotController.SimpleCallback() {
                 @Override

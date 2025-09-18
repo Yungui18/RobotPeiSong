@@ -36,7 +36,7 @@
             android:orientation="vertical">
 
             <Button
-                android:id="@+id/btn_task5"
+                android:id="@+id/btn_task2"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_margin="5dp"
@@ -44,7 +44,7 @@
                 android:textSize="18sp" />
 
             <Button
-                android:id="@+id/btn_task6"
+                android:id="@+id/btn_task3"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:layout_margin="5dp"

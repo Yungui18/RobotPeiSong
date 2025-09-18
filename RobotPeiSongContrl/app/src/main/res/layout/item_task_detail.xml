@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="10dp"
+    android:background="@drawable/button_mint_green_rect">
+
+    <TextView
+        android:id="@+id/tv_task_num"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="任务号: 1"
+        android:textSize="16sp"/>
+
+    <TextView
+        android:id="@+id/tv_task_door"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="仓门: 1"
+        android:textSize="16sp"/>
+
+    <ImageButton
+        android:id="@+id/btn_delete_task"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_close"
+        android:background="?selectableItemBackgroundBorderless"
+        android:contentDescription="删除任务"/>
+</LinearLayout>

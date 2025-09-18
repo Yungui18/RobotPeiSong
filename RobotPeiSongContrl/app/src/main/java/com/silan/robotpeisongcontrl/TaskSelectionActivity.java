@@ -6,9 +6,11 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.InputType;
+import android.view.LayoutInflater;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,6 +22,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
@@ -34,18 +37,25 @@ public class TaskSelectionActivity extends BaseActivity {
     private final TaskManager taskManager = TaskManager.getInstance();
     private int currentSelectedButtonIndex = -1;
     private List<Poi> poiList = new ArrayList<>();
-    private final Button[] taskButtons = new Button[6];
-    private final boolean[] taskAssigned = new boolean[6];
+    private Button[] taskButtons; // 动态按钮数组（替代原有的固定数组）
+    private boolean[] taskAssigned; // 动态任务状态数组
+    private int doorCount; // 仓门数量
+    private LinearLayout taskButtonsContainer; // 动态容器
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
 
-        // 初始化任务状态数组
-        for (int i = 0; i < taskAssigned.length; i++) {
-            taskAssigned[i] = false;
-        }
+        // 获取仓门数量
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
+        // 初始化任务状态数组（长度为仓门数量）
+        taskAssigned = new boolean[doorCount];
+
+        // 初始化动态容器
+        taskButtonsContainer = findViewById(R.id.task_buttons_container);
+        // 动态加载任务按钮
+        loadTaskButtonsLayout();
 
         // 获取从MainActivity传递过来的POI列表
         Intent intent = getIntent();
@@ -57,35 +67,56 @@ public class TaskSelectionActivity extends BaseActivity {
             poiList = gson.fromJson(poiListJson, type);
         }
 
+        // 其他初始化（保持不变）
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
-
-        // 初始化任务按钮
-        taskButtons[0] = findViewById(R.id.btn_task1);
-        taskButtons[1] = findViewById(R.id.btn_task2);
-        taskButtons[2] = findViewById(R.id.btn_task3);
-        taskButtons[3] = findViewById(R.id.btn_task4);
-        taskButtons[4] = findViewById(R.id.btn_task5);
-        taskButtons[5] = findViewById(R.id.btn_task6);
+        btnStart.setOnClickListener(v -> startTasks());
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> finish());
 
-        // 任务按钮点击事件
-        for (int i = 0; i < taskButtons.length; i++) {
-            int index = i;
-            taskButtons[i].setOnClickListener(v -> selectTask(index));
-        }
-
-        // 开始任务按钮
-        btnStart.setOnClickListener(v -> startTasks());
-
-        // 数字按钮
+        // 数字按钮逻辑（保持不变）
         setupNumberButtons();
 
-        // 倒计时150秒
+        // 倒计时
         startCountdown();
     }
+
+    // 动态加载任务按钮布局
+    private void loadTaskButtonsLayout() {
+        // 清空容器
+        taskButtonsContainer.removeAllViews();
+
+        // 初始化按钮数组
+        taskButtons = new Button[doorCount];
+
+        // 加载对应布局
+        LayoutInflater inflater = LayoutInflater.from(this);
+        switch (doorCount) {
+            case 3:
+                inflater.inflate(R.layout.task_three_buttons_layout, taskButtonsContainer);
+                break;
+            case 4:
+                inflater.inflate(R.layout.task_four_buttons_layout, taskButtonsContainer);
+                break;
+            case 6:
+                inflater.inflate(R.layout.task_six_buttons_layout, taskButtonsContainer);
+                break;
+        }
+
+        // 绑定按钮并设置点击事件
+        for (int i = 0; i < doorCount; i++) {
+            final int index = i;
+            taskButtons[i] = taskButtonsContainer.findViewById(
+                    getResources().getIdentifier("btn_task" + (i + 1), "id", getPackageName())
+            );
+
+            if (taskButtons[i] != null) {
+                taskButtons[i].setOnClickListener(v -> selectTask(index));
+            }
+        }
+    }
+
 
     /**
      * 显示送物密码验证对话框
@@ -189,27 +220,31 @@ public class TaskSelectionActivity extends BaseActivity {
         }
     }
 
+    // 选择任务按钮
     private void selectTask(int index) {
-        // 重置所有按钮状态为蓝色直角
-        for (int i = 0; i < taskButtons.length; i++) {
-            if (!taskAssigned[i]) { // 只重置未分配任务的按钮
+        // 重置未分配任务的按钮
+        for (int i = 0; i < doorCount; i++) {
+            if (!taskAssigned[i]) {
                 taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
             }
         }
+
         if (taskAssigned[index]) {
             Toast.makeText(this, "该任务已分配，不能修改", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        // 设置选中按钮状态为红色直角
+        // 高亮选中按钮
         taskButtons[index].setBackgroundResource(R.drawable.button_red_rect);
         currentSelectedButtonIndex = index;
     }
 
+    // 清空任务按钮状态
     private void clearTaskButtons() {
-        for (int i = 0; i < taskButtons.length; i++) {
+        for (int i = 0; i < doorCount; i++) {
             taskButtons[i].setText("");
             taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
-            taskAssigned[i] = false; // 重置任务状态
+            taskAssigned[i] = false;
         }
         currentSelectedButtonIndex = -1;
     }

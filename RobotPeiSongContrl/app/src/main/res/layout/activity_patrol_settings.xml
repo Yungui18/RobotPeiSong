@@ -78,7 +78,13 @@
             android:textSize="16sp"
             android:layout_marginBottom="8dp"/>
 
-        <include layout="@layout/task_six_buttons_layout"/>
+        <LinearLayout
+            android:id="@+id/task_buttons_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:spacing="10dp"
+            android:layout_marginBottom="16dp"/>
 
         <!-- 已选点位 -->
         <TextView

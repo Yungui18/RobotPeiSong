@@ -5,6 +5,7 @@ import static android.app.PendingIntent.getActivity;
 import static java.security.AccessController.getContext;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -17,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.PatrolPoint;
 import com.silan.robotpeisongcontrl.model.PatrolScheme;
 import com.silan.robotpeisongcontrl.model.Poi;
@@ -36,10 +38,12 @@ public class PatrolSettingsActivity extends BaseActivity {
     private List<Poi> poiList = new ArrayList<>();
     private List<PatrolPoint> selectedPoints = new ArrayList<>();
     private int currentSchemeId = 1;
-    private Button btnTask1, btnTask2, btnTask3, btnTask4;
+    private Button[] taskButtons; // 动态按钮数组（替代原有的btnTask1~4）
     private int currentSelectedTask = 0;
     private Poi currentSelectedPoi = null;
     private LinearLayout container;
+    private LinearLayout taskButtonsContainer; // 动态按钮容器
+    private int doorCount; // 仓门数量
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,20 +65,14 @@ public class PatrolSettingsActivity extends BaseActivity {
 
     private void initViews() {
         container = findViewById(R.id.poi_buttons_container);
+        taskButtonsContainer = findViewById(R.id.task_buttons_container); // 获取动态容器
 
-        // 初始化任务按钮
-        btnTask1 = findViewById(R.id.btn_task1);
-        btnTask2 = findViewById(R.id.btn_task2);
-        btnTask3 = findViewById(R.id.btn_task3);
-        btnTask4 = findViewById(R.id.btn_task4);
+        // 获取仓门数量（与其他页面保持一致）
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
+        // 初始化任务按钮（根据仓门数量）
+        loadTaskButtonsLayout();
 
-        // 设置任务按钮点击事件
-        btnTask1.setOnClickListener(v -> handleTaskButtonClick(1));
-        btnTask2.setOnClickListener(v -> handleTaskButtonClick(2));
-        btnTask3.setOnClickListener(v -> handleTaskButtonClick(3));
-        btnTask4.setOnClickListener(v -> handleTaskButtonClick(4));
-
-        // 初始化方案下拉框
+        // 初始化方案下拉框（保持不变）
         Spinner schemeSpinner = findViewById(R.id.scheme_spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this, R.array.scheme_array, android.R.layout.simple_spinner_item
@@ -83,13 +81,47 @@ public class PatrolSettingsActivity extends BaseActivity {
         schemeSpinner.setAdapter(adapter);
         schemeSpinner.setOnItemSelectedListener(new SchemeSelectionListener());
 
-        // 创建路线方案按钮
+        // 其他按钮逻辑（保持不变）
         findViewById(R.id.btn_create_scheme).setOnClickListener(v -> createPatrolScheme());
-
-        // 删除方案按钮
         findViewById(R.id.btn_delete_scheme).setOnClickListener(v -> deletePatrolScheme());
     }
 
+    // 动态加载任务按钮布局（参考PointDeliveryFragment）
+    private void loadTaskButtonsLayout() {
+        // 清空容器
+        taskButtonsContainer.removeAllViews();
+
+        // 根据仓门数量初始化按钮数组
+        taskButtons = new Button[doorCount];
+
+        // 加载对应数量的布局文件
+        LayoutInflater inflater = LayoutInflater.from(this);
+        switch (doorCount) {
+            case 3:
+                inflater.inflate(R.layout.task_three_buttons_layout, taskButtonsContainer);
+                break;
+            case 4:
+                inflater.inflate(R.layout.task_four_buttons_layout, taskButtonsContainer);
+                break;
+            case 6:
+                inflater.inflate(R.layout.task_six_buttons_layout, taskButtonsContainer);
+                break;
+        }
+
+        // 绑定按钮并设置点击事件
+        for (int i = 0; i < doorCount; i++) {
+            final int taskId = i + 1; // 任务ID从1开始
+            taskButtons[i] = taskButtonsContainer.findViewById(
+                    getResources().getIdentifier("btn_task" + taskId, "id", getPackageName())
+            );
+
+            if (taskButtons[i] != null) {
+                taskButtons[i].setOnClickListener(v -> handleTaskButtonClick(taskId));
+            }
+        }
+    }
+
+    // 任务按钮点击逻辑
     private void handleTaskButtonClick(int taskId) {
         if (currentSelectedPoi != null) {
             currentSelectedTask = taskId;
@@ -168,27 +200,16 @@ public class PatrolSettingsActivity extends BaseActivity {
         selectedView.setText(builder.toString());
     }
 
+    // 更新任务按钮UI
     private void updateTaskButtonsUI() {
         // 重置所有按钮
-        btnTask1.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask2.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask3.setBackgroundResource(R.drawable.button_blue_rect);
-        btnTask4.setBackgroundResource(R.drawable.button_blue_rect);
+        for (int i = 0; i < doorCount; i++) {
+            taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+        }
 
-        // 高亮当前选中的任务
-        switch (currentSelectedTask) {
-            case 1:
-                btnTask1.setBackgroundResource(R.drawable.button_red_rect);
-                break;
-            case 2:
-                btnTask2.setBackgroundResource(R.drawable.button_red_rect);
-                break;
-            case 3:
-                btnTask3.setBackgroundResource(R.drawable.button_red_rect);
-                break;
-            case 4:
-                btnTask4.setBackgroundResource(R.drawable.button_red_rect);
-                break;
+        // 高亮当前选中的任务（任务ID从1开始，数组索引从0开始）
+        if (currentSelectedTask > 0 && currentSelectedTask <= doorCount) {
+            taskButtons[currentSelectedTask - 1].setBackgroundResource(R.drawable.button_red_rect);
         }
     }
 

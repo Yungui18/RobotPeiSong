@@ -110,28 +110,29 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     }
 
     private void setupTaskButtonsClickListener(int doorCount) {
-        for (int i = 1; i <= doorCount; i++) {
-            int buttonId = getResources().getIdentifier("btn_task" + i, "id", getPackageName());
-            Button button = taskButtonsContainer.findViewById(buttonId); // 明确类型为Button
+        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        for (int doorId : doorNumbers) {
+            int buttonId = getResources().getIdentifier(
+                    "btn_task" + doorId, "id", getPackageName());
+            Button button = taskButtonsContainer.findViewById(buttonId);
 
             if (button == null) {
-                Log.e("TaskClick", "未找到按钮: btn_task" + i);
+                Log.e("TaskClick", "未找到按钮: btn_task" + doorId);
                 continue;
             }
 
-            // 初始化taskButtons数组（数组为0基索引，taskId为1基，故i-1对应数组索引）
-            taskButtons[i - 1] = button;
+            // 存储按钮引用（使用仓门编号作为索引）
+            taskButtons[doorId] = button;
 
-            final int taskId = i;
+            final int currentDoorId = doorId;
             button.setOnClickListener(v -> {
-                Log.d("TaskClick", "点击了仓门" + taskId);
-                // 切换选中状态：已选中则移除，未选中则添加
-                if (selectedButtonIndices.contains(taskId)) {
-                    selectedButtonIndices.remove(taskId);
-                    button.setBackgroundResource(R.drawable.button_blue_rect); // 恢复默认背景
+                Log.d("TaskClick", "点击了仓门" + currentDoorId);
+                if (selectedButtonIndices.contains(currentDoorId)) {
+                    selectedButtonIndices.remove(currentDoorId);
+                    button.setBackgroundResource(R.drawable.button_blue_rect);
                 } else {
-                    selectedButtonIndices.add(taskId);
-                    button.setBackgroundResource(R.drawable.button_red_rect); // 选中背景
+                    selectedButtonIndices.add(currentDoorId);
+                    button.setBackgroundResource(R.drawable.button_red_rect);
                 }
             });
         }

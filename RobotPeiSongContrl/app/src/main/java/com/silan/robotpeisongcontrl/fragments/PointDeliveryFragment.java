@@ -80,12 +80,11 @@ public class PointDeliveryFragment extends Fragment {
     private void loadDoorButtonsLayout(LinearLayout container) {
         // 清空容器
         container.removeAllViews();
+        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(requireContext());
+        doorButtons = new Button[10]; // 仓门编号最大为9，数组容量设为10
 
-        // 根据仓门数量初始化按钮数组
-        doorButtons = new Button[doorCount];
-
-        // 根据仓门数量加载不同的布局
         LayoutInflater inflater = LayoutInflater.from(getContext());
+        int doorCount = doorNumbers.size();
         switch (doorCount) {
             case 3:
                 inflater.inflate(R.layout.task_three_buttons_layout, container);
@@ -99,17 +98,27 @@ public class PointDeliveryFragment extends Fragment {
         }
 
         // 初始化按钮引用并设置点击事件
-        for (int i = 0; i < doorCount; i++) {
+        for (int i = 0; i < doorNumbers.size(); i++) {
+            int doorId = doorNumbers.get(i);
             final int index = i;
-            doorButtons[i] = container.findViewById(getResources().getIdentifier(
-                    "btn_task" + (i + 1), "id", requireContext().getPackageName()));
+            doorButtons[doorId] = container.findViewById(getResources().getIdentifier(
+                    "btn_task" + doorId, "id", requireContext().getPackageName()));
 
-            if (doorButtons[i] != null) {
-                doorButtons[i].setOnClickListener(v -> {
+            if (doorButtons[doorId] != null) {
+                doorButtons[doorId].setOnClickListener(v -> {
                     selectedDoors[index] = !selectedDoors[index];
-                    updateDoorButtonState(index);
+                    updateDoorButtonState(index, doorId); // 传入doorId用于更新按钮状态
                 });
             }
+        }
+    }
+
+    // 根据doorId更新按钮状态
+    private void updateDoorButtonState(int index, int doorId) {
+        if (selectedDoors[index]) {
+            doorButtons[doorId].setBackgroundResource(R.drawable.button_red_rect);
+        } else {
+            doorButtons[doorId].setBackgroundResource(R.drawable.button_blue_rect);
         }
     }
 

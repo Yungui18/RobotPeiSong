@@ -1,5 +1,6 @@
 package com.silan.robotpeisongcontrl.fragments;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -15,7 +16,12 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+
 import com.silan.robotpeisongcontrl.R;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class WarehouseDoorSettingsFragment extends Fragment {
     private static final String PREFS_NAME = "WarehouseSettings";
@@ -82,5 +88,33 @@ public class WarehouseDoorSettingsFragment extends Fragment {
     public static int getDoorCount(android.content.Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
         return prefs.getInt(DOOR_COUNT_KEY, DEFAULT_DOOR_COUNT);
+    }
+
+    // 根据设置的数量获取实际仓门编号列表
+    public static List<Integer> getDoorNumbers(Context context) {
+        int doorCount = getDoorCount(context);
+        List<Integer> doors = new ArrayList<>();
+        // 固定包含5、6号仓门
+        doors.add(5);
+        doors.add(6);
+
+        switch (doorCount) {
+            case 3:
+                doors.add(9); // 3仓门时增加9号
+                break;
+            case 4:
+                doors.add(7);
+                doors.add(8); // 4仓门时增加7、8号
+                break;
+            case 6:
+                doors.add(1);
+                doors.add(2);
+                doors.add(3);
+                doors.add(4); // 6仓门时增加1-4号
+                break;
+        }
+        // 排序确保显示顺序一致
+        Collections.sort(doors);
+        return doors;
     }
 }

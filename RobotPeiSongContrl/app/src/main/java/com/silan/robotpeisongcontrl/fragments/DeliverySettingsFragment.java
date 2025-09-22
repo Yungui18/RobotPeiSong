@@ -1,7 +1,5 @@
 package com.silan.robotpeisongcontrl.fragments;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -10,15 +8,12 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -27,6 +22,7 @@ import android.widget.Toast;
 import com.silan.robotpeisongcontrl.R;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class DeliverySettingsFragment extends Fragment {
@@ -70,44 +66,45 @@ public class DeliverySettingsFragment extends Fragment {
     private void initViews(View view) {
         tvStatus = view.findViewById(R.id.tv_status);
         LinearLayout doorsContainer = view.findViewById(R.id.doors_container);
-
-        // 清空容器
         doorsContainer.removeAllViews();
 
-        // 根据仓门数量动态添加视图
+        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(requireContext());
+        // 初始化数组（最大编号为9）
+        doorIndicators = new View[10];
+        btnDoorOpens = new Button[10];
+        btnDoorCloses = new Button[10];
+        btnDoorPauses = new Button[10];
+
         LayoutInflater inflater = LayoutInflater.from(getContext());
-        for (int i = 1; i <= doorCount; i++) {
-            // 加载单个仓门的布局
+        for (int doorId : doorNumbers) {
             View doorView = inflater.inflate(R.layout.item_door_control, doorsContainer, false);
 
-            // 设置标题
             TextView tvDoorTitle = doorView.findViewById(R.id.tv_door_title);
-            tvDoorTitle.setText("仓门" + i);
+            tvDoorTitle.setText("仓门" + doorId); // 显示实际仓门编号
 
-            // 获取并存储视图引用
-            doorIndicators[i] = doorView.findViewById(R.id.door_indicator);
-            btnDoorOpens[i] = doorView.findViewById(R.id.btn_door_open);
-            btnDoorCloses[i] = doorView.findViewById(R.id.btn_door_close);
-            btnDoorPauses[i] = doorView.findViewById(R.id.btn_door_pause);
+            doorIndicators[doorId] = doorView.findViewById(R.id.door_indicator);
+            btnDoorOpens[doorId] = doorView.findViewById(R.id.btn_door_open);
+            btnDoorCloses[doorId] = doorView.findViewById(R.id.btn_door_close);
+            btnDoorPauses[doorId] = doorView.findViewById(R.id.btn_door_pause);
 
-            // 初始状态：关闭状态，打开按钮可用，关闭和暂停按钮不可用
-            updateDoorIndicator(i, false);
-            btnDoorCloses[i].setEnabled(false);
-            btnDoorCloses[i].setAlpha(0.5f);
-            btnDoorPauses[i].setEnabled(false);
-            btnDoorPauses[i].setAlpha(0.5f);
+            // 初始状态设置
+            updateDoorIndicator(doorId, false);
+            btnDoorCloses[doorId].setEnabled(false);
+            btnDoorCloses[doorId].setAlpha(0.5f);
+            btnDoorPauses[doorId].setEnabled(false);
+            btnDoorPauses[doorId].setAlpha(0.5f);
 
-            // 添加到容器
             doorsContainer.addView(doorView);
         }
     }
 
     private void setupButtonListeners() {
-        for (int i = 1; i <= doorCount; i++) {
-            final int doorId = i;
-            btnDoorOpens[doorId].setOnClickListener(v -> openDoor(doorId));
-            btnDoorCloses[doorId].setOnClickListener(v -> closeDoor(doorId));
-            btnDoorPauses[doorId].setOnClickListener(v -> pauseDoor(doorId));
+        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(requireContext());
+        for (int doorId : doorNumbers) {
+            final int currentDoorId = doorId;
+            btnDoorOpens[currentDoorId].setOnClickListener(v -> openDoor(currentDoorId));
+            btnDoorCloses[currentDoorId].setOnClickListener(v -> closeDoor(currentDoorId));
+            btnDoorPauses[currentDoorId].setOnClickListener(v -> pauseDoor(currentDoorId));
         }
     }
 

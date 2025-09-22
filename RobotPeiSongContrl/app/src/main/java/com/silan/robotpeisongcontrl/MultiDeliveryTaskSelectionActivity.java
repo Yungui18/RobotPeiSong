@@ -74,7 +74,14 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
         countdownText = findViewById(R.id.tv_countdown);
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            // 清空任务
+            taskManager.clearTasks();
+            clearTaskButtons();
+            taskDetailsContainer.removeAllViews(); // 清空任务详情
+            taskCount = 0; // 重置任务计数
+            finish();
+        });
 
         // 任务细节显示容器
         taskDetailsContainer = findViewById(R.id.task_details_container);
@@ -271,6 +278,17 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
                 }
             }
         }
+    }
+
+    // 重写系统返回键事件
+    @Override
+    public void onBackPressed() {
+        // 清空任务
+        taskManager.clearTasks();
+        clearTaskButtons();
+        taskDetailsContainer.removeAllViews(); // 清空任务详情
+        taskCount = 0; // 重置任务计数
+        super.onBackPressed();
     }
 
     @Override

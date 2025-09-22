@@ -73,7 +73,12 @@ public class TaskSelectionActivity extends BaseActivity {
         btnStart.setOnClickListener(v -> startTasks());
 
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            // 清空任务
+            taskManager.clearTasks();
+            clearTaskButtons();
+            finish();
+        });
 
         // 数字按钮逻辑（保持不变）
         setupNumberButtons();
@@ -262,6 +267,15 @@ public class TaskSelectionActivity extends BaseActivity {
         } else {
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 重写系统返回键事件
+    @Override
+    public void onBackPressed() {
+        // 清空任务
+        taskManager.clearTasks();
+        clearTaskButtons();
+        super.onBackPressed();
     }
 
     @Override

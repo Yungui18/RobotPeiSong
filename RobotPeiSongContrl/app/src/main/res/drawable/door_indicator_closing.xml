@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- 关门中状态使用红色 -->
+    <solid android:color="#F44336" />
+    <!-- 边框 -->
+    <stroke
+        android:width="2dp"
+        android:color="#D32F2F" />
+    <!-- 大小 -->
+    <size
+        android:width="24dp"
+        android:height="24dp" />
+    <!-- 内边距 -->
+    <padding
+        android:bottom="2dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp" />
+</shape>

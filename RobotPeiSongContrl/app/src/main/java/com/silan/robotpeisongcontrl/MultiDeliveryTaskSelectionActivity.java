@@ -32,7 +32,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
     private List<Poi> poiList = new ArrayList<>();
-    private final Button[] taskButtons = new Button[6];
+    private Button[] taskButtons;
     private Set<Integer> selectedButtonIndices = new HashSet<>();
     private LinearLayout taskDetailsContainer;
     private LinearLayout taskButtonsContainer;
@@ -91,6 +91,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         // 清空容器
         taskButtonsContainer.removeAllViews();
 
+        // 动态初始化按钮数组
+        taskButtons = new Button[doorCount];
+
         // 根据仓门数量加载不同的布局
         LayoutInflater inflater = LayoutInflater.from(this);
         switch (doorCount) {
@@ -111,7 +114,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
     private void setupTaskButtonsClickListener(int doorCount) {
         List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
-        for (int doorId : doorNumbers) {
+        for (int i = 0; i < doorNumbers.size(); i++) {
+            int doorId = doorNumbers.get(i);
             int buttonId = getResources().getIdentifier(
                     "btn_task" + doorId, "id", getPackageName());
             Button button = taskButtonsContainer.findViewById(buttonId);
@@ -121,8 +125,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
                 continue;
             }
 
-            // 存储按钮引用（使用仓门编号作为索引）
-            taskButtons[doorId] = button;
+            // 存储按钮引用（使用索引而非doorId）
+            taskButtons[i] = button;
 
             final int currentDoorId = doorId;
             button.setOnClickListener(v -> {
@@ -206,8 +210,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     }
 
     private void clearTaskButtons() {
-        int doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
-        for (int i = 0; i < doorCount; i++) { // 仅循环实际仓门数量
+        if (taskButtons == null) return;
+        for (int i = 0; i < taskButtons.length; i++) {
             if (taskButtons[i] != null) {
                 taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
             }

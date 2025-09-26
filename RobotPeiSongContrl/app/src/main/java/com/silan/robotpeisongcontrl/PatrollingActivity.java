@@ -48,7 +48,7 @@ public class PatrollingActivity extends BaseActivity {
     // 任务按钮相关
     private Button[] taskButtons;
     private int currentTask = 0;
-    private Handler blinkHandler = new Handler();
+    private Handler blinkHandler = new Handler(Looper.getMainLooper());
     private Runnable blinkRunnable;
     private boolean isBlinking = false;
     private int doorCount;
@@ -122,9 +122,12 @@ public class PatrollingActivity extends BaseActivity {
         }
 
         // 初始化按钮引用
-        for (int i = 1; i <= doorCount; i++) {
+        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        taskButtons = new Button[doorNumbers.size()]; // 动态初始化
+        for (int i = 0; i < doorNumbers.size(); i++) {
+            int doorId = doorNumbers.get(i);
             taskButtons[i] = container.findViewById(getResources().getIdentifier(
-                    "btn_task" + i, "id", getPackageName()));
+                    "btn_task" + doorId, "id", getPackageName()));
             if (taskButtons[i] != null) {
                 taskButtons[i].setClickable(false); // 仅用于显示状态
             }
@@ -288,7 +291,11 @@ public class PatrollingActivity extends BaseActivity {
 
             // 停止按钮闪烁
             stopButtonBlink();
+
+            // 重置按钮状态
             resetTaskButtonsUI();
+
+            // 继续到下一个点
             startWaitingPeriod();
         });
     }

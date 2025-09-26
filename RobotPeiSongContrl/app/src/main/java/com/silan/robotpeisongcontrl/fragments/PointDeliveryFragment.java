@@ -81,7 +81,7 @@ public class PointDeliveryFragment extends Fragment {
         // 清空容器
         container.removeAllViews();
         List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(requireContext());
-        doorButtons = new Button[10]; // 仓门编号最大为9，数组容量设为10
+        doorButtons = new Button[doorNumbers.size()]; // 仓门编号最大为9，数组容量设为10
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
         int doorCount = doorNumbers.size();
@@ -101,11 +101,11 @@ public class PointDeliveryFragment extends Fragment {
         for (int i = 0; i < doorNumbers.size(); i++) {
             int doorId = doorNumbers.get(i);
             final int index = i;
-            doorButtons[doorId] = container.findViewById(getResources().getIdentifier(
+            doorButtons[i] = container.findViewById(getResources().getIdentifier(
                     "btn_task" + doorId, "id", requireContext().getPackageName()));
 
-            if (doorButtons[doorId] != null) {
-                doorButtons[doorId].setOnClickListener(v -> {
+            if (doorButtons[i] != null) {
+                doorButtons[i].setOnClickListener(v -> {
                     selectedDoors[index] = !selectedDoors[index];
                     updateDoorButtonState(index, doorId); // 传入doorId用于更新按钮状态
                 });

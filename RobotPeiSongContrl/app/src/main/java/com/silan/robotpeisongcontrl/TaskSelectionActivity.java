@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,12 +25,18 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
+import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import okio.ByteString;
 
 public class TaskSelectionActivity extends BaseActivity {
     private TextView countdownText;
@@ -37,10 +44,13 @@ public class TaskSelectionActivity extends BaseActivity {
     private final TaskManager taskManager = TaskManager.getInstance();
     private int currentSelectedButtonIndex = -1;
     private List<Poi> poiList = new ArrayList<>();
+    private int poiCount = 0;
     private Button[] taskButtons; // 动态按钮数组（替代原有的固定数组）
     private boolean[] taskAssigned; // 动态任务状态数组
     private int doorCount; // 仓门数量
     private LinearLayout taskButtonsContainer; // 动态容器
+    private Set<String> occupiedPoints = new HashSet<>();// 定义已占用点位集合（全局）
+    private static final int TOTAL_POINTS = 4;// 总点位数量
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +75,10 @@ public class TaskSelectionActivity extends BaseActivity {
             Type type = new TypeToken<ArrayList<Poi>>() {
             }.getType();
             poiList = gson.fromJson(poiListJson, type);
+            poiCount = poiList.size();
+        }else {
+            // 新增：如果Intent中没有POI列表，主动加载（参考PointDeliveryFragment）
+            loadPoiList();
         }
 
         // 其他初始化（保持不变）
@@ -120,6 +134,28 @@ public class TaskSelectionActivity extends BaseActivity {
                 taskButtons[i].setOnClickListener(v -> selectTask(index));
             }
         }
+    }
+
+    // 主动加载POI列表（确保能获取点位总数）
+    private void loadPoiList() {
+        RobotController.getPoiList(new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                String json = responseData.string(StandardCharsets.UTF_8);
+                poiList = RobotController.parsePoiList(json);
+                runOnUiThread(() -> {
+                    poiCount = poiList.size(); // 更新点位总数
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e("TaskSelection", "Failed to load POIs", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(TaskSelectionActivity.this, "点位加载失败", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
 
@@ -203,8 +239,21 @@ public class TaskSelectionActivity extends BaseActivity {
     }
 
     private void validatePoint(String pointName) {
+        // 检查是否选择了任务按钮
         if (currentSelectedButtonIndex == -1) {
             Toast.makeText(this, "请先选择一个任务按钮", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 检查点位总数是否为0（未加载成功）
+        if (poiCount <= 0) {
+            Toast.makeText(this, "点位数据未加载完成，请稍后再试", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 检查当前任务数是否已达到点位总数上限
+        if (taskManager.taskCount() >= poiCount) {
+            Toast.makeText(this, "任务数量已达上限（最多" + poiCount + "个）", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -212,6 +261,11 @@ public class TaskSelectionActivity extends BaseActivity {
         Poi poi = RobotController.findPoiByName(pointName, poiList);
 
         if (poi != null) {
+            // 检查该点位是否已被分配（确保一个点位只能有一个任务）
+            if (taskManager.isPointAssigned(poi.getDisplayName())) {
+                Toast.makeText(this, "该点位已分配任务，不可重复分配", Toast.LENGTH_SHORT).show();
+                return;
+            }
             // 添加POI对象到任务队列
             taskManager.addTask(poi);
 

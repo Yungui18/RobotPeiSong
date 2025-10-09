@@ -375,47 +375,59 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
     @Override
     public void onDataReceived(byte[] data) {
-        // 解析接收到的Modbus数据
-        if (data == null || data.length < 5) {
-            Log.e(TAG, "接收到无效数据，长度不足: " + (data != null ? data.length : 0));
-            return;
-        }
+        Log.d("ReceiveDebug", "=== 接收到串口响应数据 ===");
+        Log.d("ReceiveDebug", "响应数据（16进制）：" + bytesToHex(data)); // 打印原始响应
+        Log.d("ReceiveDebug", "响应数据长度：" + data.length + "字节");
 
-        // Modbus响应格式: [设备地址][功能码][数据长度][数据...][CRC]
-        int deviceId = data[0] & 0xFF;
-        int functionCode = data[1] & 0xFF;
-        int dataLength = data[2] & 0xFF;
+        // 核对Modbus RTU响应格式（写指令的正确响应应为8字节，与发送帧一致）
+        if (data.length == 8) {
+            int deviceCode = data[0] & 0xFF;
+            int funcCode = data[1] & 0xFF;
+            int regAddr = (data[2] & 0xFF) << 8 | (data[3] & 0xFF);
+            int respData = (data[4] & 0xFF) << 8 | (data[5] & 0xFF);
 
-        // 只处理设备01的响应
-        if (deviceId != 0x01) {
-            Log.d(TAG, "忽略非目标设备数据，设备ID: " + deviceId);
-            return;
-        }
+            Log.d("ReceiveDebug", "响应解析：设备码=" + deviceCode + "，功能码=" + funcCode + "，寄存器地址=" + regAddr + "，数据=" + respData);
 
-        // 处理读寄存器响应 (功能码0x03)
-        if (functionCode == 0x03 && dataLength > 0) {
-            // 提取数据部分
-            byte[] doorData = new byte[dataLength];
-            System.arraycopy(data, 3, doorData, 0, dataLength);
-
-            // 使用当前轮询的寄存器地址来确定是哪个仓门
-            int doorId = getDoorIdFromRegister(currentPollingRegister);
-
-            if (doorId != -1 && doorControllers.containsKey(doorId)) {
-                // 更新仓门状态
-                DoorController controller = doorControllers.get(doorId);
-                controller.handleStateData(doorData);
-
-                // 在UI线程更新界面
-                requireActivity().runOnUiThread(() -> {
-                    updateDoorIndicator(doorId, controller.getCurrentState());
-                    updateDoorButtonStates(doorId);
-                });
+            // 根据寄存器地址匹配对应仓门的Controller，分发数据
+            DoorController controller = getControllerByRegAddr(regAddr);
+            if (controller != null) {
+                Log.d("ReceiveDebug", "将响应分发给：" + controller.getClass().getSimpleName());
+                controller.handleStateData(data);
             } else {
-                Log.d(TAG, "未找到对应的仓门，寄存器地址: 0x" +
-                        Integer.toHexString(currentPollingRegister) + ", 仓门ID: " + doorId);
+                Log.e("ReceiveDebug", "未找到寄存器地址" + regAddr + "对应的仓门Controller");
             }
+        } else {
+            Log.e("ReceiveDebug", "响应数据长度异常（非8字节），可能不是Modbus RTU响应");
         }
+    }
+
+    // 辅助方法：根据寄存器地址获取对应的仓门Controller
+    private DoorController getControllerByRegAddr(int regAddr) {
+        // 映射：寄存器地址 → 仓门ID（根据协议“一键指令部分起始寄存器地址码”）
+        Map<Integer, Integer> regAddrToDoorId = new HashMap<>();
+        regAddrToDoorId.put(0x44, 1); // 1号仓门
+        regAddrToDoorId.put(0x45, 2); // 2号仓门
+        regAddrToDoorId.put(0x42, 5); // 5号仓门
+        regAddrToDoorId.put(0x43, 6); // 6号仓门
+        regAddrToDoorId.put(0x40, 7); // 7号仓门
+        regAddrToDoorId.put(0x41, 8); // 8号仓门
+        regAddrToDoorId.put(0x48, 9); // 9号仓门
+        regAddrToDoorId.put(0x46, 3); // 3号仓门
+        regAddrToDoorId.put(0x47, 4); // 4号仓门
+        Integer doorId = regAddrToDoorId.get(regAddr);
+        if (doorId != null) {
+            return doorControllers.get(doorId);
+        }
+        return null;
+    }
+
+    // 辅助方法：字节数组转16进制（与SerialPortManager中的一致）
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+        return sb.toString().trim();
     }
 
     /**

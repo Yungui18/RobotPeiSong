@@ -375,30 +375,71 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
     @Override
     public void onDataReceived(byte[] data) {
-        Log.d("ReceiveDebug", "=== 接收到串口响应数据 ===");
-        Log.d("ReceiveDebug", "响应数据（16进制）：" + bytesToHex(data)); // 打印原始响应
-        Log.d("ReceiveDebug", "响应数据长度：" + data.length + "字节");
-
-        // 核对Modbus RTU响应格式（写指令的正确响应应为8字节，与发送帧一致）
-        if (data.length == 8) {
-            int deviceCode = data[0] & 0xFF;
-            int funcCode = data[1] & 0xFF;
-            int regAddr = (data[2] & 0xFF) << 8 | (data[3] & 0xFF);
-            int respData = (data[4] & 0xFF) << 8 | (data[5] & 0xFF);
-
-            Log.d("ReceiveDebug", "响应解析：设备码=" + deviceCode + "，功能码=" + funcCode + "，寄存器地址=" + regAddr + "，数据=" + respData);
-
-            // 根据寄存器地址匹配对应仓门的Controller，分发数据
-            DoorController controller = getControllerByRegAddr(regAddr);
-            if (controller != null) {
-                Log.d("ReceiveDebug", "将响应分发给：" + controller.getClass().getSimpleName());
-                controller.handleStateData(data);
-            } else {
-                Log.e("ReceiveDebug", "未找到寄存器地址" + regAddr + "对应的仓门Controller");
-            }
-        } else {
-            Log.e("ReceiveDebug", "响应数据长度异常（非8字节），可能不是Modbus RTU响应");
+        if (data == null || data.length < 3) { // 最小帧长度：设备地址(1)+功能码(1)+CRC(2) 不，最小有效帧至少3字节（含错误码）
+            Log.e(TAG, "无效的Modbus响应数据，长度不足");
+            return;
         }
+
+        int functionCode = data[1] & 0xFF; // 功能码在第2个字节（索引1）
+
+        // 根据功能码判断合法长度
+        boolean isLengthValid = false;
+        switch (functionCode) {
+            case 0x03: // 读寄存器响应
+                // 0x03响应长度 = 1(地址) + 1(功能码) + 1(数据长度) + 2*n(数据) + 2(CRC)
+                // 数据长度字段（第3字节）表示数据的字节数，对于寄存器数据，字节数=2*n
+                if (data.length >= 3) {
+                    int dataLength = data[2] & 0xFF; // 数据长度字段（第3字节）
+                    int expectedLength = 3 + dataLength + 2; // 3=地址+功能码+数据长度，2=CRC
+                    isLengthValid = (data.length == expectedLength);
+                }
+                break;
+            case 0x06: // 写寄存器响应（与请求长度相同）
+                isLengthValid = (data.length == 8);
+                break;
+            default:
+                Log.d(TAG, "未处理的功能码: 0x" + Integer.toHexString(functionCode));
+                return;
+        }
+
+        if (!isLengthValid) {
+            Log.e(TAG, String.format("响应数据长度异常（功能码0x%02X），实际长度: %d", functionCode, data.length));
+            return;
+        }
+
+        // 长度校验通过，继续处理数据（匹配轮询的寄存器地址）
+        processValidResponse(data, functionCode);
+    }
+
+    // 处理校验通过的响应数据
+    private void processValidResponse(byte[] data, int functionCode) {
+        if (functionCode == 0x03) {
+            // 解析0x03响应：寄存器地址对应仓门ID
+            int receivedReg = getRegisterFromResponse(data); // 从响应反推寄存器地址（根据轮询上下文）
+            if (receivedReg == currentPollingRegister) {
+                // 提取数据部分（跳过前3字节：地址、功能码、数据长度）
+                byte[] stateData = new byte[2];
+                System.arraycopy(data, 3, stateData, 0, 2);
+                // 找到对应的仓门控制器并更新状态
+                for (Map.Entry<Integer, DoorController> entry : doorControllers.entrySet()) {
+                    if (getStateRegisterForDoor(entry.getKey()) == receivedReg) {
+                        entry.getValue().handleStateData(stateData);
+                        updateDoorIndicator(entry.getKey(), entry.getValue().getCurrentState());
+                        updateDoorButtonStates(entry.getKey());
+                        break;
+                    }
+                }
+            }
+        } else if (functionCode == 0x06) {
+            // 0x06响应处理（如需要确认写入成功）
+            Log.d(TAG, "0x06指令执行成功，响应数据: " + bytesToHexString(data));
+        }
+    }
+
+    // 从0x03响应反推寄存器地址（根据轮询上下文，也可通过请求记录匹配）
+    private int getRegisterFromResponse(byte[] data) {
+        // 实际应通过当前轮询的寄存器地址currentPollingRegister匹配，此处简化
+        return currentPollingRegister;
     }
 
     // 辅助方法：根据寄存器地址获取对应的仓门Controller
@@ -421,8 +462,8 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
         return null;
     }
 
-    // 辅助方法：字节数组转16进制（与SerialPortManager中的一致）
-    private String bytesToHex(byte[] bytes) {
+    // 辅助方法：字节数组转16进制字符串
+    private String bytesToHexString(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             sb.append(String.format("%02X ", b));

@@ -11,10 +11,10 @@ public abstract  class DoorController {
     protected SerialPortManager mSerialPortManager;
 
     // 统一的控制指令和状态常量（所有仓门通用）
-    protected static final int OPEN_COMMAND = 0x0100;
+    public static final int OPEN_COMMAND = 0x0100;
     protected static final int OPENING_STATE = 0x0101;
     protected static final int OPENED_STATE = 0x0102;
-    protected static final int CLOSE_COMMAND = 0x0200;
+    public static final int CLOSE_COMMAND = 0x0200;
     protected static final int CLOSING_STATE = 0x0201;
     protected static final int CLOSED_STATE = 0x0202;
 
@@ -50,7 +50,7 @@ public abstract  class DoorController {
         return mCurrentState;
     }
 
-    protected void setCurrentState(DoorState state) {
+    public void setCurrentState(DoorState state) {
         mCurrentState = state;
     }
 

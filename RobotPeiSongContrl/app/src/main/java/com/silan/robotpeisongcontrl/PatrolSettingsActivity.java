@@ -38,7 +38,7 @@ public class PatrolSettingsActivity extends BaseActivity {
     private List<Poi> poiList = new ArrayList<>();
     private List<PatrolPoint> selectedPoints = new ArrayList<>();
     private int currentSchemeId = 1;
-    private Button[] taskButtons; // 动态按钮数组（替代原有的btnTask1~4）
+    private Button[] taskButtons; // 动态按钮数组
     private int currentSelectedTask = 0;
     private Poi currentSelectedPoi = null;
     private LinearLayout container;

@@ -57,9 +57,9 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private boolean isDeliveryFailed = false;
     private int currentDoorTask = 0;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arrival_confirmation);
 
         // 获取POI列表

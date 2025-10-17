@@ -26,9 +26,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
+import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -53,9 +55,10 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private Button btnDelete;
     private AlertDialog passwordDialog;
     private boolean isScheduledTask;
-    private boolean[] selectedDoors; // 原4个仓门，改为6个
+    private boolean[] selectedDoors;
     private boolean isDeliveryFailed = false;
     private int currentDoorTask = 0;
+    private DoorStateManager doorStateManager; // 仓门状态管理器实例
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +78,9 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         Button btnPickup = findViewById(R.id.btn_pickup);
         Button btnComplete = findViewById(R.id.btn_complete);
 
+        // 初始化仓门状态管理器
+        doorStateManager = DoorStateManager.getInstance(this);
+
         // 初始化60秒倒计时
         timer = new CountDownTimer(60000, 1000) {
             @Override
@@ -87,13 +93,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
                 // 记录配送失败
                 isDeliveryFailed = true;
                 recordDeliveryFailure();
+
+                // 关闭所有已打开的仓门
+                doorStateManager.closeAllOpenedDoors();
+
                 proceedToNextTask();
             }
         }.start();
         isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
         selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
-        if (selectedDoors == null) {
-            selectedDoors = new boolean[4]; // 默认4个false值
+        int dynamicDoorCount = WarehouseDoorSettingsFragment.getDoorNumbers(this).size();
+        if (selectedDoors == null || selectedDoors.length != dynamicDoorCount) {
+                selectedDoors = new boolean[dynamicDoorCount]; // 按实际数量初始化
         }
 
         if (isScheduledTask) {
@@ -129,20 +140,33 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     }
 
     private boolean[] getDoorsToOpen() {
-        boolean[] doors = new boolean[4];
+        // 从全局配置获取实际启用的仓门ID列表（关键：动态获取）
+        List<Integer> enabledDoorIds = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        // 基于实际启用的仓门数量创建数组
+        boolean[] doorsToOpen = new boolean[enabledDoorIds.size()];
 
         if (currentDoorTask > 0) {
-            // 巡游配送模式：使用任务指定的仓门
-            doors[currentDoorTask - 1] = true;
+            // 巡游模式：找到任务指定的仓门ID在启用列表中的索引
+            int doorIndex = enabledDoorIds.indexOf(currentDoorTask);
+            if (doorIndex != -1) { // 确保该仓门在启用列表中
+                doorsToOpen[doorIndex] = true;
+            }
         } else if (selectedDoors != null) {
-            // 定时配送模式：使用选中的仓门
-            System.arraycopy(selectedDoors, 0, doors, 0, selectedDoors.length);
+            // 定时模式：selectedDoors是旧逻辑的boolean数组，需转换为仓门ID匹配
+            // 若selectedDoors存储的是“启用列表中的索引”，直接复用；若存储的是原始ID，需额外处理
+            for (int i = 0; i < Math.min(selectedDoors.length, enabledDoorIds.size()); i++) {
+                if (selectedDoors[i]) {
+                    doorsToOpen[i] = true;
+                }
+            }
         } else {
-            // 普通配送模式：默认打开仓门1
-            doors[0] = true;
+            // 普通模式：默认打开启用列表中的第一个仓门
+            if (!enabledDoorIds.isEmpty()) {
+                doorsToOpen[0] = true;
+            }
         }
 
-        return doors;
+        return doorsToOpen;
     }
 
     /**
@@ -165,6 +189,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      * 处理完成操作 - 不再需要验证送物密码
      */
     private void handleCompleteAction() {
+        // 关闭所有已打开的仓门
+        doorStateManager.closeAllOpenedDoors();
         // 移除当前点位的所有任务
         TaskManager taskManager = TaskManager.getInstance();
         if (poiList != null) {
@@ -321,19 +347,20 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      * 执行取物操作
      */
     private void performPickupAction() {
-        // 模拟取物操作
-        if (isScheduledTask) {
-            for (int i = 0; i < selectedDoors.length; i++) {
-                if (selectedDoors[i]) {
-                    Log.d("ScheduledDelivery", "Opening door " + (i + 1));
-                    // 实际项目中这里应该调用打开仓门的接口
-             }
+        // 获取动态启用的仓门列表
+        List<Integer> enabledDoorIds = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        // 获取需要打开的仓门索引数组
+        boolean[] doorsToOpen = getDoorsToOpen();
+
+        // 遍历索引数组，打开对应ID的仓门
+        for (int i = 0; i < doorsToOpen.length; i++) {
+            if (doorsToOpen[i] && i < enabledDoorIds.size()) {
+                int doorId = enabledDoorIds.get(i); // 从启用列表中获取真实仓门ID（如5、6、9等）
+                doorStateManager.openDoor(doorId); // 打开仓门并记录状态
+                Log.d("ArrivalConfirmation", "打开仓门：" + doorId);
             }
-        } else {
-            // 非定时任务，执行普通取物操作
-            // 这里可以调用普通配送的打开仓门逻辑
-            Log.d("ArrivalConfirmation", "Performing regular pickup action");
         }
+        Toast.makeText(this, "请取走物品", Toast.LENGTH_SHORT).show();
     }
 
     /**

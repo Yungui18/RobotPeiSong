@@ -62,6 +62,13 @@
                 android:spacing="10dp" />
 
             <Button
+                android:id="@+id/btn_close_all_doors"
+                android:layout_width="300dp"
+                android:layout_height="60dp"
+                android:text="关闭所有仓门"
+                android:layout_margin="16dp"/>
+
+            <Button
                 android:id="@+id/btn_start_multi_delivery"
                 android:layout_width="300dp"
                 android:layout_height="60dp"

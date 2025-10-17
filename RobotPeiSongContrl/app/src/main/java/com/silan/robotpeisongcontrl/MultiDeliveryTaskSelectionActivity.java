@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
+import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
@@ -36,6 +37,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     private Set<Integer> selectedButtonIndices = new HashSet<>();
     private LinearLayout taskDetailsContainer;
     private LinearLayout taskButtonsContainer;
+    private DoorStateManager doorStateManager; // 仓门状态管理器
     // 任务计数
     private int taskCount = 0;
     @Override
@@ -43,8 +45,19 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multi_delivery_task_selection);
 
+        // 初始化仓门状态管理器
+        doorStateManager = DoorStateManager.getInstance(this);
+
         // 初始化视图
         taskButtonsContainer = findViewById(R.id.task_buttons_container);
+
+        // 初始化"关闭所有仓门"按钮
+        Button btnCloseAllDoors = findViewById(R.id.btn_close_all_doors);
+        btnCloseAllDoors.setOnClickListener(v -> {
+            // 关闭所有已打开的仓门
+            doorStateManager.closeAllOpenedDoors();
+            Toast.makeText(MultiDeliveryTaskSelectionActivity.this, "已关闭所有仓门", Toast.LENGTH_SHORT).show();
+        });
 
         // 开始任务按钮
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
@@ -131,6 +144,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
             final int currentDoorId = doorId;
             button.setOnClickListener(v -> {
                 Log.d("TaskClick", "点击了仓门" + currentDoorId);
+                doorStateManager.openDoor(currentDoorId);// 点击即打开对应仓门
                 if (selectedButtonIndices.contains(currentDoorId)) {
                     selectedButtonIndices.remove(currentDoorId);
                     button.setBackgroundResource(R.drawable.button_blue_rect);
@@ -227,6 +241,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
             return;
         }
 
+        // 选择完毕后关闭所有已打开的仓门
+        doorStateManager.closeAllOpenedDoors();
+
         // 跳转至配送执行页面
         timer.cancel(); // 取消倒计时
         Intent intent = new Intent(this, MovingActivity.class);
@@ -301,6 +318,11 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         super.onDestroy();
         if (timer != null) {
             timer.cancel();
+        }
+
+        // 页面销毁时关闭所有仓门
+        if (doorStateManager != null) {
+            doorStateManager.closeAllOpenedDoors();
         }
     }
 }

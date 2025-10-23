@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_arrow_back"
+            android:background="?selectableItemBackgroundBorderless"
+            android:layout_margin="8dp"/>
+        <!-- 统一控制所有直流电机的参数 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="所有直流电机参数设置（电机1-4共用）"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- 统一高速速度（所有直流电机） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="高速速度(1-9):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_all_motor_high_speed"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="1-9"/>
+        </LinearLayout>
+
+        <!-- 统一低速速度（所有直流电机） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="低速速度(1-9):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_all_motor_low_speed"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="1-9"/>
+        </LinearLayout>
+
+        <!-- 统一高速时间（所有直流电机，单位100ms，0-100对应0-10秒） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="高速时间(0-100):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_all_motor_high_time"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="0-100"/>
+        </LinearLayout>
+
+        <!-- 推杆电机参数（保持独立） -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="推杆电机参数设置"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="高速速度(1-9):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_pusher_high_speed"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="1-9"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="低速速度(1-9):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_pusher_low_speed"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="1-9"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="高速时间(0-100):"
+                android:layout_gravity="center_vertical"
+                android:textSize="16sp"/>
+            <EditText
+                android:id="@+id/et_pusher_high_time"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginStart="12dp"
+                android:hint="0-100"/>
+        </LinearLayout>
+
+        <!-- 固定参数显示（不可修改） -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="固定参数（不可修改）"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/tv_lock_current"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textSize="16sp"/>
+
+        <TextView
+            android:id="@+id/tv_electromagnet_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:textSize="16sp"/>
+
+        <!-- 保存按钮 -->
+        <Button
+            android:id="@+id/btn_save_params"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="保存参数"
+            android:textSize="16sp"
+            android:padding="12dp"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -19,7 +19,7 @@ public class SerialPortManager {
     private InputStream mInputStream;
     private ReadThread mReadThread;
     private OnDataReceivedListener mDataReceivedListener;
-    private static final String DEVICE_PATH = "/dev/ttyUSB6"; // 根据实际设备修改
+    private static final String DEVICE_PATH = "/dev/ttyUSB5"; // 根据实际设备修改
     private static final int BAUDRATE = 9600; // Modbus RTU常用波特率
 
     private SerialPortManager() {}

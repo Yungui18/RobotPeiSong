@@ -181,16 +181,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
      */
     private int getStateRegisterForDoor(int doorId) {
         switch (doorId) {
-            case 1: return 0x44;
-            case 2: return 0x45;
-            case 3: return 0x46;
-            case 4: return 0x47;
-            case 5: return 0x42;
-            case 6: return 0x43;
-            case 7: return 0x40;
-            case 8: return 0x41;
-            case 9: return 0x48;
-            default: return -1;
+            case 1:
+                return 0x44;
+            case 2:
+                return 0x45;
+            case 3:
+                return 0x46;
+            case 4:
+                return 0x47;
+            case 5:
+                return 0x42;
+            case 6:
+                return 0x43;
+            case 7:
+                return 0x40;
+            case 8:
+                return 0x41;
+            case 9:
+                return 0x48;
+            default:
+                return -1;
         }
     }
 
@@ -266,66 +276,70 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     }
 
     private void updateDoorIndicator(int doorId, DoorController.DoorState state) {
-        View indicator = doorIndicators[doorId];
-        if (indicator != null) {
-            switch (state) {
-                case OPENING:
-                    indicator.setBackgroundResource(R.drawable.door_indicator_opening);
-                    playDoorAnimation(doorId, true);
-                    break;
-                case OPENED:
-                    indicator.setBackgroundResource(R.drawable.door_indicator_open);
-                    break;
-                case CLOSING:
-                    indicator.setBackgroundResource(R.drawable.door_indicator_closing);
-                    playDoorAnimation(doorId, false);
-                    break;
-                case CLOSED:
-                    indicator.setBackgroundResource(R.drawable.door_indicator_closed);
-                    break;
-                case PAUSED:
-                    indicator.setBackgroundResource(R.drawable.door_indicator_paused);
-                    break;
+        getActivity().runOnUiThread(() -> {
+            View indicator = doorIndicators[doorId];
+            if (indicator != null) {
+                switch (state) {
+                    case OPENING:
+                        indicator.setBackgroundResource(R.drawable.door_indicator_opening);
+                        playDoorAnimation(doorId, true);
+                        break;
+                    case OPENED:
+                        indicator.setBackgroundResource(R.drawable.door_indicator_open);
+                        break;
+                    case CLOSING:
+                        indicator.setBackgroundResource(R.drawable.door_indicator_closing);
+                        playDoorAnimation(doorId, false);
+                        break;
+                    case CLOSED:
+                        indicator.setBackgroundResource(R.drawable.door_indicator_closed);
+                        break;
+                    case PAUSED:
+                        indicator.setBackgroundResource(R.drawable.door_indicator_paused);
+                        break;
+                }
             }
-        }
+        });
     }
 
     private void updateDoorButtonStates(int doorId) {
-        DoorController controller = doorControllers.get(doorId);
-        if (controller == null) return;
+        getActivity().runOnUiThread(() -> {
+            DoorController controller = doorControllers.get(doorId);
+            if (controller == null) return;
 
-        DoorController.DoorState state = controller.getCurrentState();
+            DoorController.DoorState state = controller.getCurrentState();
 
-        switch (state) {
-            case CLOSED:
-            case PAUSED:
-                btnDoorOpens[doorId].setEnabled(true);
-                btnDoorOpens[doorId].setAlpha(1.0f);
-                btnDoorCloses[doorId].setEnabled(false);
-                btnDoorCloses[doorId].setAlpha(0.5f);
-                btnDoorPauses[doorId].setEnabled(false);
-                btnDoorPauses[doorId].setAlpha(0.5f);
-                break;
-            case OPENED:
-                btnDoorOpens[doorId].setEnabled(false);
-                btnDoorOpens[doorId].setAlpha(0.5f);
-                btnDoorCloses[doorId].setEnabled(true);
-                btnDoorCloses[doorId].setAlpha(1.0f);
-                btnDoorPauses[doorId].setEnabled(false);
-                btnDoorPauses[doorId].setAlpha(0.5f);
-                break;
-            case OPENING:
-            case CLOSING:
-                btnDoorOpens[doorId].setEnabled(false);
-                btnDoorOpens[doorId].setAlpha(0.5f);
-                btnDoorCloses[doorId].setEnabled(false);
-                btnDoorCloses[doorId].setAlpha(0.5f);
-                btnDoorPauses[doorId].setEnabled(true);
-                btnDoorPauses[doorId].setAlpha(1.0f);
-                break;
-        }
+            switch (state) {
+                case CLOSED:
+                case PAUSED:
+                    btnDoorOpens[doorId].setEnabled(true);
+                    btnDoorOpens[doorId].setAlpha(1.0f);
+                    btnDoorCloses[doorId].setEnabled(false);
+                    btnDoorCloses[doorId].setAlpha(0.5f);
+                    btnDoorPauses[doorId].setEnabled(false);
+                    btnDoorPauses[doorId].setAlpha(0.5f);
+                    break;
+                case OPENED:
+                    btnDoorOpens[doorId].setEnabled(false);
+                    btnDoorOpens[doorId].setAlpha(0.5f);
+                    btnDoorCloses[doorId].setEnabled(true);
+                    btnDoorCloses[doorId].setAlpha(1.0f);
+                    btnDoorPauses[doorId].setEnabled(false);
+                    btnDoorPauses[doorId].setAlpha(0.5f);
+                    break;
+                case OPENING:
+                case CLOSING:
+                    btnDoorOpens[doorId].setEnabled(false);
+                    btnDoorOpens[doorId].setAlpha(0.5f);
+                    btnDoorCloses[doorId].setEnabled(false);
+                    btnDoorCloses[doorId].setAlpha(0.5f);
+                    btnDoorPauses[doorId].setEnabled(true);
+                    btnDoorPauses[doorId].setAlpha(1.0f);
+                    break;
+            }
 
-        updateStatusText();
+            updateStatusText();
+        });
     }
 
     private void playDoorAnimation(int doorId, boolean isOpening) {
@@ -338,39 +352,44 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     }
 
     private void updateStatusText() {
-        StringBuilder sb = new StringBuilder("仓门状态: ");
-        boolean hasOpening = false;
-        boolean hasClosing = false;
-        boolean hasOpened = false;
+        handler.post(() -> {
+            StringBuilder sb = new StringBuilder("仓门状态: ");
+            boolean hasOpening = false;
+            boolean hasClosing = false;
+            boolean hasOpened = false;
 
-        for (Map.Entry<Integer, DoorController> entry : doorControllers.entrySet()) {
-            int doorId = entry.getKey();
-            DoorController.DoorState state = entry.getValue().getCurrentState();
+            for (Map.Entry<Integer, DoorController> entry : doorControllers.entrySet()) {
+                int doorId = entry.getKey();
+                DoorController.DoorState state = entry.getValue().getCurrentState();
 
-            switch (state) {
-                case OPENING:
-                    sb.append("仓门").append(doorId).append("开门中 ");
-                    hasOpening = true;
-                    break;
-                case OPENED:
-                    sb.append("仓门").append(doorId).append("已打开 ");
-                    hasOpened = true;
-                    break;
-                case CLOSING:
-                    sb.append("仓门").append(doorId).append("关门中 ");
-                    hasClosing = true;
-                    break;
-                case PAUSED:
-                    sb.append("仓门").append(doorId).append("已暂停 ");
-                    break;
+                switch (state) {
+                    case OPENING:
+                        sb.append("仓门").append(doorId).append("开门中 ");
+                        hasOpening = true;
+                        break;
+                    case OPENED:
+                        sb.append("仓门").append(doorId).append("已打开 ");
+                        hasOpened = true;
+                        break;
+                    case CLOSING:
+                        sb.append("仓门").append(doorId).append("关门中 ");
+                        hasClosing = true;
+                        break;
+                    case PAUSED:
+                        sb.append("仓门").append(doorId).append("已暂停 ");
+                        break;
+                }
             }
-        }
 
-        if (!hasOpening && !hasClosing && !hasOpened) {
-            sb.append("全部关闭");
-        }
+            if (!hasOpening && !hasClosing && !hasOpened) {
+                sb.append("全部关闭");
+            }
 
-        tvStatus.setText(sb.toString().trim());
+            // 确保tvStatus不为null
+            if (tvStatus != null) {
+                tvStatus.setText(sb.toString().trim());
+            }
+        });
     }
 
     @Override
@@ -476,16 +495,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
      */
     private int getDoorIdFromRegister(int registerAddress) {
         switch (registerAddress) {
-            case 0x44: return 1;
-            case 0x45: return 2;
-            case 0x46: return 3;
-            case 0x47: return 4;
-            case 0x42: return 5;
-            case 0x43: return 6;
-            case 0x40: return 7;
-            case 0x41: return 8;
-            case 0x48: return 9;
-            default: return -1;
+            case 0x44:
+                return 1;
+            case 0x45:
+                return 2;
+            case 0x46:
+                return 3;
+            case 0x47:
+                return 4;
+            case 0x42:
+                return 5;
+            case 0x43:
+                return 6;
+            case 0x40:
+                return 7;
+            case 0x41:
+                return 8;
+            case 0x48:
+                return 9;
+            default:
+                return -1;
         }
     }
 

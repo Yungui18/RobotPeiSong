@@ -50,9 +50,11 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
 import com.silan.robotpeisongcontrl.utils.ExactAlarmPermissionHelper;
 import com.silan.robotpeisongcontrl.utils.FollowModeManager;
+import com.silan.robotpeisongcontrl.utils.ManualParamManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 
 import com.silan.robotpeisongcontrl.utils.RobotController;
+import com.silan.robotpeisongcontrl.utils.SerialPortManager;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -244,6 +246,16 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
             intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
             startActivity(intent);
         });
+
+        // 初始化电机串口
+        SerialPortManager serialPortManager = SerialPortManager.getInstance();
+        if (serialPortManager.openSerialPort()) {
+            // 初始化手动参数
+            ManualParamManager paramManager = ManualParamManager.getInstance(this);
+            paramManager.initParams(serialPortManager);
+        } else {
+            Toast.makeText(this, "串口打开失败，无法初始化参数", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // 更新基站状态指示器

@@ -142,6 +142,8 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
         // 获取所有需要轮询的仓门ID列表
         List<Integer> doorIds = new ArrayList<>(doorControllers.keySet());
+        // 添加一个特殊标识(-1)表示急停状态轮询
+        doorIds.add(-1);
 
         // 轮询任务
         Runnable pollRunnable = new Runnable() {
@@ -159,12 +161,19 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                 int doorId = doorIds.get(currentIndex % doorIds.size());
                 currentIndex++;
 
-                // 获取对应的状态寄存器地址
-                int stateReg = getStateRegisterForDoor(doorId);
-                if (stateReg != -1) {
-                    currentPollingRegister = stateReg;
-                    serialPortManager.sendModbusReadCommand(0x01, stateReg, 1);
-                    Log.d(TAG, "轮询仓门" + doorId + "状态, 寄存器地址: 0x" + Integer.toHexString(stateReg));
+                if (doorId == -1) {
+                    // 轮询急停状态寄存器(0x36)
+                    currentPollingRegister = 0x36;
+                    serialPortManager.sendModbusReadCommand(0x01, 0x36, 1);
+                    Log.d(TAG, "轮询急停状态, 寄存器地址: 0x36");
+                } else {
+                    // 获取对应的状态寄存器地址
+                    int stateReg = getStateRegisterForDoor(doorId);
+                    if (stateReg != -1) {
+                        currentPollingRegister = stateReg;
+                        serialPortManager.sendModbusReadCommand(0x01, stateReg, 1);
+                        Log.d(TAG, "轮询仓门" + doorId + "状态, 寄存器地址: 0x" + Integer.toHexString(stateReg));
+                    }
                 }
 
                 // 每个仓门轮询间隔500ms，所有仓门轮询一遍后等待一段时间
@@ -308,6 +317,9 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
             if (controller == null) return;
 
             DoorController.DoorState state = controller.getCurrentState();
+            // 暂停按钮仅在开门中或关门中时可点击
+            boolean isPauseEnabled = state == DoorController.DoorState.OPENING
+                    || state == DoorController.DoorState.CLOSING;
 
             switch (state) {
                 case CLOSED:
@@ -316,16 +328,16 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                     btnDoorOpens[doorId].setAlpha(1.0f);
                     btnDoorCloses[doorId].setEnabled(false);
                     btnDoorCloses[doorId].setAlpha(0.5f);
-                    btnDoorPauses[doorId].setEnabled(false);
-                    btnDoorPauses[doorId].setAlpha(0.5f);
+                    btnDoorPauses[doorId].setEnabled(isPauseEnabled);
+                    btnDoorPauses[doorId].setAlpha(isPauseEnabled ? 1.0f : 0.5f);
                     break;
                 case OPENED:
                     btnDoorOpens[doorId].setEnabled(false);
                     btnDoorOpens[doorId].setAlpha(0.5f);
                     btnDoorCloses[doorId].setEnabled(true);
                     btnDoorCloses[doorId].setAlpha(1.0f);
-                    btnDoorPauses[doorId].setEnabled(false);
-                    btnDoorPauses[doorId].setAlpha(0.5f);
+                    btnDoorPauses[doorId].setEnabled(isPauseEnabled);
+                    btnDoorPauses[doorId].setAlpha(isPauseEnabled ? 1.0f : 0.5f);
                     break;
                 case OPENING:
                 case CLOSING:
@@ -333,8 +345,8 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                     btnDoorOpens[doorId].setAlpha(0.5f);
                     btnDoorCloses[doorId].setEnabled(false);
                     btnDoorCloses[doorId].setAlpha(0.5f);
-                    btnDoorPauses[doorId].setEnabled(true);
-                    btnDoorPauses[doorId].setAlpha(1.0f);
+                    btnDoorPauses[doorId].setEnabled(isPauseEnabled);
+                    btnDoorPauses[doorId].setAlpha(isPauseEnabled ? 1.0f : 0.5f);
                     break;
             }
 
@@ -434,9 +446,25 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     private void processValidResponse(byte[] data, int functionCode) {
         if (functionCode == 0x03) {
             // 解析0x03响应：寄存器地址对应仓门ID
-            int receivedReg = getRegisterFromResponse(data); // 从响应反推寄存器地址（根据轮询上下文）
+            int receivedReg = getRegisterFromResponse(data); // 从响应反推寄存器地址
+
+            // 检查是否是急停状态寄存器的响应
+            if (receivedReg == 0x36) {
+                // 提取急停状态数据
+                byte[] emergencyData = new byte[2];
+                System.arraycopy(data, 3, emergencyData, 0, 2);
+                int emergencyState = ((emergencyData[0] & 0xFF) << 8) | (emergencyData[1] & 0xFF);
+
+                // 急停状态：0001表示触发
+                if (emergencyState == 0x0001) {
+                    Log.d(TAG, "收到急停信号，执行急停操作");
+                    handleEmergencyStop();
+                }
+                return;
+            }
+
             if (receivedReg == currentPollingRegister) {
-                // 提取数据部分（跳过前3字节：地址、功能码、数据长度）
+                // 提取数据部分
                 byte[] stateData = new byte[2];
                 System.arraycopy(data, 3, stateData, 0, 2);
                 // 找到对应的仓门控制器并更新状态
@@ -453,6 +481,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
             // 0x06响应处理（如需要确认写入成功）
             Log.d(TAG, "0x06指令执行成功，响应数据: " + bytesToHexString(data));
         }
+    }
+
+    // 急停处理方法
+    private void handleEmergencyStop() {
+        // 发送急停指令停止所有电机
+        serialPortManager.sendEmergencyStop();
+
+        // 更新所有仓门状态为暂停
+        for (Map.Entry<Integer, DoorController> entry : doorControllers.entrySet()) {
+            int doorId = entry.getKey();
+            DoorController controller = entry.getValue();
+            controller.emergencyStop();
+            updateDoorIndicator(doorId, DoorController.DoorState.PAUSED);
+            updateDoorButtonStates(doorId);
+        }
+
+        // 显示急停提示
+        requireActivity().runOnUiThread(() ->
+                Toast.makeText(getContext(), "已执行急停操作，所有电机已停止", Toast.LENGTH_LONG).show()
+        );
     }
 
     // 从0x03响应反推寄存器地址（根据轮询上下文，也可通过请求记录匹配）

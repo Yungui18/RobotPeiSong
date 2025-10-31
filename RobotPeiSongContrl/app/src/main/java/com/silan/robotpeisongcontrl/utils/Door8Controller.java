@@ -32,29 +32,4 @@ public class Door8Controller extends DoorController {
         mSerialPortManager.sendModbusWriteCommand(0x01, 0x22, 0x0000); // 直流电机3停止
         mSerialPortManager.sendModbusWriteCommand(0x01, 0x23, 0x0000); // 直流电机4停止
     }
-
-    @Override
-    public void handleStateData(byte[] data) {
-        if (data != null && data.length >= 2) {
-            int state = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
-            switch (state) {
-                case OPENING_STATE:
-                    setCurrentState(DoorState.OPENING);
-                    break;
-                case OPENED_STATE:
-                    setCurrentState(DoorState.OPENED);
-                    break;
-                case CLOSING_STATE:
-                    setCurrentState(DoorState.CLOSING);
-                    break;
-                case CLOSED_STATE:
-                    setCurrentState(DoorState.CLOSED);
-                    break;
-                default:
-                    Log.d(TAG, "8号仓门收到未知状态码: " + state);
-            }
-        } else {
-            Log.e(TAG, "8号仓门收到无效状态数据");
-        }
-    }
 }

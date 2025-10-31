@@ -23,7 +23,7 @@ public class ManualParamManager {
 
     // 默认初始化参数
     private static final int DEFAULT_HIGH_SPEED = 9;
-    private static final int DEFAULT_LOW_SPEED = 9;
+    private static final int DEFAULT_LOW_SPEED = 8;
     private static final int DEFAULT_HIGH_TIME = 60; // 6秒 = 60*100ms(高速时间)
 
     private static ManualParamManager instance;
@@ -60,6 +60,14 @@ public class ManualParamManager {
 
             // 发送到串口
             sendMotorParamsToSerial(serialPortManager, i, highSpeed, lowSpeed, highTime);
+
+            // 添加延迟，避免连续发送导致指令丢失
+            try {
+                Thread.sleep(50); // 50ms延迟
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
         }
 
         // 初始化推杆电机参数
@@ -73,6 +81,14 @@ public class ManualParamManager {
         // 发送到串口
         sendPusherParamsToSerial(serialPortManager, pusherHighSpeed, pusherLowSpeed, pusherHighTime);
 
+        // 推杆指令发送后添加延迟
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
+
         // 发送固定参数
         sendFixedParamsToSerial(serialPortManager);
 
@@ -82,32 +98,27 @@ public class ManualParamManager {
         }
     }
 
-    // 发送直流电机参数到串口
+    // 发送直流电机参数到串口（用0x10批量发送）
     public void sendMotorParamsToSerial(SerialPortManager serialPortManager, int motorId,
                                         int highSpeed, int lowSpeed, int highTime) {
         // 寄存器地址根据电机ID计算
         int baseAddr = 0x00 + (motorId - 1) * 4;
+        // 构建数据列表：高速速度、低速速度、高速时间、堵转电流
+        int[] dataList = {highSpeed, lowSpeed, highTime, LOCK_CURRENT};
+        // 使用0x10功能码批量发送4个寄存器数据
+        serialPortManager.sendModbusWriteMultipleRegisters(0x01, baseAddr, dataList);
 
-        // 发送高速速度
-        serialPortManager.sendModbusWriteCommand(0x01, baseAddr, highSpeed);
-        // 发送低速速度
-        serialPortManager.sendModbusWriteCommand(0x01, baseAddr + 0x01, lowSpeed);
-        // 发送高速时间
-        serialPortManager.sendModbusWriteCommand(0x01, baseAddr + 0x02, highTime);
-        // 发送堵转电流(固定值)
-        serialPortManager.sendModbusWriteCommand(0x01, baseAddr + 0x03, LOCK_CURRENT);
     }
 
-    // 发送推杆电机参数到串口
+    // 发送推杆电机参数到串口(用0x10批量发送）
     public void sendPusherParamsToSerial(SerialPortManager serialPortManager,
                                          int highSpeed, int lowSpeed, int highTime) {
-        // 推杆电机寄存器地址
-        serialPortManager.sendModbusWriteCommand(0x01, 0x10, highSpeed);  // 高速速度
-        serialPortManager.sendModbusWriteCommand(0x01, 0x11, lowSpeed);  // 低速速度
-        serialPortManager.sendModbusWriteCommand(0x01, 0x12, highTime);  // 高速时间
+        // 推杆电机连续3个寄存器地址：0x10,0x11,0x12
+        int[] dataList = {highSpeed, lowSpeed, highTime};
+        serialPortManager.sendModbusWriteMultipleRegisters(0x01, 0x10, dataList);
     }
 
-    // 发送固定参数到串口
+    // 发送固定参数到串口（单寄存器仍用0x06）
     private void sendFixedParamsToSerial(SerialPortManager serialPortManager) {
         // 发送电磁铁持续通电时间
         serialPortManager.sendModbusWriteCommand(0x01, 0x13, ELECTROMAGNET_TIME);

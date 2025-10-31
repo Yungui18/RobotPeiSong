@@ -126,12 +126,18 @@ public class ManualParamsSettingsActivity extends AppCompatActivity {
 
     private void sendAllParamsToSerial(int motorHigh, int motorLow, int motorTime,
                                        int pusherHigh, int pusherLow, int pusherTime) {
-        // 发送统一参数到所有4个直流电机
+        // 发送统一参数到所有4个直流电机（每个电机用0x10批量发送）
         for (int motorId = 1; motorId <= 4; motorId++) {
             paramManager.sendMotorParamsToSerial(serialPortManager, motorId, motorHigh, motorLow, motorTime);
+            // 批量发送后增加短延迟，避免设备处理不过来
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        // 发送推杆电机参数
+        // 发送推杆电机参数（0x10批量发送）
         paramManager.sendPusherParamsToSerial(serialPortManager, pusherHigh, pusherLow, pusherTime);
     }
 

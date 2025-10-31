@@ -41,9 +41,17 @@ public abstract  class DoorController {
     public void pause() {
         if (mCurrentState == DoorState.OPENING || mCurrentState == DoorState.CLOSING) {
             stopDoorOperation();
-            mCurrentState = DoorState.PAUSED;
-            Log.d(TAG, "仓门" + mDoorId + "已暂停");
+            Log.d(TAG, "仓门" + mDoorId + "已暂停（保持" + mCurrentState + "状态）");
         }
+    }
+
+    /**
+     * 处理急停操作
+     */
+    public void emergencyStop() {
+        stopDoorOperation();
+        mCurrentState = DoorState.PAUSED;
+        Log.d(TAG, "仓门" + mDoorId + "已急停");
     }
 
     protected abstract void stopDoorOperation();
@@ -57,6 +65,12 @@ public abstract  class DoorController {
     }
 
     public void handleStateData(byte[] data) {
+        // 如果当前是暂停状态，不更新状态（防止被轮询数据覆盖）
+        if (mCurrentState == DoorState.PAUSED) {
+            Log.d(TAG, "仓门" + mDoorId + "处于暂停状态，忽略状态更新");
+            return;
+        }
+
         if (data == null || data.length < 2) {
             Log.e(TAG, "仓门" + mDoorId + "状态数据异常，长度不足");
             return;
@@ -84,7 +98,6 @@ public abstract  class DoorController {
                 mCurrentState = DoorState.CLOSED;
                 break;
             default:
-                // 未知状态明确打印，便于调试
                 Log.d(TAG, "仓门" + mDoorId + "收到未知状态码: 0x" + Integer.toHexString(stateValue)
                         + "（十进制：" + stateValue + "）");
                 // 未知状态不修改当前状态，避免覆盖有效状态

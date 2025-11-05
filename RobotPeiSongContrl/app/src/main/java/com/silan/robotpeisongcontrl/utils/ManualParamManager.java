@@ -23,7 +23,7 @@ public class ManualParamManager {
 
     // 默认初始化参数
     private static final int DEFAULT_HIGH_SPEED = 9;
-    private static final int DEFAULT_LOW_SPEED = 8;
+    private static final int DEFAULT_LOW_SPEED = 9;
     private static final int DEFAULT_HIGH_TIME = 60; // 6秒 = 60*100ms(高速时间)
 
     private static ManualParamManager instance;

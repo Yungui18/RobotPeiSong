@@ -19,7 +19,7 @@ public class SerialPortManager {
     private InputStream mInputStream;
     private ReadThread mReadThread;
     private OnDataReceivedListener mDataReceivedListener;
-    private static final String DEVICE_PATH = "/dev/ttyUSB5"; // 根据实际设备修改
+    private static final String DEVICE_PATH = "/dev/ttyUSB6"; // 根据实际设备修改
     private static final int BAUDRATE = 9600; // Modbus RTU常用波特率
 
     // 新增：记录最后发送的指令用于响应验证
@@ -303,9 +303,16 @@ public class SerialPortManager {
                         frameBuffer.reset(); // 重置缓冲区
                         Log.d(TAG, "接收到完整帧: " + bytesToHexString(completeFrame));
 
-                        // 新增：验证0x10指令响应
+                        // 过滤长度不足2字节的无效帧
+                        if (completeFrame.length < 2) {
+                            Log.w(TAG, "跳过无效短帧，长度: " + completeFrame.length);
+                            continue;
+                        }
+
+                        // 验证0x10指令响应
                         verifyResponse(completeFrame);
 
+                        // 回调给监听器
                         if (mDataReceivedListener != null) {
                             mDataReceivedListener.onDataReceived(completeFrame);
                         }
@@ -327,16 +334,28 @@ public class SerialPortManager {
         }
 
         /**
-         * 新增：验证0x10指令响应是否正确
+         * 验证0x10指令响应是否正确
          */
         private void verifyResponse(byte[] response) {
-            if (lastSentCommand == null || lastSentCommand.length < 2) return;
+            if (response == null || response.length < 2) {
+                Log.w(TAG, "响应数据无效，长度不足: " + (response == null ? 0 : response.length));
+                return;
+            }
+            if (lastSentCommand == null || lastSentCommand.length < 2) {
+                Log.w(TAG, "无历史发送指令，无法验证响应");
+                return;
+            }
 
             int sentFunctionCode = lastSentCommand[1] & 0xFF;
             int responseFunctionCode = response[1] & 0xFF;
 
             // 0x10响应功能码应与发送一致，且包含起始地址和数量
             if (sentFunctionCode == 0x10 && responseFunctionCode == 0x10) {
+                // 校验响应长度是否满足（至少6字节：地址+功能码+起始地址2字节+数量2字节）
+                if (response.length < 6) {
+                    Log.w(TAG, "0x10响应长度不足，无法验证");
+                    return;
+                }
                 // 验证设备地址
                 if (response[0] != lastSentCommand[0]) {
                     Log.w(TAG, "0x10响应设备地址不匹配");

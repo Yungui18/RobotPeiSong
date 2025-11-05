@@ -323,13 +323,32 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
             switch (state) {
                 case CLOSED:
-                case PAUSED:
                     btnDoorOpens[doorId].setEnabled(true);
                     btnDoorOpens[doorId].setAlpha(1.0f);
                     btnDoorCloses[doorId].setEnabled(false);
                     btnDoorCloses[doorId].setAlpha(0.5f);
                     btnDoorPauses[doorId].setEnabled(isPauseEnabled);
                     btnDoorPauses[doorId].setAlpha(isPauseEnabled ? 1.0f : 0.5f);
+                    break;
+                case PAUSED:
+                    // 根据暂停前的状态决定哪个按钮可点击
+                    DoorController.DoorState previousState = controller.getPreviousState();
+                    if (previousState == DoorController.DoorState.OPENING) {
+                        // 之前在开门，允许继续开门
+                        btnDoorOpens[doorId].setEnabled(true);
+                        btnDoorOpens[doorId].setAlpha(1.0f);
+                        btnDoorCloses[doorId].setEnabled(false);
+                        btnDoorCloses[doorId].setAlpha(0.5f);
+                    } else if (previousState == DoorController.DoorState.CLOSING) {
+                        // 之前在关门，允许继续关门
+                        btnDoorOpens[doorId].setEnabled(false);
+                        btnDoorOpens[doorId].setAlpha(0.5f);
+                        btnDoorCloses[doorId].setEnabled(true);
+                        btnDoorCloses[doorId].setAlpha(1.0f);
+                    }
+                    // 暂停状态下暂停按钮禁用
+                    btnDoorPauses[doorId].setEnabled(false);
+                    btnDoorPauses[doorId].setAlpha(0.5f);
                     break;
                 case OPENED:
                     btnDoorOpens[doorId].setEnabled(false);
@@ -347,6 +366,15 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                     btnDoorCloses[doorId].setAlpha(0.5f);
                     btnDoorPauses[doorId].setEnabled(isPauseEnabled);
                     btnDoorPauses[doorId].setAlpha(isPauseEnabled ? 1.0f : 0.5f);
+                    break;
+                case IDLE:
+                    // 空闲状态默认允许开门
+                    btnDoorOpens[doorId].setEnabled(true);
+                    btnDoorOpens[doorId].setAlpha(1.0f);
+                    btnDoorCloses[doorId].setEnabled(false);
+                    btnDoorCloses[doorId].setAlpha(0.5f);
+                    btnDoorPauses[doorId].setEnabled(false);
+                    btnDoorPauses[doorId].setAlpha(0.5f);
                     break;
             }
 

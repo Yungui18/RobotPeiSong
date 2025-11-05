@@ -18,6 +18,7 @@ public abstract  class DoorController {
     protected static final int CLOSING_STATE = 0x0201; // 关门中
     protected static final int CLOSED_STATE = 0x0202; // 关门完成
     protected static final int IDLE_STATE = 0x0000; // 空闲/初始状态
+    protected DoorState mPreviousState = DoorState.IDLE;// 记录暂停前的状态
 
     // 仓门状态枚举
     public enum DoorState {
@@ -40,9 +41,17 @@ public abstract  class DoorController {
 
     public void pause() {
         if (mCurrentState == DoorState.OPENING || mCurrentState == DoorState.CLOSING) {
+            // 保存暂停前的状态
+            mPreviousState = mCurrentState;
             stopDoorOperation();
-            Log.d(TAG, "仓门" + mDoorId + "已暂停（保持" + mCurrentState + "状态）");
+            mCurrentState = DoorState.PAUSED;
+            Log.d(TAG, "仓门" + mDoorId + "已暂停（暂停前状态：" + mPreviousState + "）");
         }
+    }
+
+    // 获取暂停前的状态
+    public DoorState getPreviousState() {
+        return mPreviousState;
     }
 
     /**

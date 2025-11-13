@@ -434,6 +434,7 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
     @Override
     public void onDataReceived(byte[] data) {
+        Log.d(TAG, "收到串口响应数据，长度: " + data.length + "，原始数据: " + bytesToHexString(data));
         if (data == null || data.length < 3) { // 最小帧长度：设备地址(1)+功能码(1)+CRC(2) 不，最小有效帧至少3字节（含错误码）
             Log.e(TAG, "无效的Modbus响应数据，长度不足");
             return;
@@ -473,40 +474,63 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     // 处理校验通过的响应数据
     private void processValidResponse(byte[] data, int functionCode) {
         if (functionCode == 0x03) {
-            // 解析0x03响应：寄存器地址对应仓门ID
-            int receivedReg = getRegisterFromResponse(data); // 从响应反推寄存器地址
+            // 解析0x03响应：通过当前轮询的寄存器地址确定对应的仓门
+            int receivedReg = currentPollingRegister;
 
             // 检查是否是急停状态寄存器的响应
             if (receivedReg == 0x36) {
-                // 提取急停状态数据
-                byte[] emergencyData = new byte[2];
-                System.arraycopy(data, 3, emergencyData, 0, 2);
-                int emergencyState = ((emergencyData[0] & 0xFF) << 8) | (emergencyData[1] & 0xFF);
+                // 提取急停状态数据（2字节）
+                if (data.length >= 5) { // 确保有足够数据（地址1 + 功能码1 + 数据长度1 + 数据2 + CRC2）
+                    byte[] emergencyData = new byte[2];
+                    System.arraycopy(data, 3, emergencyData, 0, 2);
+                    int emergencyState = ((emergencyData[0] & 0xFF) << 8) | (emergencyData[1] & 0xFF);
 
-                // 急停状态：0001表示触发
-                if (emergencyState == 0x0001) {
-                    Log.d(TAG, "收到急停信号，执行急停操作");
-                    handleEmergencyStop();
+                    // 急停状态：0x0001表示触发
+                    if (emergencyState == 0x0001) {
+                        Log.d(TAG, "收到急停信号，执行急停操作");
+                        handleEmergencyStop();
+                    }
+                } else {
+                    Log.e(TAG, "急停状态响应数据长度不足");
                 }
                 return;
             }
 
-            if (receivedReg == currentPollingRegister) {
-                // 提取数据部分
+            // 通过寄存器地址获取对应的仓门ID（使用已有的映射方法）
+            int doorId = getDoorIdFromRegister(receivedReg);
+            if (doorId == -1) {
+                Log.w(TAG, "未找到寄存器地址0x" + Integer.toHexString(receivedReg)+"对应的仓门");
+                return;
+            }
+
+            // 获取对应的仓门控制器
+            DoorController controller = doorControllers.get(doorId);
+            if (controller == null) {
+                Log.w(TAG, "未找到仓门" + doorId + "的控制器");
+                return;
+            }
+
+            // 提取状态数据（2字节寄存器值）
+            if (data.length >= 5) { // 验证数据长度
                 byte[] stateData = new byte[2];
                 System.arraycopy(data, 3, stateData, 0, 2);
-                // 找到对应的仓门控制器并更新状态
-                for (Map.Entry<Integer, DoorController> entry : doorControllers.entrySet()) {
-                    if (getStateRegisterForDoor(entry.getKey()) == receivedReg) {
-                        entry.getValue().handleStateData(stateData);
-                        updateDoorIndicator(entry.getKey(), entry.getValue().getCurrentState());
-                        updateDoorButtonStates(entry.getKey());
-                        break;
-                    }
-                }
+
+                // 处理状态数据并更新UI
+                handler.post(() -> {
+                    controller.handleStateData(stateData);
+                    DoorController.DoorState newState = controller.getCurrentState();
+                    Log.d(TAG, "仓门" + doorId + "状态更新为: " + newState);
+
+                    // 更新指示器和按钮状态
+                    updateDoorIndicator(doorId, newState);
+                    updateDoorButtonStates(doorId);
+                });
+            } else {
+                Log.e(TAG, "仓门状态响应数据长度不足，寄存器0x" + Integer.toHexString(receivedReg));
             }
+
         } else if (functionCode == 0x06) {
-            // 0x06响应处理（如需要确认写入成功）
+            // 0x06响应处理（确认写入成功）
             Log.d(TAG, "0x06指令执行成功，响应数据: " + bytesToHexString(data));
         }
     }

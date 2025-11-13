@@ -16,7 +16,7 @@ public class Door6Controller extends DoorController {
     public void open() {
         Log.d(TAG, "发送6号仓门开门指令");
         setCurrentState(DoorState.OPENING);
-        mSerialPortManager.sendModbusWriteCommand(0x01, DOOR6_CONTROL_REG, OPEN_COMMAND);
+        mSerialPortManager.sendModbusWriteCommand(0x01, DOOR6_CONTROL_REG, OPEN_ECOMMAND);
     }
 
     @Override

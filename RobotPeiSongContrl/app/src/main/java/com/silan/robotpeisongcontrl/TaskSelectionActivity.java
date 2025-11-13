@@ -63,16 +63,11 @@ public class TaskSelectionActivity extends BaseActivity {
         // 初始化任务状态数组（长度为仓门数量）
         taskAssigned = new boolean[doorCount];
 
-        // 获取仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
         // 获取实际仓门编号列表（与硬件仓门ID对应）
         doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
-        // 初始化任务状态数组（长度为仓门数量）
-        taskAssigned = new boolean[doorCount];
 
         // 初始化仓门状态管理器
         doorStateManager = DoorStateManager.getInstance(this);
-
 
         // 初始化动态容器
         taskButtonsContainer = findViewById(R.id.task_buttons_container);

@@ -12,6 +12,7 @@ public abstract  class DoorController {
 
     // 统一的控制指令和状态常量（所有仓门通用）
     public static final int OPEN_COMMAND = 0x0100; // 开门
+    public static final int OPEN_ECOMMAND = 0x0001; // 电磁铁开门
     protected static final int OPENING_STATE = 0x0101; // 开门中
     protected static final int OPENED_STATE = 0x0102; // 开门完成
     public static final int CLOSE_COMMAND = 0x0200; // 关门

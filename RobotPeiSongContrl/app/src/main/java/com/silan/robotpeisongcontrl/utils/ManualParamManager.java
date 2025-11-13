@@ -18,7 +18,7 @@ public class ManualParamManager {
     private static final String PUSHER_HIGH_TIME = "pusher_high_time";// 推杆电机高速时间
 
     // 固定参数
-    public static final int LOCK_CURRENT = 3000; // 3000mA(堵转电流)
+    public static final int LOCK_CURRENT = 65535; // 3000mA(堵转电流)
     public static final int ELECTROMAGNET_TIME = 1000; // 1s = 1000ms(电磁铁通电触发时间)
 
     // 默认初始化参数

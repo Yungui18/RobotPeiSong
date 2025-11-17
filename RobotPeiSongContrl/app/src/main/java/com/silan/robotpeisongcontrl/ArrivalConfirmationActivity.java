@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -59,10 +60,13 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private boolean isDeliveryFailed = false;
     private int currentDoorTask = 0;
     private DoorStateManager doorStateManager; // 仓门状态管理器实例
+    private List<Integer> currentTaskDoorIds = new ArrayList<>();
+    private static final int DOOR_OPEN_DELAY = 300;
+    private Handler doorHandler = new Handler(Looper.getMainLooper());
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arrival_confirmation);
 
         // 获取POI列表
@@ -70,7 +74,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         String poiListJson = intent.getStringExtra("poi_list");
         if (poiListJson != null) {
             Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Poi>>(){}.getType();
+            Type type = new TypeToken<ArrayList<Poi>>() {
+            }.getType();
             poiList = gson.fromJson(poiListJson, type);
         }
 
@@ -104,11 +109,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
         int dynamicDoorCount = WarehouseDoorSettingsFragment.getDoorNumbers(this).size();
         if (selectedDoors == null || selectedDoors.length != dynamicDoorCount) {
-                selectedDoors = new boolean[dynamicDoorCount]; // 按实际数量初始化
+            selectedDoors = new boolean[dynamicDoorCount]; // 按实际数量初始化
         }
 
         if (isScheduledTask) {
             performPickupAction();
+        }
+
+        // 关键修改：获取当前任务关联的仓门ID
+        Poi currentPoi = TaskManager.getInstance().getCurrentPoi();
+        if (currentPoi != null) {
+            currentTaskDoorIds = TaskManager.getInstance().getDoorIdsForPoint(currentPoi.getDisplayName());
+            Log.d("ArrivalConfirmation", "当前任务关联的所有仓门ID：" + currentTaskDoorIds);
         }
 
         // 取物按钮点击事件
@@ -144,6 +156,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         List<Integer> enabledDoorIds = WarehouseDoorSettingsFragment.getDoorNumbers(this);
         // 基于实际启用的仓门数量创建数组
         boolean[] doorsToOpen = new boolean[enabledDoorIds.size()];
+        // 优先使用当前任务关联的仓门ID
+        if (!currentTaskDoorIds.isEmpty()) {
+            for (int doorId : currentTaskDoorIds) {
+                int doorIndex = enabledDoorIds.indexOf(doorId);
+                if (doorIndex != -1) {
+                    doorsToOpen[doorIndex] = true; // 标记所有关联的仓门
+                    Log.d("ArrivalConfirmation", "要打开的仓门索引：" + doorIndex + "（对应ID：" + doorId + "）");
+                } else {
+                    Log.e("ArrivalConfirmation", "仓门ID " + doorId + " 不在启用列表中");
+                }
+            }
+        }
 
         if (currentDoorTask > 0) {
             // 巡游模式：找到任务指定的仓门ID在启用列表中的索引
@@ -191,14 +215,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private void handleCompleteAction() {
         // 关闭所有已打开的仓门
         doorStateManager.closeAllOpenedDoors();
-        // 移除当前点位的所有任务
+        // 显示提示：等待仓门关闭
+        Toast.makeText(this, "等待仓门关闭...", Toast.LENGTH_SHORT).show();
+        // 仅移除当前正在处理的点位任务（保留其他未处理任务）
         TaskManager taskManager = TaskManager.getInstance();
-        if (poiList != null) {
-            for (Poi poi : poiList) {
-                taskManager.removeTask(poi);
-            }
+        Poi currentPoi = taskManager.getCurrentPoi(); // 获取当前正在处理的点位
+        if (currentPoi != null) {
+            taskManager.removeTask(currentPoi); // 只删除当前点位的任务
         }
-        proceedToNextTask(); // 直接继续下一个任务
+        // 延迟5秒后再继续下一个任务（关键修改）
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            proceedToNextTask();
+        }, 10000); // 5000毫秒 = 5秒
     }
 
     /**
@@ -352,14 +380,27 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         // 获取需要打开的仓门索引数组
         boolean[] doorsToOpen = getDoorsToOpen();
 
-        // 遍历索引数组，打开对应ID的仓门
+        // 收集需要打开的仓门ID（过滤无效项）
+        List<Integer> doorsToOpenList = new ArrayList<>();
         for (int i = 0; i < doorsToOpen.length; i++) {
             if (doorsToOpen[i] && i < enabledDoorIds.size()) {
-                int doorId = enabledDoorIds.get(i); // 从启用列表中获取真实仓门ID（如5、6、9等）
-                doorStateManager.openDoor(doorId); // 打开仓门并记录状态
-                Log.d("ArrivalConfirmation", "打开仓门：" + doorId);
+                int doorId = enabledDoorIds.get(i);
+                doorsToOpenList.add(doorId);
+                Log.d("ArrivalConfirmation", "待打开的仓门ID：" + doorId);
             }
         }
+
+        // 按间隔发送每个仓门的打开指令
+        for (int i = 0; i < doorsToOpenList.size(); i++) {
+            final int doorId = doorsToOpenList.get(i);
+            // 第i个仓门延迟 i * DOOR_OPEN_DELAY 毫秒发送（避免同时发送）
+            doorHandler.postDelayed(() -> {
+                // 调用仓门管理器打开仓门（强制发送指令，不依赖当前状态）
+                doorStateManager.openDoor(doorId);
+                Log.d("ArrivalConfirmation", "延迟发送打开指令，仓门ID：" + doorId);
+            }, i * DOOR_OPEN_DELAY);
+        }
+
         Toast.makeText(this, "请取走物品", Toast.LENGTH_SHORT).show();
     }
 

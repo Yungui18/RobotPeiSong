@@ -3,6 +3,8 @@ package com.silan.robotpeisongcontrl;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -143,7 +145,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
             final int currentDoorId = doorId;
             button.setOnClickListener(v -> {
-                Log.d("TaskClick", "点击了仓门" + currentDoorId);
+                Log.d("TaskClick", "点击了仓门" + currentDoorId + "，通过DoorStateManager打开");
                 doorStateManager.openDoor(currentDoorId);// 点击即打开对应仓门
                 if (selectedButtonIndices.contains(currentDoorId)) {
                     selectedButtonIndices.remove(currentDoorId);
@@ -206,15 +208,18 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         Poi poi = RobotController.findPoiByName(pointName, poiList);
 
         if (poi != null) {
-            // 添加POI对象到任务队列
+            // 检查该点位是否已分配任务
             if (taskManager.isPointAssigned(poi.getDisplayName())) {
                 Toast.makeText(this, "该点位已分配任务，不可重复分配", Toast.LENGTH_SHORT).show();
                 return;
             }
-            for (int index : selectedButtonIndices) {
-                taskManager.addTask(poi);
-            }
-            // 显示任务细节
+
+            // 关键修改：将选中的多个仓门ID转为List
+            List<Integer> selectedDoorIds = new ArrayList<>(selectedButtonIndices);
+            // 关联点位与多个仓门ID
+            taskManager.addPointWithDoors(poi, selectedDoorIds);
+
+            // 显示任务细节（保持不变）
             showTaskDetails(poi, selectedButtonIndices);
             // 恢复按钮状态
             clearTaskButtons();
@@ -243,13 +248,18 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
 
         // 选择完毕后关闭所有已打开的仓门
         doorStateManager.closeAllOpenedDoors();
+        // 显示提示：等待仓门关闭
+        Toast.makeText(this, "等待仓门关闭...", Toast.LENGTH_SHORT).show();
 
         // 跳转至配送执行页面
         timer.cancel(); // 取消倒计时
-        Intent intent = new Intent(this, MovingActivity.class);
-        intent.putExtra("poi_list", new Gson().toJson(poiList)); // 传递POI列表
-        startActivity(intent);
-        finish();
+        // 延迟5秒后再跳转（关键修改）
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            Intent intent = new Intent(this, MovingActivity.class);
+            intent.putExtra("poi_list", new Gson().toJson(poiList));
+            startActivity(intent);
+            finish();
+        }, 10000); // 5000毫秒 = 5秒
     }
 
     private void showTaskDetails(Poi poi, Set<Integer> selectedButtons) {

@@ -82,13 +82,21 @@ public class SerialPortManager {
      * @param data 数据
      */
     public void sendModbusWriteCommand(int deviceId, int register, int data) {
+        // 关键修改1：自动打开串口
+        if (!openSerialPort()) {
+            Log.e(TAG, "串口打开失败，无法发送指令");
+            if (mDataReceivedListener != null) {
+                mDataReceivedListener.onError("串口打开失败");
+            }
+            return;
+        }
+
         if (mOutputStream == null) {
-            Log.e(TAG, "串口未打开，无法发送数据");
+            Log.e(TAG, "串口输出流为空，无法发送数据");
             return;
         }
 
         // 构建Modbus RTU写单个寄存器指令 (功能码0x06)
-        // 格式: [设备地址][功能码][寄存器地址高字节][寄存器地址低字节][数据高字节][数据低字节][CRC高字节][CRC低字节]
         byte[] command = new byte[8];
         command[0] = (byte) deviceId;
         command[1] = 0x06; // 写单个寄存器功能码
@@ -106,7 +114,7 @@ public class SerialPortManager {
             mOutputStream.write(command);
             mOutputStream.flush();
             lastSentCommand = command.clone(); // 记录发送的指令
-            Log.d(TAG, "发送Modbus指令(0x06): " + bytesToHexString(command));
+            Log.d(TAG, "发送Modbus指令(0x06): 设备ID=" + deviceId + " 寄存器=" + register + " 数据=0x" + Integer.toHexString(data) + " | 指令: " + bytesToHexString(command));
         } catch (IOException e) {
             Log.e(TAG, "发送数据失败", e);
             if (mDataReceivedListener != null) {
@@ -115,6 +123,7 @@ public class SerialPortManager {
         }
     }
 
+
     /**
      * 新增：发送Modbus写多个寄存器指令（功能码0x10）
      * @param deviceId 设备ID
@@ -122,6 +131,15 @@ public class SerialPortManager {
      * @param dataList 要写入的数据列表
      */
     public void sendModbusWriteMultipleRegisters(int deviceId, int startRegister, int[] dataList) {
+        // 关键修改2：自动打开串口
+        if (!openSerialPort()) {
+            Log.e(TAG, "串口打开失败，无法发送指令");
+            if (mDataReceivedListener != null) {
+                mDataReceivedListener.onError("串口打开失败");
+            }
+            return;
+        }
+
         if (mOutputStream == null) {
             Log.e(TAG, "串口未打开，无法发送数据");
             return;
@@ -160,7 +178,7 @@ public class SerialPortManager {
             mOutputStream.write(command);
             mOutputStream.flush();
             lastSentCommand = command.clone(); // 记录发送的指令
-            Log.d(TAG, "发送Modbus指令(0x10): " + bytesToHexString(command));
+            Log.d(TAG, "发送Modbus指令(0x10): 设备ID=" + deviceId + " 起始寄存器=" + startRegister + " 数据长度=" + dataCount + " | 指令: " + bytesToHexString(command));
         } catch (IOException e) {
             Log.e(TAG, "发送数据失败", e);
             if (mDataReceivedListener != null) {
@@ -176,7 +194,15 @@ public class SerialPortManager {
      * @param length 读取长度
      */
     public void sendModbusReadCommand(int deviceId, int register, int length) {
-        // 原有代码保持不变...
+        // 关键修改3：自动打开串口
+        if (!openSerialPort()) {
+            Log.e(TAG, "串口打开失败，无法发送指令");
+            if (mDataReceivedListener != null) {
+                mDataReceivedListener.onError("串口打开失败");
+            }
+            return;
+        }
+
         if (mOutputStream == null) {
             Log.e(TAG, "串口未打开，无法发送数据");
             return;
@@ -200,7 +226,7 @@ public class SerialPortManager {
             mOutputStream.write(command);
             mOutputStream.flush();
             lastSentCommand = command.clone(); // 记录发送的指令
-            Log.d(TAG, "发送Modbus读指令: " + bytesToHexString(command));
+            Log.d(TAG, "发送Modbus读指令: 设备ID=" + deviceId + " 寄存器=" + register + " 长度=" + length + " | 指令: " + bytesToHexString(command));
         } catch (IOException e) {
             Log.e(TAG, "发送数据失败", e);
             if (mDataReceivedListener != null) {
@@ -213,6 +239,12 @@ public class SerialPortManager {
      * 发送急停指令（0x10功能码），停止所有电机
      */
     public void sendEmergencyStop() {
+        // 关键修改4：自动打开串口
+        if (!openSerialPort()) {
+            Log.e(TAG, "串口打开失败，无法发送急停指令");
+            return;
+        }
+
         if (mOutputStream == null) {
             Log.e(TAG, "串口未打开，无法发送急停指令");
             return;

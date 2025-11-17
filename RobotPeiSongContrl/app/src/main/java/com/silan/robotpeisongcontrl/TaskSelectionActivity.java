@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -63,11 +65,16 @@ public class TaskSelectionActivity extends BaseActivity {
         // 初始化任务状态数组（长度为仓门数量）
         taskAssigned = new boolean[doorCount];
 
+        // 获取仓门数量
+        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
         // 获取实际仓门编号列表（与硬件仓门ID对应）
         doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        // 初始化任务状态数组（长度为仓门数量）
+        taskAssigned = new boolean[doorCount];
 
         // 初始化仓门状态管理器
         doorStateManager = DoorStateManager.getInstance(this);
+
 
         // 初始化动态容器
         taskButtonsContainer = findViewById(R.id.task_buttons_container);
@@ -138,13 +145,14 @@ public class TaskSelectionActivity extends BaseActivity {
                 break;
         }
 
-        // 绑定按钮并设置点击事件
+        // 绑定按钮并设置点击事件（核心修改部分）
         for (int i = 0; i < doorCount; i++) {
             final int index = i;
-            // 获取实际仓门ID
+            // 关键修改1：获取当前循环对应的实际仓门ID（从doorNumbers列表中）
             final int doorId = doorNumbers.get(i);
+            // 关键修改2：用实际仓门ID拼接按钮ID（与布局文件中的ID匹配）
             taskButtons[i] = taskButtonsContainer.findViewById(
-                    getResources().getIdentifier("btn_task" + (i + 1), "id", getPackageName())
+                    getResources().getIdentifier("btn_task" + doorId, "id", getPackageName())
             );
 
             if (taskButtons[i] != null) {
@@ -152,8 +160,11 @@ public class TaskSelectionActivity extends BaseActivity {
                     // 选择任务按钮
                     selectTask(index);
                     // 点击即打开对应仓门（无论是否分配任务）
-                    doorStateManager.openDoor(doorId);
+                    Log.d("TaskSelection", "点击了仓门" + doorId + "，通过DoorStateManager打开");
+                    doorStateManager.openDoor(doorId); // 关键修改3：确保传入实际仓门ID
                 });
+            } else {
+                Log.e("TaskSelection", "未找到按钮: btn_task" + doorId);
             }
         }
     }
@@ -246,10 +257,21 @@ public class TaskSelectionActivity extends BaseActivity {
 
         if (poi != null) {
             // 检查该点位是否已被分配（确保一个点位只能有一个任务）
+            int selectedDoorId = doorNumbers.get(currentSelectedButtonIndex); // 获取实际仓门ID（如5、6、9）
+
             if (taskManager.isPointAssigned(poi.getDisplayName())) {
                 Toast.makeText(this, "该点位已分配任务，不可重复分配", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            // 将单个仓门ID包装为List
+            List<Integer> doorIds = new ArrayList<>();
+            doorIds.add(selectedDoorId);
+
+            // 调用TaskManager的新方法，关联点位与仓门ID列表
+            taskManager.addPointWithDoors(poi, doorIds);
+            Log.d("TaskSelection", "单点任务添加成功，点位：" + pointName + "，关联仓门ID列表：" + doorIds);
+
             // 添加POI对象到任务队列
             taskManager.addTask(poi);
 
@@ -297,14 +319,19 @@ public class TaskSelectionActivity extends BaseActivity {
             timer.cancel();
             // 关闭所有已打开的仓门
             doorStateManager.closeAllOpenedDoors();
+            // 显示提示：等待仓门关闭
+            Toast.makeText(this, "等待仓门关闭...", Toast.LENGTH_SHORT).show();
 
-            Intent intent = new Intent(this, MovingActivity.class);
-            intent.putExtra("poi_list", new Gson().toJson(poiList));
-            startActivity(intent);
-            for (Button button : taskButtons) {
-                button.setBackgroundResource(R.drawable.button_green_rect);
-            }
-            finish();
+            // 延迟5秒后再跳转（关键修改）
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                Intent intent = new Intent(this, MovingActivity.class);
+                intent.putExtra("poi_list", new Gson().toJson(poiList));
+                startActivity(intent);
+                for (Button button : taskButtons) {
+                    button.setBackgroundResource(R.drawable.button_green_rect);
+                }
+                finish();
+            }, 10000); // 5000毫秒 = 5秒
         } else {
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
         }

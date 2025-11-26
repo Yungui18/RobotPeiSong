@@ -27,7 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
@@ -63,12 +63,16 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private List<Integer> currentTaskDoorIds = new ArrayList<>();
     private static final int DOOR_OPEN_DELAY = 300;
     private Handler doorHandler = new Handler(Looper.getMainLooper());
+    private List<BasicSettingsFragment.DoorInfo> enabledDoors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arrival_confirmation);
 
+        enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
+        // 计算实际启用的仓门数量（避免空指针）
+        int dynamicDoorCount = (enabledDoors != null) ? enabledDoors.size() : 0;
         // 获取POI列表
         Intent intent = getIntent();
         String poiListJson = intent.getStringExtra("poi_list");
@@ -107,9 +111,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         }.start();
         isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
         selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
-        int dynamicDoorCount = WarehouseDoorSettingsFragment.getDoorNumbers(this).size();
         if (selectedDoors == null || selectedDoors.length != dynamicDoorCount) {
-            selectedDoors = new boolean[dynamicDoorCount]; // 按实际数量初始化
+            selectedDoors = new boolean[dynamicDoorCount];
         }
 
         if (isScheduledTask) {
@@ -131,12 +134,15 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         currentDoorTask = getIntent().getIntExtra("current_door_task", 0);
     }
 
+    /**
+     * 记录配送失败
+     */
     private void recordDeliveryFailure() {
         // 获取当前点位信息
         Poi currentPoi = TaskManager.getInstance().getCurrentPoi();
 
         if (currentPoi == null) {
-            Log.e("ArrivalConfirmation", "Current Poi is null");
+            Log.e("ArrivalConfirmation", "当前点位为空，无法记录失败");
             return;
         }
 
@@ -151,44 +157,49 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         DeliveryFailureManager.addFailure(getApplicationContext(), failure);
     }
 
+    /**
+     * 计算需要打开的仓门（基于动态仓门配置）
+     *
+     * @return 仓门打开状态数组（索引对应启用仓门列表的顺序）
+     */
     private boolean[] getDoorsToOpen() {
-        // 从全局配置获取实际启用的仓门ID列表（关键：动态获取）
-        List<Integer> enabledDoorIds = WarehouseDoorSettingsFragment.getDoorNumbers(this);
-        // 基于实际启用的仓门数量创建数组
-        boolean[] doorsToOpen = new boolean[enabledDoorIds.size()];
+        List<Integer> enabledHardwareIds = new ArrayList<>();
+        if (enabledDoors != null) {
+            for (BasicSettingsFragment.DoorInfo doorInfo : enabledDoors) {
+                enabledHardwareIds.add(doorInfo.getHardwareId());
+            }
+        }
+        int doorCount = enabledHardwareIds.size();
+        boolean[] doorsToOpen = new boolean[doorCount];
         // 优先使用当前任务关联的仓门ID
         if (!currentTaskDoorIds.isEmpty()) {
-            for (int doorId : currentTaskDoorIds) {
-                int doorIndex = enabledDoorIds.indexOf(doorId);
+            for (int hardwareId : currentTaskDoorIds) {
+                int doorIndex = enabledHardwareIds.indexOf(hardwareId);
                 if (doorIndex != -1) {
-                    doorsToOpen[doorIndex] = true; // 标记所有关联的仓门
-                    Log.d("ArrivalConfirmation", "要打开的仓门索引：" + doorIndex + "（对应ID：" + doorId + "）");
+                    doorsToOpen[doorIndex] = true;
+                    Log.d("ArrivalConfirmation", "任务关联仓门：索引=" + doorIndex + "，硬件ID=" + hardwareId);
                 } else {
-                    Log.e("ArrivalConfirmation", "仓门ID " + doorId + " 不在启用列表中");
+                    Log.e("ArrivalConfirmation", "任务关联的仓门ID=" + hardwareId + "未在启用列表中");
                 }
             }
-        }
-
-        if (currentDoorTask > 0) {
-            // 巡游模式：找到任务指定的仓门ID在启用列表中的索引
-            int doorIndex = enabledDoorIds.indexOf(currentDoorTask);
-            if (doorIndex != -1) { // 确保该仓门在启用列表中
+        } else if (currentDoorTask > 0) {
+            int doorIndex = enabledHardwareIds.indexOf(currentDoorTask);
+            if (doorIndex != -1) {
                 doorsToOpen[doorIndex] = true;
+                Log.d("ArrivalConfirmation", "巡游任务仓门：索引=" + doorIndex + "，硬件ID=" + currentDoorTask);
+            } else {
+                Log.e("ArrivalConfirmation", "巡游任务仓门ID=" + currentDoorTask + "未在启用列表中");
             }
         } else if (selectedDoors != null) {
-            // 定时模式：selectedDoors是旧逻辑的boolean数组，需转换为仓门ID匹配
-            // 若selectedDoors存储的是“启用列表中的索引”，直接复用；若存储的是原始ID，需额外处理
-            for (int i = 0; i < Math.min(selectedDoors.length, enabledDoorIds.size()); i++) {
-                if (selectedDoors[i]) {
-                    doorsToOpen[i] = true;
-                }
+            for (int i = 0; i < Math.min(selectedDoors.length, doorCount); i++) {
+                doorsToOpen[i] = selectedDoors[i];
             }
-        } else {
-            // 普通模式：默认打开启用列表中的第一个仓门
-            if (!enabledDoorIds.isEmpty()) {
-                doorsToOpen[0] = true;
-            }
+            Log.d("ArrivalConfirmation", "定时任务选中仓门：" + java.util.Arrays.toString(doorsToOpen));
+        } else if (doorCount > 0) {
+            doorsToOpen[0] = true;
+            Log.d("ArrivalConfirmation", "默认打开第一个仓门：索引=0，硬件ID=" + enabledHardwareIds.get(0));
         }
+
 
         return doorsToOpen;
     }
@@ -375,29 +386,32 @@ public class ArrivalConfirmationActivity extends BaseActivity {
      * 执行取物操作
      */
     private void performPickupAction() {
-        // 获取动态启用的仓门列表
-        List<Integer> enabledDoorIds = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        List<Integer> enabledHardwareIds = new ArrayList<>();
+        if (enabledDoors != null) {
+            for (BasicSettingsFragment.DoorInfo doorInfo : enabledDoors) {
+                enabledHardwareIds.add(doorInfo.getHardwareId());
+            }
+        }
         // 获取需要打开的仓门索引数组
         boolean[] doorsToOpen = getDoorsToOpen();
 
         // 收集需要打开的仓门ID（过滤无效项）
         List<Integer> doorsToOpenList = new ArrayList<>();
         for (int i = 0; i < doorsToOpen.length; i++) {
-            if (doorsToOpen[i] && i < enabledDoorIds.size()) {
-                int doorId = enabledDoorIds.get(i);
-                doorsToOpenList.add(doorId);
-                Log.d("ArrivalConfirmation", "待打开的仓门ID：" + doorId);
+            if (doorsToOpen[i] && i < enabledHardwareIds.size()) {
+                int hardwareId = enabledHardwareIds.get(i);
+                doorsToOpenList.add(hardwareId);
+                Log.d("ArrivalConfirmation", "待打开仓门：硬件ID=" + hardwareId);
             }
         }
 
         // 按间隔发送每个仓门的打开指令
         for (int i = 0; i < doorsToOpenList.size(); i++) {
-            final int doorId = doorsToOpenList.get(i);
-            // 第i个仓门延迟 i * DOOR_OPEN_DELAY 毫秒发送（避免同时发送）
+            final int hardwareId = doorsToOpenList.get(i);
             doorHandler.postDelayed(() -> {
-                // 调用仓门管理器打开仓门（强制发送指令，不依赖当前状态）
-                doorStateManager.openDoor(doorId);
-                Log.d("ArrivalConfirmation", "延迟发送打开指令，仓门ID：" + doorId);
+                // 调用仓门管理器打开指定硬件ID的仓门
+                doorStateManager.openDoor(hardwareId);
+                Log.d("ArrivalConfirmation", "已发送打开指令：硬件ID=" + hardwareId);
             }, i * DOOR_OPEN_DELAY);
         }
 

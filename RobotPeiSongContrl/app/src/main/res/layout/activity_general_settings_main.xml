@@ -99,20 +99,6 @@
             android:layout_marginHorizontal="16dp"/>
 
         <Button
-            android:id="@+id/btn_door_settings"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="仓门设置"
-            android:textAllCaps="false"
-            android:background="@drawable/menu_item_background"
-            android:textColor="@color/black"/>
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/gray"
-            android:layout_marginHorizontal="16dp"/>
-
-        <Button
             android:id="@+id/btn_delivery_verification"
             android:layout_width="match_parent"
             android:layout_height="60dp"

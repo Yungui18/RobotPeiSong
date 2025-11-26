@@ -7,6 +7,7 @@ import static java.security.AccessController.getContext;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -18,7 +19,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.PatrolPoint;
 import com.silan.robotpeisongcontrl.model.PatrolScheme;
 import com.silan.robotpeisongcontrl.model.Poi;
@@ -43,7 +44,7 @@ public class PatrolSettingsActivity extends BaseActivity {
     private Poi currentSelectedPoi = null;
     private LinearLayout container;
     private LinearLayout taskButtonsContainer; // 动态按钮容器
-    private int doorCount; // 仓门数量
+    private List<BasicSettingsFragment.DoorInfo> enabledDoors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,9 +68,9 @@ public class PatrolSettingsActivity extends BaseActivity {
         container = findViewById(R.id.poi_buttons_container);
         taskButtonsContainer = findViewById(R.id.task_buttons_container); // 获取动态容器
 
-        // 获取仓门数量（与其他页面保持一致）
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
-        // 初始化任务按钮（根据仓门数量）
+        enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
+        int doorCount = enabledDoors.size(); // 从新配置获取仓门数量
+        // 初始化任务按钮（根据仓门数量动态创建）
         loadTaskButtonsLayout();
 
         // 初始化方案下拉框（保持不变）
@@ -91,44 +92,56 @@ public class PatrolSettingsActivity extends BaseActivity {
         // 清空容器
         taskButtonsContainer.removeAllViews();
 
+        if (enabledDoors == null || enabledDoors.isEmpty()) {
+            Toast.makeText(this, "未检测到启用的仓门", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // 根据仓门数量初始化按钮数组
-        taskButtons = new Button[doorCount];
+        taskButtons = new Button[enabledDoors.size()];
 
         // 加载对应数量的布局文件
         LayoutInflater inflater = LayoutInflater.from(this);
-        switch (doorCount) {
-            case 3:
-                inflater.inflate(R.layout.task_three_buttons_layout, taskButtonsContainer);
-                break;
-            case 4:
-                inflater.inflate(R.layout.task_four_buttons_layout, taskButtonsContainer);
-                break;
-            case 6:
-                inflater.inflate(R.layout.task_six_buttons_layout, taskButtonsContainer);
-                break;
-        }
+        for (int i = 0; i < enabledDoors.size(); i++) {
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
+            int hardwareDoorId = doorInfo.getHardwareId(); // 获取硬件仓门ID
 
-        // 绑定按钮并设置点击事件
-        for (int i = 0; i < doorCount; i++) {
-            final int taskId = i + 1; // 任务ID从1开始
-            taskButtons[i] = taskButtonsContainer.findViewById(
-                    getResources().getIdentifier("btn_task" + taskId, "id", getPackageName())
+            // 动态创建按钮
+            Button button = new Button(this);
+            button.setId(View.generateViewId());
+            button.setText(String.format("仓门%d", hardwareDoorId)); // 显示硬件ID
+            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setTextColor(getResources().getColor(android.R.color.white));
+
+            // 设置布局参数（均匀分布）
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    1.0f
             );
+            params.setMargins(8, 8, 8, 8);
+            button.setLayoutParams(params);
 
-            if (taskButtons[i] != null) {
-                taskButtons[i].setOnClickListener(v -> handleTaskButtonClick(taskId));
-            }
+            // 存储按钮引用（数组索引对应仓门列表索引）
+            taskButtons[i] = button;
+
+            // 设置按钮点击事件（传递硬件仓门ID作为taskId）
+            final int currentHardwareId = hardwareDoorId;
+            button.setOnClickListener(v -> handleTaskButtonClick(currentHardwareId));
+
+            // 添加按钮到容器
+            taskButtonsContainer.addView(button);
         }
     }
 
     // 任务按钮点击逻辑
     private void handleTaskButtonClick(int taskId) {
         if (currentSelectedPoi != null) {
-            currentSelectedTask = taskId;
-            updateTaskButtonsUI();
+            currentSelectedTask = taskId;// 存储硬件仓门ID
+            updateTaskButtonsUI(); // 高亮选中的按钮
 
-            // 添加点到方案
-            addPointToScheme(currentSelectedPoi, currentSelectedTask);
+            // 添加点到方案（传递硬件仓门ID作为任务ID）
+            addPointToScheme(currentSelectedPoi, taskId);
             resetSelection();
         } else {
             Toast.makeText(this, "请先选择点位", Toast.LENGTH_SHORT).show();
@@ -170,7 +183,7 @@ public class PatrolSettingsActivity extends BaseActivity {
 
                 // 设置当前选中的POI
                 currentSelectedPoi = (Poi) v.getTag();
-                currentSelectedTask = 0;
+                currentSelectedTask = 0;// 重置任务选择
 
                 // 高亮显示选中的POI
                 btn.setBackgroundResource(R.drawable.button_red_rect);
@@ -182,8 +195,8 @@ public class PatrolSettingsActivity extends BaseActivity {
         }
     }
 
-    private void addPointToScheme(Poi poi, int task) {
-        PatrolPoint point = new PatrolPoint(poi, task);
+    private void addPointToScheme(Poi poi, int taskId) {
+        PatrolPoint point = new PatrolPoint(poi, taskId);// taskId为硬件仓门ID
         selectedPoints.add(point);
         updateSelectedPointsDisplay();
     }
@@ -192,7 +205,8 @@ public class PatrolSettingsActivity extends BaseActivity {
         TextView selectedView = findViewById(R.id.tv_selected_pois);
         StringBuilder builder = new StringBuilder("已选点位: ");
         for (PatrolPoint point : selectedPoints) {
-            builder.append(point.toString()).append(" → ");
+            builder.append(point.getPoi().getDisplayName())
+                    .append("(仓门").append(point.getTask()).append(") → ");
         }
         if (selectedPoints.size() > 0) {
             builder.setLength(builder.length() - 3); // 移除最后的箭头
@@ -202,14 +216,28 @@ public class PatrolSettingsActivity extends BaseActivity {
 
     // 更新任务按钮UI
     private void updateTaskButtonsUI() {
-        // 重置所有按钮
-        for (int i = 0; i < doorCount; i++) {
-            taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+        if (taskButtons == null) return;
+
+        // 重置所有按钮为默认状态
+        for (Button button : taskButtons) {
+            if (button != null) {
+                button.setBackgroundResource(R.drawable.button_blue_rect);
+            }
         }
 
-        // 高亮当前选中的任务（任务ID从1开始，数组索引从0开始）
-        if (currentSelectedTask > 0 && currentSelectedTask <= doorCount) {
-            taskButtons[currentSelectedTask - 1].setBackgroundResource(R.drawable.button_red_rect);
+        // 高亮当前选中的任务按钮（根据硬件仓门ID匹配）
+        if (currentSelectedTask > 0) {
+            for (Button button : taskButtons) {
+                if (button != null) {
+                    // 从按钮文本中提取硬件仓门ID（格式：仓门X）
+                    String buttonText = button.getText().toString();
+                    int hardwareId = Integer.parseInt(buttonText.replace("仓门", ""));
+                    if (hardwareId == currentSelectedTask) {
+                        button.setBackgroundResource(R.drawable.button_red_rect);
+                        break;
+                    }
+                }
+            }
         }
     }
 

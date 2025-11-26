@@ -3,6 +3,7 @@ package com.silan.robotpeisongcontrl;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -10,6 +11,8 @@ import android.os.Looper;
 import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -25,7 +28,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
@@ -60,15 +63,16 @@ public class TaskSelectionActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
 
-        // 获取仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
         // 初始化任务状态数组（长度为仓门数量）
         taskAssigned = new boolean[doorCount];
 
-        // 获取仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
-        // 获取实际仓门编号列表（与硬件仓门ID对应）
-        doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
+        //获取仓门
+        List<BasicSettingsFragment.DoorInfo> enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
+        doorCount = enabledDoors.size(); // 动态仓门数量
+        doorNumbers = new ArrayList<>();
+        for (BasicSettingsFragment.DoorInfo door : enabledDoors) {
+            doorNumbers.add(door.getHardwareId()); // 动态获取硬件ID
+        }
         // 初始化任务状态数组（长度为仓门数量）
         taskAssigned = new boolean[doorCount];
 
@@ -78,6 +82,13 @@ public class TaskSelectionActivity extends BaseActivity {
 
         // 初始化动态容器
         taskButtonsContainer = findViewById(R.id.task_buttons_container);
+        if (taskButtonsContainer == null) {
+            Log.e("TaskSelection", "未找到task_buttons_container容器");
+            Toast.makeText(this, "布局加载失败", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         // 动态加载任务按钮
         loadTaskButtonsLayout();
 
@@ -91,11 +102,10 @@ public class TaskSelectionActivity extends BaseActivity {
             poiList = gson.fromJson(poiListJson, type);
             poiCount = poiList.size();
         }else {
-            // 新增：如果Intent中没有POI列表，主动加载（参考PointDeliveryFragment）
             loadPoiList();
         }
 
-        // 其他初始化（保持不变）
+        // 其他初始化
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
         btnStart.setOnClickListener(v -> startTasks());
@@ -128,44 +138,45 @@ public class TaskSelectionActivity extends BaseActivity {
         // 清空容器
         taskButtonsContainer.removeAllViews();
 
+        // 无启用仓门时显示提示
+        if (doorCount == 0) {
+            TextView tipView = new TextView(this);
+            tipView.setText("暂无启用的仓门，请先在基础设置中配置");
+            tipView.setTextColor(Color.RED);
+            tipView.setTextSize(16);
+            taskButtonsContainer.addView(tipView);
+            return;
+        }
+
         // 初始化按钮数组
         taskButtons = new Button[doorCount];
 
-        // 加载对应布局
-        LayoutInflater inflater = LayoutInflater.from(this);
-        switch (doorCount) {
-            case 3:
-                inflater.inflate(R.layout.task_three_buttons_layout, taskButtonsContainer);
-                break;
-            case 4:
-                inflater.inflate(R.layout.task_four_buttons_layout, taskButtonsContainer);
-                break;
-            case 6:
-                inflater.inflate(R.layout.task_six_buttons_layout, taskButtonsContainer);
-                break;
-        }
-
-        // 绑定按钮并设置点击事件（核心修改部分）
+        // 动态创建按钮
         for (int i = 0; i < doorCount; i++) {
-            final int index = i;
-            // 关键修改1：获取当前循环对应的实际仓门ID（从doorNumbers列表中）
-            final int doorId = doorNumbers.get(i);
-            // 关键修改2：用实际仓门ID拼接按钮ID（与布局文件中的ID匹配）
-            taskButtons[i] = taskButtonsContainer.findViewById(
-                    getResources().getIdentifier("btn_task" + doorId, "id", getPackageName())
+            Button button = new Button(this);
+            button.setId(View.generateViewId());
+            button.setText("仓门 " + doorNumbers.get(i)); // 显示硬件ID
+            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setTextColor(Color.WHITE);
+            button.setTextSize(18);
+            // 垂直布局
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, // 宽度填满父容器
+                    ViewGroup.LayoutParams.WRAP_CONTENT,   // 高度自适应
+                    0 // 垂直布局中weight=0，不占用额外高度
             );
+            params.setMargins(0, 10, 0, 10); // 上下边距10dp，增加间距
+            button.setLayoutParams(params);
 
-            if (taskButtons[i] != null) {
-                taskButtons[i].setOnClickListener(v -> {
-                    // 选择任务按钮
-                    selectTask(index);
-                    // 点击即打开对应仓门（无论是否分配任务）
-                    Log.d("TaskSelection", "点击了仓门" + doorId + "，通过DoorStateManager打开");
-                    doorStateManager.openDoor(doorId); // 关键修改3：确保传入实际仓门ID
-                });
-            } else {
-                Log.e("TaskSelection", "未找到按钮: btn_task" + doorId);
-            }
+            // 设置点击事件
+            final int index = i;
+            button.setOnClickListener(v -> {
+                selectTask(index);
+                doorStateManager.openDoor(doorNumbers.get(index)); // 打开对应硬件ID的仓门
+            });
+
+            taskButtonsContainer.addView(button);
+            taskButtons[i] = button;
         }
     }
 
@@ -307,7 +318,7 @@ public class TaskSelectionActivity extends BaseActivity {
     // 清空任务按钮状态
     private void clearTaskButtons() {
         for (int i = 0; i < doorCount; i++) {
-            taskButtons[i].setText("");
+            taskButtons[i].setText("仓门 " + doorNumbers.get(i));
             taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
             taskAssigned[i] = false;
         }

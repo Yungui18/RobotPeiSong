@@ -95,10 +95,10 @@ public class RobotController {
 
         JsonObject moveOptions = new JsonObject();
         moveOptions.addProperty("mode", 2);// 自由导航模式
-        moveOptions.add("flags", new JsonArray());
-        JSONArray flags = new JSONArray();
-        flags.put("precise"); // 精确到点模式
-        flags.put("with_yaw"); // 启用精确朝向
+        JsonArray flags = new JsonArray();
+        flags.add("precise"); // 精确到点模式
+        flags.add("with_yaw"); // 启用精确朝向
+        moveOptions.add("flags", flags);
         moveOptions.addProperty("yaw", poi.getYaw());// 目标朝向角
         moveOptions.addProperty("acceptable_precision", 0.1);// 可接受的精度
         moveOptions.addProperty("fail_retry_count", 3);// 失败重试次数

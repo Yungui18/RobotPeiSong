@@ -38,14 +38,21 @@ public class SerialPortManager {
      * 打开串口
      */
     public boolean openSerialPort() {
+        // 若串口已打开，直接返回true
+        if (mSerialPort != null && mOutputStream != null && mInputStream != null) {
+            return true;
+        }
         try {
             mSerialPort = new SerialPort(new File(DEVICE_PATH), BAUDRATE, 0);
             mOutputStream = mSerialPort.getOutputStream();
             mInputStream = mSerialPort.getInputStream();
 
-            // 启动读取线程
-            mReadThread = new ReadThread();
-            mReadThread.start();
+            // 启动读取线程（仅首次打开时启动）
+            if (mReadThread == null || !mReadThread.isAlive()) {
+                mReadThread = new ReadThread();
+                mReadThread.start();
+            }
+            Log.d(TAG, "串口打开成功");
             return true;
         } catch (SecurityException e) {
             Log.e(TAG, "打开串口失败: 权限被拒绝", e);
@@ -117,6 +124,53 @@ public class SerialPortManager {
             Log.d(TAG, "发送Modbus指令(0x06): 设备ID=" + deviceId + " 寄存器=" + register + " 数据=0x" + Integer.toHexString(data) + " | 指令: " + bytesToHexString(command));
         } catch (IOException e) {
             Log.e(TAG, "发送数据失败", e);
+            if (mDataReceivedListener != null) {
+                mDataReceivedListener.onError("发送数据失败: " + e.getMessage());
+            }
+        }
+    }
+
+
+    /**
+     * 发送Modbus写单个8位寄存器指令（功能码0x06，适配1字节参数）
+     * @param deviceId 设备ID
+     * @param register 寄存器地址
+     * @param data 8位数据（0-255）
+     */
+    public void sendModbusWrite8BitCommand(int deviceId, int register, int data) {
+        if (!openSerialPort()) {
+            Log.e(TAG, "串口打开失败，无法发送指令");
+            if (mDataReceivedListener != null) {
+                mDataReceivedListener.onError("串口打开失败");
+            }
+            return;
+        }
+
+        if (mOutputStream == null) {
+            Log.e(TAG, "串口输出流为空，无法发送数据");
+            return;
+        }
+
+        // 构建Modbus RTU写单个寄存器指令（功能码0x06），数据部分仅使用低8位
+        byte[] command = new byte[8];
+        command[0] = (byte) deviceId;
+        command[1] = 0x06; // 写单个寄存器功能码
+        command[2] = (byte) (register >> 8); // 寄存器地址高字节
+        command[3] = (byte) (register & 0xFF); // 寄存器地址低字节
+        command[4] = 0x00; // 高字节置0（仅低字节有效）
+        command[5] = (byte) (data & 0xFF); // 8位数据（低字节）
+
+        int crc = calculateCRC(command, 6);
+        command[6] = (byte) (crc & 0xFF);
+        command[7] = (byte) (crc >> 8);
+
+        try {
+            mOutputStream.write(command);
+            mOutputStream.flush();
+            lastSentCommand = command.clone();
+            Log.d(TAG, "发送Modbus 8位指令(0x06): 设备ID=" + deviceId + " 寄存器=" + register + " 8位数据=" + data);
+        } catch (IOException e) {
+            Log.e(TAG, "发送8位数据失败", e);
             if (mDataReceivedListener != null) {
                 mDataReceivedListener.onError("发送数据失败: " + e.getMessage());
             }
@@ -239,7 +293,7 @@ public class SerialPortManager {
      * 发送急停指令（0x10功能码），停止所有电机
      */
     public void sendEmergencyStop() {
-        // 关键修改4：自动打开串口
+        // ：自动打开串口
         if (!openSerialPort()) {
             Log.e(TAG, "串口打开失败，无法发送急停指令");
             return;
@@ -250,12 +304,11 @@ public class SerialPortManager {
             return;
         }
 
-        // 停止所有直流电机1-4（寄存器0x20-0x23）和推杆电机1（0x24）、抽屉电磁铁（0x25）
-        // 数据：0x0000表示停止
-        int[] dataList = {0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000};
-        // 从寄存器0x20开始，连续写入6个寄存器
-        sendModbusWriteMultipleRegisters(0x01, 0x20, dataList);
-        Log.d(TAG, "发送急停指令，停止所有电机");
+        for (int reg = 0x30; reg <= 0x38; reg++) {
+            sendModbusWriteCommand(0x01, reg, 0x0000);
+            try { Thread.sleep(20); } catch (InterruptedException e) { e.printStackTrace(); }
+        }
+        Log.d(TAG, "发送急停指令，所有一键指令动作已停止");
     }
 
     /**

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="基础设置"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center_horizontal"/>
+
+    <!-- 第一行配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cb_enable_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用第1行"
+            android:textSize="14sp"
+            android:layout_marginRight="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_type_1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择类型"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinner_layout_1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择布局"
+            android:layout_marginStart="16dp"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
+
+    <!-- 第二行配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cb_enable_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用第2行"
+            android:textSize="14sp"
+            android:layout_marginRight="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_type_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择类型"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinner_layout_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择布局"
+            android:layout_marginStart="16dp"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
+
+    <!-- 第三行配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cb_enable_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用第3行"
+            android:textSize="14sp"
+            android:layout_marginRight="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_type_3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择类型"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinner_layout_3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择布局"
+            android:layout_marginStart="16dp"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
+
+    <!-- 第四行配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cb_enable_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用第4行"
+            android:textSize="14sp"
+            android:layout_marginRight="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_type_4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择类型"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinner_layout_4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择布局"
+            android:layout_marginStart="16dp"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
+
+    <!-- 第五行配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cb_enable_5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="启用第5行"
+            android:textSize="14sp"
+            android:layout_marginRight="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_type_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择类型"
+            android:spinnerMode="dropdown"/>
+
+        <Spinner
+            android:id="@+id/spinner_layout_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="选择布局"
+            android:layout_marginStart="16dp"
+            android:spinnerMode="dropdown"/>
+    </LinearLayout>
+
+    <!-- 保存按钮 -->
+    <Button
+        android:id="@+id/btn_save_basic"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存设置"
+        android:textSize="16sp"
+        android:backgroundTint="@color/design_default_color_primary"
+        android:textColor="@android:color/white"/>
+
+</LinearLayout>

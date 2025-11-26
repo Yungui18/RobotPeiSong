@@ -10,6 +10,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.utils.PasswordManager;
 
 public class SuperAdminActivity extends BaseActivity {
@@ -17,6 +18,7 @@ public class SuperAdminActivity extends BaseActivity {
     private static final String[] SUPER_ADMIN_MENU = {
             "服务设置",
             "密码设置",
+            "基础设置",
             "手动参数设置",
             "硬件版本",
             "恢复出厂设置"
@@ -43,13 +45,16 @@ public class SuperAdminActivity extends BaseActivity {
                 case 1: // 密码设置
                     startActivity(new Intent(SuperAdminActivity.this, SuperAdminPasswordActivity.class));
                     break;
-                case 2: // 手动参数设置
+                case 2: // 基础设置
+                    startActivity(new Intent(SuperAdminActivity.this, BasicSettingsHostActivity.class));
+                    break;
+                case 3: // 手动参数设置
                     startActivity(new Intent(SuperAdminActivity.this, ManualParamsSettingsActivity.class));
                     break;
-                case 3: // 硬件版本
+                case 4: // 硬件版本
                     showHardwareVersion();
                     break;
-                case 4: // 恢复出厂设置
+                case 5: // 恢复出厂设置
                     performFactoryReset();
                     break;
             }

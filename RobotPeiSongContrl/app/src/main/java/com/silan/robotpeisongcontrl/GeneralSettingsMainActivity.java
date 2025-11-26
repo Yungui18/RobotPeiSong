@@ -12,7 +12,6 @@ import com.silan.robotpeisongcontrl.fragments.AdminPasswordSettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliverySettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliveryVerificationFragment;
 import com.silan.robotpeisongcontrl.fragments.PersonalizationSettingsFragment;
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
 
 /**
  * 通用设置主页面
@@ -59,11 +58,5 @@ public class GeneralSettingsMainActivity extends BaseActivity {
                     .commit();
         });
 
-        findViewById(R.id.btn_door_settings).setOnClickListener(v -> {
-            // 加载仓门设置Fragment
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.content_frame, new WarehouseDoorSettingsFragment())
-                    .commit();
-        });
     }
 }

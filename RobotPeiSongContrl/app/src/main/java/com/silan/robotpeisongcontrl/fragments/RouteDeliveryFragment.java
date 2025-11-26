@@ -1,6 +1,7 @@
 package com.silan.robotpeisongcontrl.fragments;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -40,13 +41,13 @@ public class RouteDeliveryFragment extends Fragment {
     private List<PatrolScheme> schemeList = new ArrayList<>();
     private boolean[] selectedDoors;
     private ActivityResultLauncher<Intent> alarmPermissionLauncher;
-    private int doorCount;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // 获取仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(requireContext());
+        List<BasicSettingsFragment.DoorInfo> enabledDoors = BasicSettingsFragment.getEnabledDoors(requireContext());
+        int doorCount = enabledDoors.size();
         selectedDoors = new boolean[doorCount];
 
         View view = inflater.inflate(R.layout.fragment_route_delivery, container, false);
@@ -62,7 +63,7 @@ public class RouteDeliveryFragment extends Fragment {
 
         // 加载任务按钮布局
         LinearLayout buttonsContainer = view.findViewById(R.id.door_buttons_container);
-        loadDoorButtonsLayout(buttonsContainer);
+        loadDoorButtonsLayout(buttonsContainer, enabledDoors); // 传入动态仓门列表
 
         // 加载路线方案
         loadPatrolSchemes();
@@ -73,50 +74,58 @@ public class RouteDeliveryFragment extends Fragment {
         return view;
     }
 
-    private void loadDoorButtonsLayout(LinearLayout container) {
+    private void loadDoorButtonsLayout(LinearLayout container, List<BasicSettingsFragment.DoorInfo> enabledDoors) {
         // 清空容器
         container.removeAllViews();
-        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(requireContext());
-        doorButtons = new Button[doorNumbers.size()]; // 仓门编号最大为9，数组容量设为10
-
+        doorButtons = new Button[enabledDoors.size()]; // 仓门编号最大为9，数组容量设为10
         LayoutInflater inflater = LayoutInflater.from(getContext());
-        int doorCount = doorNumbers.size();
-        switch (doorCount) {
-            case 3:
-                inflater.inflate(R.layout.task_three_buttons_layout, container);
-                break;
-            case 4:
-                inflater.inflate(R.layout.task_four_buttons_layout, container);
-                break;
-            case 6:
-                inflater.inflate(R.layout.task_six_buttons_layout, container);
-                break;
-        }
+        for (int i = 0; i < enabledDoors.size(); i++) {
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
+            int doorHardwareId  = doorInfo.getHardwareId();
 
-        // 初始化按钮引用并设置点击事件
-        for (int i = 0; i < doorNumbers.size(); i++) {
-            int doorId = doorNumbers.get(i);
-            final int index = i;
-            doorButtons[i] = container.findViewById(getResources().getIdentifier(
-                    "btn_task" + doorId, "id", requireContext().getPackageName()));
+            // 创建按钮（或从基础布局inflate）
+            Button button = new Button(getContext());
+            button.setId(View.generateViewId());
 
-            if (doorButtons[i] != null) {
-                doorButtons[i].setOnClickListener(v -> {
-                    selectedDoors[index] = !selectedDoors[index];
-                    updateDoorButtonState(index, doorId); // 传入doorId用于更新按钮状态
-                });
+            String doorType = "";
+            switch (doorInfo.getType()) {
+                case 0: doorType = "电机"; break;
+                case 1: doorType = "电磁锁"; break;
+                case 2: doorType = "推杆"; break;
             }
+
+            button.setText(String.format("仓门%d", doorHardwareId, doorType)); // 显示硬件仓门ID
+            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setTextColor(Color.WHITE);
+            button.setTextSize(16);
+
+            // 设置布局参数（均匀分布）
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1.0f
+            );
+            params.setMargins(8, 8, 8, 8);
+            button.setLayoutParams(params);
+
+            // 存储按钮引用
+            doorButtons[i] = button;
+
+            // 设置点击事件
+            final int index = i;
+            button.setOnClickListener(v -> {
+                selectedDoors[index] = !selectedDoors[index];
+                updateDoorButtonState(index); // 只传索引（不再需要doorId）
+            });
+
+            // 添加到容器
+            container.addView(button);
         }
+
     }
 
     // 根据doorId更新按钮状态
-    private void updateDoorButtonState(int index, int doorId) {
-        if (selectedDoors[index]) {
-            doorButtons[doorId].setBackgroundResource(R.drawable.button_red_rect);
-        } else {
-            doorButtons[doorId].setBackgroundResource(R.drawable.button_blue_rect);
-        }
-    }
+
 
     private void loadPatrolSchemes() {
         Map<Integer, PatrolScheme> schemes = PatrolSchemeManager.loadSchemes(requireContext());

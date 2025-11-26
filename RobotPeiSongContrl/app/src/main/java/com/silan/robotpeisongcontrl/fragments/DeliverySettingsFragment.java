@@ -39,6 +39,7 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
     // 仓门控制器映射
     private Map<Integer, DoorController> doorControllers = new HashMap<>();
+    private List<BasicSettingsFragment.DoorInfo> doorInfos;
     private TextView tvStatus;
 
     // 动态存储仓门相关视图
@@ -61,8 +62,8 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_delivery_settings, container, false);
         // 获取设置的仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(requireContext());
-        Log.d(TAG, "获取到仓门数量: " + doorCount);
+        doorInfos = BasicSettingsFragment.getEnabledDoors(requireContext());
+        Log.d(TAG, "获取到仓门数量: " + doorInfos.size());
 
         // 初始化串口管理器
         serialPortManager = SerialPortManager.getInstance();
@@ -74,11 +75,11 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
         // 初始化仓门控制器
         initDoorControllers();
 
-        // 初始化视图容器 - 支持1-9号仓门
-        doorIndicators = new View[10]; // 1-based index (1-9)
-        btnDoorOpens = new Button[10];
-        btnDoorCloses = new Button[10];
-        btnDoorPauses = new Button[10];
+        // 初始化视图容器
+        doorIndicators = new View[doorInfos.size()];
+        btnDoorOpens = new Button[doorInfos.size()];
+        btnDoorCloses = new Button[doorInfos.size()];
+        btnDoorPauses = new Button[doorInfos.size()];
 
         // 初始化视图
         initViews(view);
@@ -96,39 +97,17 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     private void initDoorControllers() {
         doorControllers.clear();
 
-        // 始终添加固定的5号和6号仓门
-        doorControllers.put(5, DoorControllerFactory.createDoorController(requireContext(), 5));
-        doorControllers.put(6, DoorControllerFactory.createDoorController(requireContext(), 6));
-
-        // 根据总仓门数量添加剩余的仓门（减去固定的2个）
-        int dynamicDoorCount = doorCount - 2;
-
-        switch (dynamicDoorCount) {
-            case 1:
-                // 总3个仓门: 5,6 + 9(大仓门整体)
-                doorControllers.put(9, DoorControllerFactory.createDoorController(requireContext(), 9));
-                Log.d(TAG, "初始化3个仓门: 5,6,9");
-                break;
-            case 2:
-                // 总4个仓门: 5,6 + 7,8(大仓门分成两个)
-                doorControllers.put(7, DoorControllerFactory.createDoorController(requireContext(), 7));
-                doorControllers.put(8, DoorControllerFactory.createDoorController(requireContext(), 8));
-                Log.d(TAG, "初始化4个仓门: 5,6,7,8");
-                break;
-            case 4:
-                // 总6个仓门: 5,6 + 1-4(大仓门分成四个)
-                doorControllers.put(1, DoorControllerFactory.createDoorController(requireContext(), 1));
-                doorControllers.put(2, DoorControllerFactory.createDoorController(requireContext(), 2));
-                doorControllers.put(3, DoorControllerFactory.createDoorController(requireContext(), 3));
-                doorControllers.put(4, DoorControllerFactory.createDoorController(requireContext(), 4));
-                Log.d(TAG, "初始化6个仓门: 1,2,3,4,5,6");
-                break;
-            default:
-                Log.e(TAG, "不支持的动态仓门数量: " + dynamicDoorCount + ", 总仓门数: " + doorCount);
-                Toast.makeText(getContext(), "不支持的仓门配置", Toast.LENGTH_SHORT).show();
+        for (int i = 0; i < doorInfos.size(); i++) {
+            BasicSettingsFragment.DoorInfo info = doorInfos.get(i);
+            // Key=列表索引i，与getDoorIdFromRegister返回的索引一致
+            doorControllers.put(i, DoorControllerFactory.createDoorController(
+                    requireContext(),
+                    info.getType(),
+                    info.getHardwareId()
+            ));
+            Log.d(TAG, "初始化仓门：索引=" + i + "，类型=" + info.getType() + "，硬件ID=" + info.getHardwareId() + "，寄存器地址=" + Integer.toHexString(getStateRegisterForDoor(info.getType(), info.getHardwareId())));
         }
 
-        // 启动状态轮询
         startStatePolling();
     }
 
@@ -162,13 +141,14 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                 currentIndex++;
 
                 if (doorId == -1) {
-                    // 轮询急停状态寄存器(0x36)
-                    currentPollingRegister = 0x36;
-                    serialPortManager.sendModbusReadCommand(0x01, 0x36, 1);
-                    Log.d(TAG, "轮询急停状态, 寄存器地址: 0x36");
+                    // 轮询急停状态寄存器(0x49)
+                    currentPollingRegister = 0x49;
+                    serialPortManager.sendModbusReadCommand(0x01, 0x49, 1);
+                    Log.d(TAG, "轮询急停状态, 寄存器地址: 0x49");
                 } else {
+                    BasicSettingsFragment.DoorInfo info = doorInfos.get(doorId);
                     // 获取对应的状态寄存器地址
-                    int stateReg = getStateRegisterForDoor(doorId);
+                    int stateReg = getStateRegisterForDoor(info.getType(), info.getHardwareId());
                     if (stateReg != -1) {
                         currentPollingRegister = stateReg;
                         serialPortManager.sendModbusReadCommand(0x01, stateReg, 1);
@@ -188,27 +168,24 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     /**
      * 获取仓门对应的状态寄存器地址
      */
-    private int getStateRegisterForDoor(int doorId) {
-        switch (doorId) {
-            case 1:
-                return 0x44;
-            case 2:
-                return 0x45;
-            case 3:
-                return 0x46;
-            case 4:
-                return 0x47;
-            case 5:
-                return 0x42;
-            case 6:
-                return 0x43;
-            case 7:
-                return 0x40;
-            case 8:
-                return 0x41;
-            case 9:
-                return 0x48;
+    private int getStateRegisterForDoor(int type, int hardwareId) {
+        switch (type) {
+            case 0: // 电机仓门（协议：0x50-0x53，hardwareId=1-4）
+                if (hardwareId < 1 || hardwareId > 4) {
+                    Log.e(TAG, "电机仓门硬件ID无效（1-4）：" + hardwareId);
+                    return -1;
+                }
+                return 0x50 + (hardwareId - 1); // 1号→0x50，2号→0x51...
+            case 1: // 电磁锁仓门（协议：0x58-0x5B，hardwareId=1-4）
+                if (hardwareId < 1 || hardwareId > 4) {
+                    Log.e(TAG, "电磁锁硬件ID无效（1-4）：" + hardwareId);
+                    return -1;
+                }
+                return 0x58 + (hardwareId - 1); // 1号→0x58，2号→0x59...
+            case 2: // 推杆电机（协议：0x57，唯一）
+                return 0x57;
             default:
+                Log.e(TAG, "未知仓门类型：" + type);
                 return -1;
         }
     }
@@ -222,29 +199,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
 
         // 根据仓门控制器中的实际仓门ID动态添加视图
         LayoutInflater inflater = LayoutInflater.from(getContext());
-        // 按仓门ID排序显示
-        List<Integer> sortedDoorIds = new ArrayList<>(doorControllers.keySet());
-        sortedDoorIds.sort(Integer::compareTo);
-
-        for (int doorId : sortedDoorIds) {
-            // 加载单个仓门的布局
+        for (int i = 0; i < doorInfos.size(); i++) {
+            BasicSettingsFragment.DoorInfo info = doorInfos.get(i);
             View doorView = inflater.inflate(R.layout.item_door_control, doorsContainer, false);
 
             // 设置标题
             TextView tvDoorTitle = doorView.findViewById(R.id.tv_door_title);
-            tvDoorTitle.setText("仓门" + doorId);
+            String typeStr = info.getType() == 0 ? "电机" : (info.getType() == 1 ? "电磁锁" : "推杆");
+            tvDoorTitle.setText(String.format("行%d-%d号（%s）",
+                    info.getRow(), info.getPosition(), typeStr));
 
-            // 获取并存储视图引用
-            doorIndicators[doorId] = doorView.findViewById(R.id.door_indicator);
-            btnDoorOpens[doorId] = doorView.findViewById(R.id.btn_door_open);
-            btnDoorCloses[doorId] = doorView.findViewById(R.id.btn_door_close);
-            btnDoorPauses[doorId] = doorView.findViewById(R.id.btn_door_pause);
+            // 存储视图引用
+            doorIndicators[i] = doorView.findViewById(R.id.door_indicator);
+            btnDoorOpens[i] = doorView.findViewById(R.id.btn_door_open);
+            btnDoorCloses[i] = doorView.findViewById(R.id.btn_door_close);
+            btnDoorPauses[i] = doorView.findViewById(R.id.btn_door_pause);
 
-            // 初始状态：关闭状态
-            updateDoorIndicator(doorId, DoorController.DoorState.CLOSED);
-            updateDoorButtonStates(doorId);
+            // 初始状态
+            updateDoorIndicator(i, DoorController.DoorState.CLOSED);
+            updateDoorButtonStates(i);
 
-            // 添加到容器
             doorsContainer.addView(doorView);
         }
     }
@@ -478,7 +452,7 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
             int receivedReg = currentPollingRegister;
 
             // 检查是否是急停状态寄存器的响应
-            if (receivedReg == 0x36) {
+            if (receivedReg == 0x49) {
                 // 提取急停状态数据（2字节）
                 if (data.length >= 5) { // 确保有足够数据（地址1 + 功能码1 + 数据长度1 + 数据2 + CRC2）
                     byte[] emergencyData = new byte[2];
@@ -594,28 +568,35 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
      * 从寄存器地址获取对应的仓门ID
      */
     private int getDoorIdFromRegister(int registerAddress) {
-        switch (registerAddress) {
-            case 0x44:
-                return 1;
-            case 0x45:
-                return 2;
-            case 0x46:
-                return 3;
-            case 0x47:
-                return 4;
-            case 0x42:
-                return 5;
-            case 0x43:
-                return 6;
-            case 0x40:
-                return 7;
-            case 0x41:
-                return 8;
-            case 0x48:
-                return 9;
-            default:
-                return -1;
+        // 遍历所有已启用的仓门，匹配寄存器地址
+        for (int i = 0; i < doorInfos.size(); i++) {
+            BasicSettingsFragment.DoorInfo info = doorInfos.get(i);
+            int type = info.getType();
+            int hardwareId = info.getHardwareId();
+
+            // 计算当前仓门对应的状态寄存器地址（与getStateRegisterForDoor逻辑一致）
+            int targetReg = -1;
+            switch (type) {
+                case 0: // 电机仓门（协议：0x50-0x53）
+                    targetReg = 0x50 + (hardwareId - 1);
+                    break;
+                case 1: // 电磁锁仓门（协议：0x58-0x5B）
+                    targetReg = 0x58 + (hardwareId - 1);
+                    break;
+                case 2: // 推杆电机（协议：0x57）
+                    targetReg = 0x57;
+                    break;
+            }
+
+            // 匹配成功，返回列表索引（控制器的Key）
+            if (targetReg == registerAddress) {
+                return i;
+            }
         }
+
+        // 未匹配到（急停寄存器等）
+        Log.w(TAG, "未找到寄存器地址0x" + Integer.toHexString(registerAddress) + "对应的仓门");
+        return -1;
     }
 
     @Override

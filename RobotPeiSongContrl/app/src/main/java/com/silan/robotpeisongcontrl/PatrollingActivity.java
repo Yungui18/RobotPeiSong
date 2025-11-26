@@ -7,18 +7,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.PatrolPoint;
 import com.silan.robotpeisongcontrl.model.PatrolScheme;
 import com.silan.robotpeisongcontrl.model.Poi;
@@ -47,21 +43,19 @@ public class PatrollingActivity extends BaseActivity {
 
     // 任务按钮相关
     private Button[] taskButtons;
-    private int currentTask = 0;
+    private int currentTaskHardwareId = 0;
     private Handler blinkHandler = new Handler(Looper.getMainLooper());
     private Runnable blinkRunnable;
     private boolean isBlinking = false;
     private int doorCount;
-
+    private List<BasicSettingsFragment.DoorInfo> enabledDoors;    // 存储当前启用的仓门信息
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_patrolling);
 
-        // 获取仓门数量
-        doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
-        taskButtons = new Button[doorCount + 1]; // 1-based index
+        enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
 
         // 初始化任务按钮容器
         LinearLayout taskButtonsContainer = findViewById(R.id.task_buttons_container);
@@ -73,16 +67,12 @@ public class PatrollingActivity extends BaseActivity {
             @Override
             public void run() {
                 if (isBlinking) {
-                    Button activeButton = getTaskButton(currentTask);
+                    Button activeButton = getTaskButtonByHardwareId(currentTaskHardwareId);
                     if (activeButton != null) {
-                        if (isRed) {
-                            activeButton.setBackgroundResource(R.drawable.button_red_rect);
-                        } else {
-                            activeButton.setBackgroundResource(R.drawable.button_blue_rect);
-                        }
+                        activeButton.setBackgroundResource(isRed ? R.drawable.button_red_rect : R.drawable.button_blue_rect);
                     }
                     isRed = !isRed;
-                    blinkHandler.postDelayed(this, 500); // 每500ms切换一次
+                    blinkHandler.postDelayed(this, 500);
                 }
             }
         };
@@ -107,30 +97,41 @@ public class PatrollingActivity extends BaseActivity {
         // 清空容器
         container.removeAllViews();
 
-        // 根据仓门数量加载不同的布局
-        LayoutInflater inflater = LayoutInflater.from(this);
-        switch (doorCount) {
-            case 3:
-                inflater.inflate(R.layout.task_three_buttons_layout, container);
-                break;
-            case 4:
-                inflater.inflate(R.layout.task_four_buttons_layout, container);
-                break;
-            case 6:
-                inflater.inflate(R.layout.task_six_buttons_layout, container);
-                break;
+        if (enabledDoors == null || enabledDoors.isEmpty()) {
+            Log.w(TAG, "没有启用的仓门");
+            return;
         }
 
-        // 初始化按钮引用
-        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
-        taskButtons = new Button[doorNumbers.size()]; // 动态初始化
-        for (int i = 0; i < doorNumbers.size(); i++) {
-            int doorId = doorNumbers.get(i);
-            taskButtons[i] = container.findViewById(getResources().getIdentifier(
-                    "btn_task" + doorId, "id", getPackageName()));
-            if (taskButtons[i] != null) {
-                taskButtons[i].setClickable(false); // 仅用于显示状态
-            }
+        // 初始化按钮数组，长度等于已启用仓门的数量
+        taskButtons = new Button[enabledDoors.size()];
+        // 根据仓门数量加载不同的布局
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (int i = 0; i < enabledDoors.size(); i++) {
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
+            int hardwareDoorId = doorInfo.getHardwareId();
+
+            // 动态创建按钮
+            Button button = new Button(this);
+            button.setId(View.generateViewId());
+            button.setText(String.format("仓门%d", hardwareDoorId));
+            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setTextColor(getResources().getColor(android.R.color.white));
+            button.setClickable(false); // 仅用于显示状态
+
+            // 设置布局参数，使其均匀分布
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    1.0f
+            );
+            params.setMargins(8, 8, 8, 8);
+            button.setLayoutParams(params);
+
+            // 存储按钮引用到数组中
+            taskButtons[i] = button;
+
+            // 添加按钮到容器
+            container.addView(button);
         }
     }
 
@@ -241,19 +242,40 @@ public class PatrollingActivity extends BaseActivity {
 
     private void handleArrivalAtPoint(PatrolPoint point) {
         runOnUiThread(() -> {
-            currentTask = point.getTask();
+            currentTaskHardwareId = point.getTask();
             resetTaskButtonsUI();
 
-            if (currentTask > 0 && currentTask <= doorCount) {
-                // 更新UI：设置对应按钮为红色
-                getTaskButton(currentTask).setBackgroundResource(R.drawable.button_red_rect);
+            // 检查任务ID是否有效
+            if (currentTaskHardwareId > 0 && getTaskButtonByHardwareId(currentTaskHardwareId) != null) {
+                // 设置对应按钮为红色
+                Button taskButton = getTaskButtonByHardwareId(currentTaskHardwareId);
+                if (taskButton != null) {
+                    taskButton.setBackgroundResource(R.drawable.button_red_rect);
+                }
                 // 执行打开仓门操作
-                openCargoDoor(currentTask);
+                openCargoDoor(currentTaskHardwareId);
             } else {
                 // 没有任务或任务ID无效，直接前往下一点
                 startWaitingPeriod();
             }
         });
+    }
+
+    /**
+     * 根据硬件ID查找对应的按钮
+     * @param hardwareDoorId 硬件仓门ID
+     * @return 对应的Button对象，或null if not found
+     */
+    private Button getTaskButtonByHardwareId(int hardwareDoorId) {
+        if (enabledDoors == null || taskButtons == null) return null;
+
+        for (int i = 0; i < enabledDoors.size(); i++) {
+            if (enabledDoors.get(i).getHardwareId() == hardwareDoorId) {
+                return taskButtons[i];
+            }
+        }
+        Log.w(TAG, "未找到硬件ID为 " + hardwareDoorId + " 的按钮");
+        return null;
     }
 
     private Button getTaskButton(int taskId) {
@@ -265,23 +287,26 @@ public class PatrollingActivity extends BaseActivity {
 
     // 重置按钮状态方法
     private void resetTaskButtonsUI() {
-        for (int i = 1; i <= doorCount; i++) {
-            if (taskButtons[i] != null) {
-                taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
+        if (taskButtons == null) return;
+        for (Button button : taskButtons) {
+            if (button != null) {
+                button.setBackgroundResource(R.drawable.button_blue_rect);
             }
         }
+        // 停止任何正在进行的闪烁
+        stopButtonBlink();
     }
 
-    private void openCargoDoor(int doorId) {
+    private void openCargoDoor(int hardwareDoorId) {
         runOnUiThread(() -> {
             // 开始按钮闪烁
             startButtonBlink();
             // 显示开仓提示
-            updateStatus("模拟打开仓门 " + doorId);
+            updateStatus("模拟打开仓门 " + hardwareDoorId);
         });
 
         // 使用主线程Handler执行延迟操作
-        mainHandler.postDelayed(() -> closeCargoDoor(doorId), 5000);
+        mainHandler.postDelayed(() -> closeCargoDoor(hardwareDoorId), 5000);
     }
 
     private void closeCargoDoor(int doorId) {
@@ -309,9 +334,11 @@ public class PatrollingActivity extends BaseActivity {
         isBlinking = false;
         blinkHandler.removeCallbacks(blinkRunnable);
         // 停止后恢复为蓝色
-        Button activeButton = getTaskButton(currentTask);
-        if (activeButton != null) {
-            activeButton.setBackgroundResource(R.drawable.button_blue_rect);
+        if (currentTaskHardwareId > 0) {
+            Button activeButton = getTaskButtonByHardwareId(currentTaskHardwareId);
+            if (activeButton != null) {
+                activeButton.setBackgroundResource(R.drawable.button_blue_rect);
+            }
         }
     }
 
@@ -348,8 +375,6 @@ public class PatrollingActivity extends BaseActivity {
                 }
             }.start();
         });
-        currentPointIndex++;
-        handler.postDelayed(this::moveToNextPoint, 5000);
     }
 
     private void stopPatrol() {

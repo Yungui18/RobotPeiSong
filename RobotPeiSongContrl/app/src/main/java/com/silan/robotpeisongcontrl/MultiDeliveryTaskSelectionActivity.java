@@ -1,6 +1,7 @@
 package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -8,6 +9,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -17,7 +19,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.silan.robotpeisongcontrl.fragments.WarehouseDoorSettingsFragment;
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.RobotController;
@@ -40,6 +42,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
     private LinearLayout taskDetailsContainer;
     private LinearLayout taskButtonsContainer;
     private DoorStateManager doorStateManager; // 仓门状态管理器
+    private List<BasicSettingsFragment.DoorInfo> enabledDoors;
     // 任务计数
     private int taskCount = 0;
     @Override
@@ -50,8 +53,18 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         // 初始化仓门状态管理器
         doorStateManager = DoorStateManager.getInstance(this);
 
+        // 获取仓门配置
+        enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
+        int doorCount = enabledDoors.size(); // 从新配置获取仓门数量
+
         // 初始化视图
         taskButtonsContainer = findViewById(R.id.task_buttons_container);
+        if (taskButtonsContainer == null) {
+            Log.e("MultiDelivery", "未找到task_buttons_container容器");
+            Toast.makeText(this, "布局加载失败", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         // 初始化"关闭所有仓门"按钮
         Button btnCloseAllDoors = findViewById(R.id.btn_close_all_doors);
@@ -65,11 +78,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
         btnStart.setOnClickListener(v -> startMultiDelivery());
 
-        // 根据仓门数量加载对应的按钮布局
-        int doorCount = WarehouseDoorSettingsFragment.getDoorCount(this);
+        // 加载动态按钮布局
         loadTaskButtonsLayout(doorCount);
-
-
 
         // 数字按钮
         setupNumberButtons();
@@ -93,8 +103,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
             // 清空任务
             taskManager.clearTasks();
             clearTaskButtons();
-            taskDetailsContainer.removeAllViews(); // 清空任务详情
-            taskCount = 0; // 重置任务计数
+            if (taskDetailsContainer != null) {
+                taskDetailsContainer.removeAllViews();
+            }
             finish();
         });
 
@@ -106,55 +117,63 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         // 清空容器
         taskButtonsContainer.removeAllViews();
 
-        // 动态初始化按钮数组
-        taskButtons = new Button[doorCount];
-
-        // 根据仓门数量加载不同的布局
-        LayoutInflater inflater = LayoutInflater.from(this);
-        switch (doorCount) {
-            case 3:
-                inflater.inflate(R.layout.task_three_buttons_layout, taskButtonsContainer);
-                break;
-            case 4:
-                inflater.inflate(R.layout.task_four_buttons_layout, taskButtonsContainer);
-                break;
-            case 6:
-                inflater.inflate(R.layout.task_six_buttons_layout, taskButtonsContainer);
-                break;
+        // 无启用仓门时显示提示
+        if (enabledDoors == null || enabledDoors.isEmpty()) {
+            TextView tipView = new TextView(this);
+            tipView.setText("暂无启用的仓门，请先在基础设置中配置");
+            tipView.setTextColor(Color.RED);
+            tipView.setTextSize(16);
+            taskButtonsContainer.addView(tipView);
+            Log.w("MultiDelivery", "没有启用的仓门");
+            return;
         }
 
-        // 为按钮设置点击事件
-        setupTaskButtonsClickListener(doorCount);
-    }
+        // 动态初始化按钮数组
+        taskButtons = new Button[enabledDoors.size()];
 
-    private void setupTaskButtonsClickListener(int doorCount) {
-        List<Integer> doorNumbers = WarehouseDoorSettingsFragment.getDoorNumbers(this);
-        for (int i = 0; i < doorNumbers.size(); i++) {
-            int doorId = doorNumbers.get(i);
-            int buttonId = getResources().getIdentifier(
-                    "btn_task" + doorId, "id", getPackageName());
-            Button button = taskButtonsContainer.findViewById(buttonId);
+        // 根据仓门数量加载不同的布局
+        for (int i = 0; i < enabledDoors.size(); i++) {
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
+            int hardwareDoorId = doorInfo.getHardwareId();
 
-            if (button == null) {
-                Log.e("TaskClick", "未找到按钮: btn_task" + doorId);
-                continue;
-            }
+            // 动态创建按钮
+            Button button = new Button(this);
+            button.setId(View.generateViewId());
+            button.setText(String.format("仓门%d", hardwareDoorId));
+            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setTextColor(getResources().getColor(android.R.color.white));
+            button.setTextSize(18);
 
-            // 存储按钮引用（使用索引而非doorId）
+            // 设置布局参数，使其均匀分布
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, // 宽度填满
+                    ViewGroup.LayoutParams.WRAP_CONTENT,   // 高度自适应
+                    0 // weight=0
+            );
+            params.setMargins(0, 10, 0, 10); // 上下边距
+            button.setLayoutParams(params);
+
+            // 存储按钮引用
             taskButtons[i] = button;
 
-            final int currentDoorId = doorId;
+            // 设置点击事件
+            final int currentIndex = i;
+            final int currentHardwareId = hardwareDoorId;
             button.setOnClickListener(v -> {
-                Log.d("TaskClick", "点击了仓门" + currentDoorId + "，通过DoorStateManager打开");
-                doorStateManager.openDoor(currentDoorId);// 点击即打开对应仓门
-                if (selectedButtonIndices.contains(currentDoorId)) {
-                    selectedButtonIndices.remove(currentDoorId);
+                Log.d("TaskClick", "点击了仓门 " + currentHardwareId);
+                doorStateManager.openDoor(currentHardwareId); // 打开对应的硬件仓门
+
+                if (selectedButtonIndices.contains(currentIndex)) {
+                    selectedButtonIndices.remove(currentIndex);
                     button.setBackgroundResource(R.drawable.button_blue_rect);
                 } else {
-                    selectedButtonIndices.add(currentDoorId);
+                    selectedButtonIndices.add(currentIndex);
                     button.setBackgroundResource(R.drawable.button_red_rect);
                 }
             });
+
+            // 添加按钮到容器
+            taskButtonsContainer.addView(button);
         }
     }
 
@@ -214,13 +233,18 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
                 return;
             }
 
-            // 关键修改：将选中的多个仓门ID转为List
-            List<Integer> selectedDoorIds = new ArrayList<>(selectedButtonIndices);
+            // 将选中的按钮索引转换为硬件仓门ID列表
+            List<Integer> selectedDoorHardwareIds = new ArrayList<>();
+            for (int index : selectedButtonIndices) {
+                if (index >= 0 && index < enabledDoors.size()) {
+                    selectedDoorHardwareIds.add(enabledDoors.get(index).getHardwareId());
+                }
+            }
             // 关联点位与多个仓门ID
-            taskManager.addPointWithDoors(poi, selectedDoorIds);
+            taskManager.addPointWithDoors(poi, selectedDoorHardwareIds);
 
             // 显示任务细节（保持不变）
-            showTaskDetails(poi, selectedButtonIndices);
+            showTaskDetails(poi, selectedDoorHardwareIds);
             // 恢复按钮状态
             clearTaskButtons();
         } else {
@@ -262,52 +286,46 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         }, 10000); // 5000毫秒 = 5秒
     }
 
-    private void showTaskDetails(Poi poi, Set<Integer> selectedButtons) {
-        // 加载统一的任务详情布局
+    private void showTaskDetails(Poi poi, List<Integer> selectedDoorHardwareIds) {
         LayoutInflater inflater = LayoutInflater.from(this);
         LinearLayout taskItem = (LinearLayout) inflater.inflate(
                 R.layout.item_task_detail, taskDetailsContainer, false);
 
-        // 设置任务信息（任务号使用当前子项数量+1）
         TextView taskNumText = taskItem.findViewById(R.id.tv_task_num);
         TextView taskDoorText = taskItem.findViewById(R.id.tv_task_door);
         taskNumText.setText("任务号: " + (taskDetailsContainer.getChildCount() + 1));
-        taskDoorText.setText("点位: " + poi.getDisplayName() + "，仓门: " + getDoorNames(selectedButtons));
+        taskDoorText.setText("点位: " + poi.getDisplayName() + "，仓门: " + getDoorNames(selectedDoorHardwareIds));
 
-        // 保存POI信息到视图标签，用于删除时从任务管理器移除
         taskItem.setTag(poi);
 
-        // 删除按钮点击事件
         ImageButton btnDelete = taskItem.findViewById(R.id.btn_delete_task);
         btnDelete.setOnClickListener(v -> {
             taskDetailsContainer.removeView(taskItem);
-            taskManager.removeTask((Poi) taskItem.getTag()); // 从任务管理器移除
-            updateTaskNumbers(); // 更新任务编号
+            taskManager.removeTask((Poi) taskItem.getTag());
+            updateTaskNumbers();
         });
 
         taskDetailsContainer.addView(taskItem);
     }
 
     // 辅助方法：获取仓门名称字符串
-    private String getDoorNames(Set<Integer> selectedButtons) {
+    private String getDoorNames(List<Integer> selectedDoorHardwareIds) {
         StringBuilder doorInfo = new StringBuilder();
-        for (int doorId : selectedButtons) { // doorId是1基（仓门1、2、3...）
-            doorInfo.append("仓门").append(doorId).append(" ");
+        for (int hardwareId : selectedDoorHardwareIds) {
+            doorInfo.append("仓门").append(hardwareId).append(" ");
         }
-        return doorInfo.toString();
+        return doorInfo.toString().trim();
     }
 
     // 更新任务编号显示
     private void updateTaskNumbers() {
+        if (taskDetailsContainer == null) return;
         int childCount = taskDetailsContainer.getChildCount();
         for (int i = 0; i < childCount; i++) {
             View child = taskDetailsContainer.getChildAt(i);
-            if (child instanceof LinearLayout) {
-                LinearLayout taskLayout = (LinearLayout) child;
-                TextView taskNumText = taskLayout.findViewById(R.id.tv_task_num);
-                if (taskNumText != null) { // 确保视图存在
-                    taskNumText.setText("任务号: " + (i + 1));
-                }
+            TextView taskNumText = child.findViewById(R.id.tv_task_num);
+            if (taskNumText != null) {
+                taskNumText.setText("任务号: " + (i + 1));
             }
         }
     }
@@ -318,8 +336,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
         // 清空任务
         taskManager.clearTasks();
         clearTaskButtons();
-        taskDetailsContainer.removeAllViews(); // 清空任务详情
-        taskCount = 0; // 重置任务计数
+        if (taskDetailsContainer != null) {
+            taskDetailsContainer.removeAllViews();
+        }
         super.onBackPressed();
     }
 

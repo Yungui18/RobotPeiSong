@@ -123,6 +123,8 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
         List<Integer> doorIds = new ArrayList<>(doorControllers.keySet());
         // 添加一个特殊标识(-1)表示急停状态轮询
         doorIds.add(-1);
+        doorIds.add(-2); // 电机1旋转方向(0x18)
+        doorIds.add(-3); // 电机1正转延时(0x1D)
 
         // 轮询任务
         Runnable pollRunnable = new Runnable() {
@@ -145,7 +147,17 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
                     currentPollingRegister = 0x49;
                     serialPortManager.sendModbusReadCommand(0x01, 0x49, 1);
                     Log.d(TAG, "轮询急停状态, 寄存器地址: 0x49");
-                } else {
+                }
+                // 新增：轮询旋转方向和延时寄存器
+                else if (doorId == -2) {
+                    currentPollingRegister = 0x18;
+                    serialPortManager.sendModbusReadCommand(0x01, 0x18, 1);
+                    Log.d(TAG, "轮询电机1旋转方向寄存器: 0x18");
+                } else if (doorId == -3) {
+                    currentPollingRegister = 0x1D;
+                    serialPortManager.sendModbusReadCommand(0x01, 0x1D, 1);
+                    Log.d(TAG, "轮询电机1正转延时寄存器: 0x1D");
+                }else {
                     BasicSettingsFragment.DoorInfo info = doorInfos.get(doorId);
                     // 获取对应的状态寄存器地址
                     int stateReg = getStateRegisterForDoor(info.getType(), info.getHardwareId());
@@ -450,6 +462,19 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
         if (functionCode == 0x03) {
             // 解析0x03响应：通过当前轮询的寄存器地址确定对应的仓门
             int receivedReg = currentPollingRegister;
+
+            // 新增：处理旋转方向和延时寄存器的读取结果
+            if (receivedReg == 0x18) {
+                byte[] dirData = new byte[2];
+                System.arraycopy(data, 3, dirData, 0, 2);
+                int dirValue = ((dirData[0] & 0xFF) << 8) | (dirData[1] & 0xFF);
+                Log.d(TAG, "电机1旋转方向读取结果: " + dirValue + "（0=Normal，1=Reserval）");
+            } else if (receivedReg == 0x1D) {
+                byte[] delayData = new byte[2];
+                System.arraycopy(data, 3, delayData, 0, 2);
+                int delayValue = ((delayData[0] & 0xFF) << 8) | (delayData[1] & 0xFF);
+                Log.d(TAG, "电机1正转延时读取结果: " + delayValue + "（0.02ms单位，对应" + (delayValue * 0.02) + "ms）");
+            }
 
             // 检查是否是急停状态寄存器的响应
             if (receivedReg == 0x49) {

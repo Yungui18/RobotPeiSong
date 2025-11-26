@@ -433,9 +433,27 @@ public class SerialPortManager {
 
             int sentFunctionCode = lastSentCommand[1] & 0xFF;
             int responseFunctionCode = response[1] & 0xFF;
-
+            // 新增：验证0x06指令响应
+            if (sentFunctionCode == 0x06 && responseFunctionCode == 0x06) {
+                // 0x06响应需与发送指令前6字节（地址+功能码+寄存器地址+数据）一致
+                if (response.length < 8) {
+                    Log.w(TAG, "0x06响应长度不足（需8字节），实际长度: " + response.length);
+                    return;
+                }
+                // 验证设备地址、寄存器地址、数据是否匹配
+                boolean isMatch = response[0] == lastSentCommand[0] // 设备地址
+                        && response[2] == lastSentCommand[2] // 寄存器地址高字节
+                        && response[3] == lastSentCommand[3] // 寄存器地址低字节
+                        && response[4] == lastSentCommand[4] // 数据高字节
+                        && response[5] == lastSentCommand[5]; // 数据低字节
+                if (isMatch) {
+                    Log.d(TAG, "0x06指令执行成功（寄存器0x" + Integer.toHexString((response[2]<<8)|response[3]) + "）");
+                } else {
+                    Log.w(TAG, "0x06响应数据不匹配，发送指令: " + bytesToHexString(lastSentCommand) + "，响应: " + bytesToHexString(response));
+                }
+            }
             // 0x10响应功能码应与发送一致，且包含起始地址和数量
-            if (sentFunctionCode == 0x10 && responseFunctionCode == 0x10) {
+            else if (sentFunctionCode == 0x10 && responseFunctionCode == 0x10) {
                 // 校验响应长度是否满足（至少6字节：地址+功能码+起始地址2字节+数量2字节）
                 if (response.length < 6) {
                     Log.w(TAG, "0x10响应长度不足，无法验证");

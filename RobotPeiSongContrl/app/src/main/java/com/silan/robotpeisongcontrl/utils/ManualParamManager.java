@@ -86,7 +86,7 @@ public class ManualParamManager {
 
             // 添加延迟，避免连续发送导致指令丢失
             try {
-                Thread.sleep(50); // 50ms延迟
+                Thread.sleep(100); // 50ms延迟
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 e.printStackTrace();
@@ -103,6 +103,7 @@ public class ManualParamManager {
         int pusherReverseDelay = firstBoot ? DEFAULT_REVERSE_DELAY : getPusherReverseDelay();
 
 
+
         // 保存参数
         savePusherParams(pusherHighSpeed, pusherLowSpeed, pusherHighTime, pusherDirection, pusherForwardDelay, pusherReverseDelay);
 
@@ -112,7 +113,7 @@ public class ManualParamManager {
 
         // 推杆指令发送后添加延迟
         try {
-            Thread.sleep(50);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             e.printStackTrace();
@@ -139,7 +140,7 @@ public class ManualParamManager {
         serialPortManager.sendModbusWriteMultipleRegisters(0x01, baseAddr, dataList);
 
         try {
-            Thread.sleep(30); // 短暂延迟
+            Thread.sleep(100); // 短暂延迟
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -155,7 +156,7 @@ public class ManualParamManager {
         serialPortManager.sendModbusWriteCommand(0x01, forwardDelayAddr, forwardDelay);
 
         try {
-            Thread.sleep(30); // 短暂延迟
+            Thread.sleep(100); // 短暂延迟
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -174,21 +175,21 @@ public class ManualParamManager {
         serialPortManager.sendModbusWriteMultipleRegisters(0x01, 0x10, baseDataList);
 
         try {
-            Thread.sleep(30); // 短暂延迟
+            Thread.sleep(100); // 短暂延迟
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
         // 旋转方向（0x1C，8位指令）
         serialPortManager.sendModbusWrite8BitCommand(0x01, 0x1C, direction); // 关键修改
-        try { Thread.sleep(50); } catch (InterruptedException e) { e.printStackTrace(); }
+        try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
 
 
         // 新增：发送推杆电机正转延时 (0x21)
         serialPortManager.sendModbusWriteCommand(0x01, 0x21, forwardDelay);
 
         try {
-            Thread.sleep(30); // 短暂延迟
+            Thread.sleep(100); // 短暂延迟
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -203,7 +204,7 @@ public class ManualParamManager {
         for (int i = 0; i < 4; i++) {
             serialPortManager.sendModbusWriteCommand(0x01, 0x14 + i, ELECTROMAGNET_TIME);
             try {
-                Thread.sleep(50);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

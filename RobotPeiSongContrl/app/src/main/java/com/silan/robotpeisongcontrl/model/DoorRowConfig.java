@@ -7,11 +7,12 @@ import androidx.annotation.NonNull;
 
 /**
  * 每行仓门配置模型
+ * layout: 0=单仓门（一行1个，对应分组舱门：12/34/所有）；1=双仓门（一行2个，对应独立舱门：1/2/3/4号）
  */
 public class DoorRowConfig implements Parcelable {
     private boolean isEnabled; // 是否启用该行
     private int type; // 0:电机仓门 1:电磁锁仓门 2:推杆电机仓门
-    private int layout; // 0:单仓门 1:双仓门
+    private int layout; //  0:单仓门（一行1个） 1:双仓门（一行2个）
 
     public DoorRowConfig() {
         this.isEnabled = false;

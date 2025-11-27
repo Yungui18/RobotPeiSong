@@ -182,19 +182,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
      */
     private int getStateRegisterForDoor(int type, int hardwareId) {
         switch (type) {
-            case 0: // 电机仓门（协议：0x50-0x53，hardwareId=1-4）
-                if (hardwareId < 1 || hardwareId > 4) {
-                    Log.e(TAG, "电机仓门硬件ID无效（1-4）：" + hardwareId);
+            case 0: // 电机仓门
+                if (hardwareId >= 1 && hardwareId <= 4) { // 双仓门（独立）
+                    return 0x50 + (hardwareId - 1); // 1→0x50, 2→0x51...
+                } else if (hardwareId == 5) { // 单仓门（12舱门）
+                    return 0x54;
+                } else if (hardwareId == 6) { // 单仓门（34舱门）
+                    return 0x55;
+                } else if (hardwareId == 7) { // 单仓门（所有舱门）
+                    return 0x56;
+                } else {
+                    Log.e(TAG, "电机仓门硬件ID无效：" + hardwareId);
                     return -1;
                 }
-                return 0x50 + (hardwareId - 1); // 1号→0x50，2号→0x51...
-            case 1: // 电磁锁仓门（协议：0x58-0x5B，hardwareId=1-4）
+            case 1: // 电磁锁仓门
                 if (hardwareId < 1 || hardwareId > 4) {
                     Log.e(TAG, "电磁锁硬件ID无效（1-4）：" + hardwareId);
                     return -1;
                 }
-                return 0x58 + (hardwareId - 1); // 1号→0x58，2号→0x59...
-            case 2: // 推杆电机（协议：0x57，唯一）
+                return 0x58 + (hardwareId - 1); // 1→0x58, 2→0x59...
+            case 2: // 推杆电机（功能不变）
                 return 0x57;
             default:
                 Log.e(TAG, "未知仓门类型：" + type);

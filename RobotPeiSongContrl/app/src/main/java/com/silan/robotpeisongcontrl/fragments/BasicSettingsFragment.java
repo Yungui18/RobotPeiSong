@@ -183,19 +183,28 @@ public class BasicSettingsFragment extends Fragment {
      * 验证资源占用是否超限
      */
     private boolean validateResourceUsage() {
-        int motorCount = 0;
+        int motorCount = 0; // 独立电机仓门数
+        int groupMotorCount = 0; // 分组电机仓门数
         int lockCount = 0;
         int pushRodCount = 0;
 
         for (DoorRowConfig config : rowConfigs) {
             if (config.isEnabled()) {
-                int count = config.getLayout() == 0 ? 1 : 2; // 单仓1个，双仓2个
+                int count = config.getLayout() == 0 ? 1 : 2;
                 switch (config.getType()) {
                     case 0: // 电机仓门
-                        motorCount += count;
-                        if (motorCount > 4) {
-                            Toast.makeText(requireContext(), "电机仓门数量不能超过4个", Toast.LENGTH_SHORT).show();
-                            return false;
+                        if (config.getLayout() == 1) { // 双仓门（独立）
+                            motorCount += count;
+                            if (motorCount > 4) {
+                                Toast.makeText(requireContext(), "双仓门（独立电机）数量不能超过4个", Toast.LENGTH_SHORT).show();
+                                return false;
+                            }
+                        } else { // 单仓门（分组）
+                            groupMotorCount += count;
+                            if (groupMotorCount > 3) { // 分组最多3个：12/34/所有
+                                Toast.makeText(requireContext(), "单仓门（分组电机）数量不能超过3个", Toast.LENGTH_SHORT).show();
+                                return false;
+                            }
                         }
                         break;
                     case 1: // 电磁锁仓门
@@ -205,7 +214,7 @@ public class BasicSettingsFragment extends Fragment {
                             return false;
                         }
                         break;
-                    case 2: // 推杆电机仓门
+                    case 2: // 推杆电机仓门（功能不变）
                         pushRodCount += count;
                         if (pushRodCount > 1) {
                             Toast.makeText(requireContext(), "推杆电机仓门数量不能超过1个", Toast.LENGTH_SHORT).show();
@@ -220,38 +229,44 @@ public class BasicSettingsFragment extends Fragment {
 
     // 静态方法：获取启用的仓门列表
     public static List<DoorInfo> getEnabledDoors(android.content.Context context) {
-
         List<DoorRowConfig> configs = getRowConfigs(context);
-
-        // 生成启用的仓门信息
         List<DoorInfo> doors = new ArrayList<>();
-        int motorIndex = 1; // 电机编号从1开始
+        int motorIndex = 1; // 双仓门独立ID（1-4）
+        int groupMotorIndex = 5; // 单仓门分组ID（5=12舱门、6=34舱门、7=所有舱门）
         int lockIndex = 1;  // 电磁锁编号从1开始
-        int pushRodIndex = 1; // 推杆电机编号从1开始
+        int pushRodIndex = 1; // 推杆电机编号保持1不变
 
         for (int rowIndex = 0; rowIndex < configs.size(); rowIndex++) {
             DoorRowConfig config = configs.get(rowIndex);
             if (!config.isEnabled()) continue;
 
-            // 行号从1开始计算
             int currentRow = rowIndex + 1;
-            int count = config.getLayout() == 0 ? 1 : 2;
+            int count = config.getLayout() == 0 ? 1 : 2; // 单仓门1个，双仓门2个
 
             for (int i = 0; i < count; i++) {
                 DoorInfo info = new DoorInfo();
                 info.setType(config.getType());
                 info.setRow(currentRow);
-                info.setPosition(i + 1); // 位置在一行内从1开始计算 (1: 左, 2: 右)
+                info.setPosition(i + 1);
 
                 switch (config.getType()) {
-                    case 0:
-                        info.setHardwareId(motorIndex++);
+                    case 0: // 电机仓门
+                        if (config.getLayout() == 1) { // 双仓门（独立舱门）
+                            info.setHardwareId(motorIndex++);
+                            // 限制独立ID不超过4
+                            if (motorIndex > 4) motorIndex = 4;
+                        } else { // 单仓门（分组舱门）
+                            info.setHardwareId(groupMotorIndex++);
+                            // 限制分组ID不超过7（5=12、6=34、7=所有）
+                            if (groupMotorIndex > 7) groupMotorIndex = 7;
+                        }
                         break;
-                    case 1:
+                    case 1: // 电磁锁仓门
                         info.setHardwareId(lockIndex++);
+                        if (lockIndex > 4) lockIndex = 4;
                         break;
-                    case 2:
-                        info.setHardwareId(pushRodIndex++);
+                    case 2: // 推杆电机仓门（功能不变）
+                        info.setHardwareId(pushRodIndex);
                         break;
                 }
                 doors.add(info);

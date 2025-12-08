@@ -1,6 +1,8 @@
 package com.silan.robotpeisongcontrl.utils;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 public abstract  class DoorController {
@@ -21,6 +23,18 @@ public abstract  class DoorController {
     protected static final int IDLE_STATE = 0x0000; // 空闲/初始状态
     protected DoorState mPreviousState = DoorState.IDLE;// 记录暂停前的状态
 
+    // 开门超时时间（3秒）
+    private static final long OPEN_TIMEOUT_MS = 3000;
+    private Handler timeoutHandler = new Handler(Looper.getMainLooper());
+    private Runnable openTimeoutRunnable;
+
+    // 状态变化监听器接口
+    public interface OnStateChangeListener {
+        void onStateChanged(DoorState state);
+    }
+    private OnStateChangeListener mStateChangeListener;
+
+
     // 仓门状态枚举
     public enum DoorState {
         IDLE,      // 空闲/初始
@@ -35,9 +49,42 @@ public abstract  class DoorController {
         mContext = context;
         mDoorId = doorId;
         mSerialPortManager = SerialPortManager.getInstance();
+
+        // 初始化开门超时任务
+        openTimeoutRunnable = () -> {
+            if (mCurrentState == DoorState.OPENING) {
+                Log.w(TAG, "仓门" + mDoorId + "开门超时，自动切换为OPENED状态");
+                mCurrentState = DoorState.OPENED;
+                // 通知UI更新
+                if (mStateChangeListener != null) {
+                    mStateChangeListener.onStateChanged(mCurrentState);
+                }
+            }
+        };
     }
 
-    public abstract void open();
+    // 设置状态监听器
+    public void setOnStateChangeListener(OnStateChangeListener listener) {
+        mStateChangeListener = listener;
+    }
+
+    public void open() {
+        // 取消之前的超时任务
+        timeoutHandler.removeCallbacks(openTimeoutRunnable);
+        // 设置当前状态为OPENING
+        mCurrentState = DoorState.OPENING;
+        // 通知UI状态变化
+        if (mStateChangeListener != null) {
+            mStateChangeListener.onStateChanged(mCurrentState);
+        }
+        // 发送开门指令
+        sendOpenCommand();
+        // 启动超时任务
+        timeoutHandler.postDelayed(openTimeoutRunnable, OPEN_TIMEOUT_MS);
+    }
+
+    // 新增：抽象方法，子类实现具体开门指令发送
+    protected abstract void sendOpenCommand();
     public abstract void close();
 
     public void pause() {
@@ -47,6 +94,10 @@ public abstract  class DoorController {
             stopDoorOperation();
             mCurrentState = DoorState.PAUSED;
             Log.d(TAG, "仓门" + mDoorId + "已暂停（暂停前状态：" + mPreviousState + "）");
+            // 通知UI状态变化
+            if (mStateChangeListener != null) {
+                mStateChangeListener.onStateChanged(mCurrentState);
+            }
         }
     }
 
@@ -62,6 +113,10 @@ public abstract  class DoorController {
         stopDoorOperation();
         mCurrentState = DoorState.PAUSED;
         Log.d(TAG, "仓门" + mDoorId + "已急停");
+        // 通知UI状态变化
+        if (mStateChangeListener != null) {
+            mStateChangeListener.onStateChanged(mCurrentState);
+        }
     }
 
     protected abstract void stopDoorOperation();
@@ -72,6 +127,10 @@ public abstract  class DoorController {
 
     public void setCurrentState(DoorState state) {
         mCurrentState = state;
+        // 通知UI状态变化
+        if (mStateChangeListener != null) {
+            mStateChangeListener.onStateChanged(mCurrentState);
+        }
     }
 
     public void handleStateData(byte[] data) {
@@ -90,22 +149,30 @@ public abstract  class DoorController {
         int stateValue = ((data[0] & 0xFF) << 8) | (data[1] & 0xFF);
         Log.d(TAG, "仓门" + mDoorId + "收到状态码: 0x" + Integer.toHexString(stateValue));
 
+        DoorState oldState = mCurrentState;
         // 解析状态码并更新当前状态
         switch (stateValue) {
             case IDLE_STATE:
                 mCurrentState = DoorState.IDLE;
+                timeoutHandler.removeCallbacks(openTimeoutRunnable); // 取消超时
                 break;
             case OPENING_STATE:
                 mCurrentState = DoorState.OPENING;
+                // 重启超时任务（防止硬件长时间停留在OPENING）
+                timeoutHandler.removeCallbacks(openTimeoutRunnable);
+                timeoutHandler.postDelayed(openTimeoutRunnable, OPEN_TIMEOUT_MS);
                 break;
             case OPENED_STATE:
                 mCurrentState = DoorState.OPENED;
+                timeoutHandler.removeCallbacks(openTimeoutRunnable); // 取消超时
                 break;
             case CLOSING_STATE:
                 mCurrentState = DoorState.CLOSING;
+                timeoutHandler.removeCallbacks(openTimeoutRunnable); // 取消超时
                 break;
             case CLOSED_STATE:
                 mCurrentState = DoorState.CLOSED;
+                timeoutHandler.removeCallbacks(openTimeoutRunnable); // 取消超时
                 break;
             default:
                 Log.d(TAG, "仓门" + mDoorId + "收到未知状态码: 0x" + Integer.toHexString(stateValue)
@@ -115,5 +182,13 @@ public abstract  class DoorController {
         }
 
         Log.d(TAG, "仓门" + mDoorId + "状态更新为: " + mCurrentState);
+        // 通知UI状态变化
+        if (mStateChangeListener != null && oldState != mCurrentState) {
+            mStateChangeListener.onStateChanged(mCurrentState);
+        }
+    }
+    // 销毁时移除超时任务，避免内存泄漏
+    public void destroy() {
+        timeoutHandler.removeCallbacks(openTimeoutRunnable);
     }
 }

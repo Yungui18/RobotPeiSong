@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
-
+//在TaskSelectionActivity和MultiDeliveryTaskSelectionActivity页面，仓门按钮都只显示仓门1，并且点击任意按钮，都只打开一个12舱门，为什么
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();

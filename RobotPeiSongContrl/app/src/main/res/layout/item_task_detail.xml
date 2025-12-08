@@ -5,7 +5,7 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:padding="10dp"
-    android:background="@drawable/button_mint_green_rect">
+    android:background="@drawable/button_sky_blue_rect">
 
     <TextView
         android:id="@+id/tv_task_num"
@@ -13,7 +13,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="任务号: 1"
-        android:textSize="16sp"/>
+        android:textSize="16sp"
+        android:textColor="@color/white"/>
 
     <TextView
         android:id="@+id/tv_task_door"
@@ -21,7 +22,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="仓门: 1"
-        android:textSize="16sp"/>
+        android:textSize="16sp"
+        android:textColor="@color/white"/>
 
     <ImageButton
         android:id="@+id/btn_delete_task"

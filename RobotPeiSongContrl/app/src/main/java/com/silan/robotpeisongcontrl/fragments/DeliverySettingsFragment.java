@@ -98,13 +98,26 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
         doorControllers.clear();
 
         for (int i = 0; i < doorInfos.size(); i++) {
+            // 新增：创建final变量保存当前i的值
+            final int doorIndex = i;
             BasicSettingsFragment.DoorInfo info = doorInfos.get(i);
-            // Key=列表索引i，与getDoorIdFromRegister返回的索引一致
-            doorControllers.put(i, DoorControllerFactory.createDoorController(
+            DoorController controller = DoorControllerFactory.createDoorController(
                     requireContext(),
                     info.getType(),
                     info.getHardwareId()
-            ));
+            );
+            doorControllers.put(i, controller);
+
+            // 使用final的doorIndex代替i
+            controller.setOnStateChangeListener(state -> {
+                Log.d(TAG, "仓门" + doorIndex + "状态变化：" + state);
+                // 主线程更新UI
+                requireActivity().runOnUiThread(() -> {
+                    updateDoorIndicator(doorIndex, state);
+                    updateDoorButtonStates(doorIndex);
+                });
+            });
+
             Log.d(TAG, "初始化仓门：索引=" + i + "，类型=" + info.getType() + "，硬件ID=" + info.getHardwareId() + "，寄存器地址=" + Integer.toHexString(getStateRegisterForDoor(info.getType(), info.getHardwareId())));
         }
 
@@ -116,65 +129,81 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
      * 依次轮询所有仓门的状态寄存器
      */
     private void startStatePolling() {
-        // 清除之前的回调
         handler.removeCallbacksAndMessages(null);
 
-        // 获取所有需要轮询的仓门ID列表
-        List<Integer> doorIds = new ArrayList<>(doorControllers.keySet());
-        // 添加一个特殊标识(-1)表示急停状态轮询
-        doorIds.add(-1);
-        doorIds.add(-2); // 电机1旋转方向(0x18)
-        doorIds.add(-3); // 电机1正转延时(0x1D)
+        // 分离轮询列表：优先轮询仓门状态，非必要寄存器降低频率
+        List<Integer> doorStateIds = new ArrayList<>();
+        List<Integer> otherRegIds = new ArrayList<>();
+        for (int i = 0; i < doorInfos.size(); i++) {
+            doorStateIds.add(i); // 仓门状态ID
+        }
+        otherRegIds.add(-1); // 急停
+        otherRegIds.add(-2); // 旋转方向
+        otherRegIds.add(-3); // 正转延时
 
-        // 轮询任务
-        Runnable pollRunnable = new Runnable() {
+        // 仓门状态轮询（高频：500ms/次）
+        Runnable doorPollRunnable = new Runnable() {
             private int currentIndex = 0;
 
             @Override
             public void run() {
-                if (doorIds.isEmpty()) {
-                    // 没有仓门需要轮询，延迟后重试
-                    handler.postDelayed(this, 1000);
+                if (doorStateIds.isEmpty()) {
+                    handler.postDelayed(this, 500);
                     return;
                 }
 
-                // 循环获取下一个仓门ID
-                int doorId = doorIds.get(currentIndex % doorIds.size());
+                int doorId = doorStateIds.get(currentIndex % doorStateIds.size());
                 currentIndex++;
-
-                if (doorId == -1) {
-                    // 轮询急停状态寄存器(0x49)
-                    currentPollingRegister = 0x49;
-                    serialPortManager.sendModbusReadCommand(0x01, 0x49, 1);
-                    Log.d(TAG, "轮询急停状态, 寄存器地址: 0x49");
-                }
-                // 新增：轮询旋转方向和延时寄存器
-                else if (doorId == -2) {
-                    currentPollingRegister = 0x18;
-                    serialPortManager.sendModbusReadCommand(0x01, 0x18, 1);
-                    Log.d(TAG, "轮询电机1旋转方向寄存器: 0x18");
-                } else if (doorId == -3) {
-                    currentPollingRegister = 0x1D;
-                    serialPortManager.sendModbusReadCommand(0x01, 0x1D, 1);
-                    Log.d(TAG, "轮询电机1正转延时寄存器: 0x1D");
-                }else {
-                    BasicSettingsFragment.DoorInfo info = doorInfos.get(doorId);
-                    // 获取对应的状态寄存器地址
-                    int stateReg = getStateRegisterForDoor(info.getType(), info.getHardwareId());
-                    if (stateReg != -1) {
-                        currentPollingRegister = stateReg;
-                        serialPortManager.sendModbusReadCommand(0x01, stateReg, 1);
-                        Log.d(TAG, "轮询仓门" + doorId + "状态, 寄存器地址: 0x" + Integer.toHexString(stateReg));
-                    }
+                BasicSettingsFragment.DoorInfo info = doorInfos.get(doorId);
+                int stateReg = getStateRegisterForDoor(info.getType(), info.getHardwareId());
+                if (stateReg != -1) {
+                    currentPollingRegister = stateReg;
+                    serialPortManager.sendModbusReadCommand(0x01, stateReg, 1);
+                    Log.d(TAG, "轮询仓门" + doorId + "状态, 寄存器地址: 0x" + Integer.toHexString(stateReg));
                 }
 
-                // 每个仓门轮询间隔500ms，所有仓门轮询一遍后等待一段时间
-                handler.postDelayed(this, 500);
+                handler.postDelayed(this, 500); // 仓门状态高频轮询
             }
         };
 
-        // 立即开始轮询
-        handler.post(pollRunnable);
+        // 非必要寄存器轮询（低频：3000ms/次）
+        Runnable otherPollRunnable = new Runnable() {
+            private int currentIndex = 0;
+
+            @Override
+            public void run() {
+                if (otherRegIds.isEmpty()) {
+                    handler.postDelayed(this, 3000);
+                    return;
+                }
+
+                int regId = otherRegIds.get(currentIndex % otherRegIds.size());
+                currentIndex++;
+                switch (regId) {
+                    case -1: // 急停
+                        currentPollingRegister = 0x49;
+                        serialPortManager.sendModbusReadCommand(0x01, 0x49, 1);
+                        Log.d(TAG, "轮询急停状态, 寄存器地址: 0x49");
+                        break;
+                    case -2: // 旋转方向
+                        currentPollingRegister = 0x18;
+                        serialPortManager.sendModbusReadCommand(0x01, 0x18, 1);
+                        Log.d(TAG, "轮询电机1旋转方向寄存器: 0x18");
+                        break;
+                    case -3: // 正转延时
+                        currentPollingRegister = 0x1D;
+                        serialPortManager.sendModbusReadCommand(0x01, 0x1D, 1);
+                        Log.d(TAG, "轮询电机1正转延时寄存器: 0x1D");
+                        break;
+                }
+
+                handler.postDelayed(this, 3000); // 非必要寄存器低频轮询
+            }
+        };
+
+        // 启动轮询
+        handler.post(doorPollRunnable);
+        handler.post(otherPollRunnable);
     }
 
     /**
@@ -467,6 +496,18 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     // 处理校验通过的响应数据
     private void processValidResponse(byte[] data, int functionCode) {
         if (functionCode == 0x03) {
+            // 修复：宽松校验长度（只要数据部分完整，允许末尾冗余字节）
+            if (data.length < 5) { // 最小长度：地址+功能码+数据长度+1字节数据+CRC（实际最小7字节，此处放宽）
+                Log.e(TAG, "读寄存器响应长度不足，忽略");
+                return;
+            }
+            int dataLength = data[2] & 0xFF;
+            // 要求：数据部分必须完整（前 3 + dataLength 字节有效，末尾冗余字节忽略）
+            if (data.length < 3 + dataLength) {
+                Log.e(TAG, "数据部分不完整，忽略");
+                return;
+            }
+
             // 解析0x03响应：通过当前轮询的寄存器地址确定对应的仓门
             int receivedReg = currentPollingRegister;
 
@@ -517,24 +558,19 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
             }
 
             // 提取状态数据（2字节寄存器值）
-            if (data.length >= 5) { // 验证数据长度
-                byte[] stateData = new byte[2];
-                System.arraycopy(data, 3, stateData, 0, 2);
+            byte[] stateData = new byte[2];
+            System.arraycopy(data, 3, stateData, 0, 2);
 
-                // 处理状态数据并更新UI
-                handler.post(() -> {
-                    controller.handleStateData(stateData);
-                    DoorController.DoorState newState = controller.getCurrentState();
-                    Log.d(TAG, "仓门" + doorId + "状态更新为: " + newState);
+            // 处理状态数据并更新UI
+            handler.post(() -> {
+                controller.handleStateData(stateData);
+                DoorController.DoorState newState = controller.getCurrentState();
+                Log.d(TAG, "仓门" + doorId + "状态更新为: " + newState);
 
-                    // 更新指示器和按钮状态
-                    updateDoorIndicator(doorId, newState);
-                    updateDoorButtonStates(doorId);
-                });
-            } else {
-                Log.e(TAG, "仓门状态响应数据长度不足，寄存器0x" + Integer.toHexString(receivedReg));
-            }
-
+                // 更新指示器和按钮状态
+                updateDoorIndicator(doorId, newState);
+                updateDoorButtonStates(doorId);
+            });
         } else if (functionCode == 0x06) {
             // 0x06响应处理（确认写入成功）
             Log.d(TAG, "0x06指令执行成功，响应数据: " + bytesToHexString(data));
@@ -642,6 +678,10 @@ public class DeliverySettingsFragment extends Fragment implements OnDataReceived
     public void onDestroyView() {
         super.onDestroyView();
         handler.removeCallbacksAndMessages(null);
+        // 销毁控制器超时任务
+        for (DoorController controller : doorControllers.values()) {
+            controller.destroy();
+        }
         if (serialPortManager != null) {
             serialPortManager.closeSerialPort();
         }

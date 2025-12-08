@@ -3,7 +3,7 @@
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_default"
+    android:background="@drawable/bg_none"
     android:padding="0dp">
 
     <!-- 时间显示 -->
@@ -31,12 +31,13 @@
             android:layout_height="wrap_content"
             android:layout_margin="30dp"
             android:layout_marginBottom="30dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
             android:text="开始配送"
             android:textAllCaps="false"
-            android:textSize="18sp" />
+            android:textColor="@color/white"
+            android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_patrol_mode"
@@ -44,36 +45,39 @@
             android:layout_height="wrap_content"
             android:layout_margin="30dp"
             android:layout_marginBottom="30dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
+            android:textColor="@color/white"
             android:text="巡游模式"
             android:textAllCaps="false"
-            android:textSize="18sp" />
+            android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_multi_delivery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="30dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
+            android:textColor="@color/white"
             android:text="多点配送"
             android:textAllCaps="false"
-            android:textSize="18sp" />
+            android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_follow_mode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="30dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
+            android:textColor="@color/white"
             android:text="跟随模式"
             android:textAllCaps="false"
-            android:textSize="18sp" />
+            android:textSize="25sp" />
     </LinearLayout>
 
     <!-- 设置按钮 -->

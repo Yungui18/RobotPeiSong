@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,7 +27,9 @@ import com.silan.robotpeisongcontrl.model.DoorRowConfig;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 public class BasicSettingsFragment extends Fragment {
@@ -228,13 +231,13 @@ public class BasicSettingsFragment extends Fragment {
     }
 
     // 静态方法：获取启用的仓门列表
-    public static List<DoorInfo> getEnabledDoors(android.content.Context context) {
+    public static List<DoorInfo> getEnabledDoors(Context context) {
         List<DoorRowConfig> configs = getRowConfigs(context);
         List<DoorInfo> doors = new ArrayList<>();
         int motorIndex = 1; // 双仓门独立ID（1-4）
-        int groupMotorIndex = 5; // 单仓门分组ID（5=12舱门、6=34舱门、7=所有舱门）
-        int lockIndex = 1;  // 电磁锁编号从1开始
-        int pushRodIndex = 1; // 推杆电机编号保持1不变
+        int groupMotorIndex = 5; // 单仓门分组ID（5=12、6=34、7=所有）
+        int lockIndex = 8;  // 电磁锁编号（8-11）避免重叠
+        int pushRodIndex = 12; // 推杆电机编号（固定1）
 
         for (int rowIndex = 0; rowIndex < configs.size(); rowIndex++) {
             DoorRowConfig config = configs.get(rowIndex);
@@ -251,27 +254,45 @@ public class BasicSettingsFragment extends Fragment {
 
                 switch (config.getType()) {
                     case 0: // 电机仓门
-                        if (config.getLayout() == 1) { // 双仓门（独立舱门）
+                        if (config.getLayout() == 1) { // 双仓门（独立）
+                            // 修复：超过上限时跳过，避免重复ID
+                            if (motorIndex > 4) {
+                                Log.w("BasicSettings", "独立电机仓门已达上限（4个），跳过行" + currentRow + "位置" + (i+1));
+                                continue;
+                            }
                             info.setHardwareId(motorIndex++);
-                            // 限制独立ID不超过4
-                            if (motorIndex > 4) motorIndex = 4;
-                        } else { // 单仓门（分组舱门）
+                        } else { // 单仓门（分组）
+                            if (groupMotorIndex > 7) {
+                                Log.w("BasicSettings", "分组电机仓门已达上限（3个），跳过行" + currentRow + "位置" + (i+1));
+                                continue;
+                            }
                             info.setHardwareId(groupMotorIndex++);
-                            // 限制分组ID不超过7（5=12、6=34、7=所有）
-                            if (groupMotorIndex > 7) groupMotorIndex = 7;
                         }
                         break;
                     case 1: // 电磁锁仓门
+                        if (lockIndex > 11) {
+                            Log.w("BasicSettings", "电磁锁仓门已达上限（4个），跳过行" + currentRow + "位置" + (i+1));
+                            continue;
+                        }
                         info.setHardwareId(lockIndex++);
-                        if (lockIndex > 4) lockIndex = 4;
                         break;
-                    case 2: // 推杆电机仓门（功能不变）
+                    case 2: // 推杆电机仓门
+                        // 推杆电机仅支持1个，直接固定ID=1
                         info.setHardwareId(pushRodIndex);
                         break;
                 }
                 doors.add(info);
             }
         }
+
+        // 日志打印：验证硬件ID是否重复
+        Set<Integer> hardwareIds = new HashSet<>();
+        for (DoorInfo info : doors) {
+            if (!hardwareIds.add(info.getHardwareId())) {
+                Log.e("BasicSettings", "硬件ID重复：" + info.getHardwareId() + "（行" + info.getRow() + "-位置" + info.getPosition() + "）");
+            }
+        }
+        Log.d("BasicSettings", "最终启用的仓门列表：" + new Gson().toJson(doors));
         return doors;
     }
 

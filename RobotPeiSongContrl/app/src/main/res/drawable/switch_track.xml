@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 选中（打开）时：浅红色轨道（带透明度） -->
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#78B6F8" />
+            <corners android:radius="12dp" /> <!-- 轨道圆角（与滑块匹配） -->
+        </shape>
+    </item>
+    <!-- 未选中（关闭）时：灰色轨道 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#CCCCCC" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</selector>

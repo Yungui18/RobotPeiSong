@@ -110,7 +110,7 @@ public class PatrolSettingsActivity extends BaseActivity {
             Button button = new Button(this);
             button.setId(View.generateViewId());
             button.setText(String.format("仓门%d", hardwareDoorId)); // 显示硬件ID
-            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setBackgroundResource(R.drawable.button_sky_blue_rect);
             button.setTextColor(getResources().getColor(android.R.color.white));
 
             // 设置布局参数（均匀分布）

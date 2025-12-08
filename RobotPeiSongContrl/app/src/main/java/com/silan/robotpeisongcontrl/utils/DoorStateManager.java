@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +17,8 @@ public class DoorStateManager {
     private static DoorStateManager instance;
     private Set<Integer> openedDoors = new CopyOnWriteArraySet<>();
     private Context context;
+    private final List<BasicSettingsFragment.DoorInfo> enabledDoors; // 存储完整仓门信息
+
     // 新增：主线程Handler，用于延迟发送指令
     private Handler mHandler = new Handler(Looper.getMainLooper());
     // 新增：指令间隔时间（500ms，可根据硬件调整）
@@ -22,6 +26,8 @@ public class DoorStateManager {
 
     private DoorStateManager(Context context) {
         this.context = context.getApplicationContext();
+        // 初始化时获取所有启用的仓门信息（包含类型和硬件ID）
+        this.enabledDoors = BasicSettingsFragment.getEnabledDoors(context);
     }
 
     public static synchronized DoorStateManager getInstance(Context context) {
@@ -100,20 +106,28 @@ public class DoorStateManager {
     }
 
     // 获取对应仓门的控制器（不变）
-    private DoorController getDoorController(int doorId) {
-        switch (doorId) {
-            case 1: return new Door1Controller(context);
-            case 2: return new Door2Controller(context);
-            case 3: return new Door3Controller(context);
-            case 4: return new Door4Controller(context);
-            case 5: return new Door5Controller(context);
-            case 6: return new Door6Controller(context);
-            case 7: return new Door7Controller(context);
-            case 8: return new Door8Controller(context);
-            case 9: return new Door9Controller(context);
-            default:
-                Log.e("DoorStateManager", "无效的仓门ID: " + doorId);
-                return null;
+    private DoorController getDoorController(int hardwareId) {
+        BasicSettingsFragment.DoorInfo doorInfo = getDoorInfoByHardwareId(hardwareId);
+        if (doorInfo == null) {
+            return null;
         }
+        // 根据仓门信息中的真实类型创建控制器
+        return DoorControllerFactory.createDoorController(
+                context,
+                doorInfo.getType(), // 关键：传真实类型（0=电机，1=电磁锁，2=推杆）
+                hardwareId
+        );
+    }
+
+    // 根据硬件ID获取对应的DoorInfo（包含类型）
+    private BasicSettingsFragment.DoorInfo getDoorInfoByHardwareId(int hardwareId) {
+        for (BasicSettingsFragment.DoorInfo info : enabledDoors) {
+            if (info.getHardwareId() == hardwareId) {
+                Log.d("DoorStateManager", "匹配到仓门：ID=" + hardwareId + ", 类型=" + info.getType());
+                return info;
+            }
+        }
+        Log.e("DoorStateManager", "未找到硬件ID为" + hardwareId + "的仓门信息");
+        return null;
     }
 }

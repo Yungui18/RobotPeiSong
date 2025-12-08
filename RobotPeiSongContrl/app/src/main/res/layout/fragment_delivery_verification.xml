@@ -2,8 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="@color/white">
+    android:background="@color/white"
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,33 +14,35 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="配送验证设置"
-            android:textSize="24sp"
-            android:textColor="@color/black"
-            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
             android:gravity="center"
-            android:layout_marginBottom="24dp"/>
+            android:text="配送验证设置"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <!-- 启用配送验证开关 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:background="?selectableItemBackground"
             android:gravity="center_vertical"
-            android:padding="16dp"
-            android:background="?selectableItemBackground">
+            android:orientation="horizontal"
+            android:padding="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="启用配送验证"
-                android:textSize="18sp"/>
+                android:textSize="18sp" />
 
             <Switch
                 android:id="@+id/switch_verification"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:thumb="@drawable/switch_thumb"
+                android:track="@drawable/switch_track" />
         </LinearLayout>
 
         <!-- 密码设置区域 -->
@@ -49,15 +51,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:visibility="gone">
 
             <!-- 取物密码 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:padding="8dp">
 
                 <TextView
@@ -65,30 +67,31 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="取物密码"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tv_pickup_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
                     android:text="未设置"
-                    android:textSize="16sp"
-                    android:layout_marginEnd="16dp"/>
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/btn_set_pickup_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/button_sky_blue_rect"
                     android:text="设置"
-                    android:background="@drawable/button_blue_rect"/>
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <!-- 送物密码 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:padding="8dp">
 
                 <TextView
@@ -96,22 +99,23 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="送物密码"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/tv_delivery_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
                     android:text="未设置"
-                    android:textSize="16sp"
-                    android:layout_marginEnd="16dp"/>
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/btn_set_delivery_password"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/button_sky_blue_rect"
                     android:text="设置"
-                    android:background="@drawable/button_blue_rect"/>
+                    android:textColor="@color/white" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

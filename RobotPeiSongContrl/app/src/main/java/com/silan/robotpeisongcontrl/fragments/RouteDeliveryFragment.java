@@ -95,7 +95,7 @@ public class RouteDeliveryFragment extends Fragment {
             }
 
             button.setText(String.format("仓门%d", doorHardwareId, doorType)); // 显示硬件仓门ID
-            button.setBackgroundResource(R.drawable.button_blue_rect);
+            button.setBackgroundResource(R.drawable.button_sky_blue_rect);
             button.setTextColor(Color.WHITE);
             button.setTextSize(16);
 
@@ -149,7 +149,7 @@ public class RouteDeliveryFragment extends Fragment {
         if (selectedDoors[index]) {
             doorButtons[index].setBackgroundResource(R.drawable.button_red_rect);
         } else {
-            doorButtons[index].setBackgroundResource(R.drawable.button_blue_rect);
+            doorButtons[index].setBackgroundResource(R.drawable.button_sky_blue_rect);
         }
     }
 

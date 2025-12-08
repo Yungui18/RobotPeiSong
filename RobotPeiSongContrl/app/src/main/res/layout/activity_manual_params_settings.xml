@@ -1,549 +1,606 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="8dp"> <!-- 与原按钮margin匹配，保证边距一致 -->
         <ImageButton
             android:id="@+id/btn_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_back"
+            android:layout_margin="8dp"
             android:background="?selectableItemBackgroundBorderless"
-            android:layout_margin="8dp"/>
-        <!-- 统一控制所有直流电机的参数 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="所有直流电机参数设置（电机1-4共用）"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 统一高速速度（所有直流电机） -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="高速速度(1-9):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_all_motor_high_speed"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="1-9"/>
-        </LinearLayout>
-
-        <!-- 统一低速速度（所有直流电机） -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="低速速度(1-9):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_all_motor_low_speed"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="1-9"/>
-        </LinearLayout>
-
-        <!-- 统一高速时间（所有直流电机，单位100ms，0-100对应0-10秒） -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="高速时间(0-100):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_all_motor_high_time"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0-100"/>
-        </LinearLayout>
-        <!-- 电机1单独参数设置 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="直流电机1单独参数设置"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 电机1旋转方向 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="旋转方向(0=正/1=反):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor1_direction"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0或1"/>
-        </LinearLayout>
-
-        <!-- 电机1正转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="正转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor1_forward_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机1反转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="反转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor1_reverse_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机2单独参数设置 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="直流电机2单独参数设置"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 电机2旋转方向 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="旋转方向(0=正/1=反):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor2_direction"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0或1"/>
-        </LinearLayout>
-
-        <!-- 电机2正转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="正转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor2_forward_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机2反转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="反转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor2_reverse_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机3单独参数设置 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="直流电机3单独参数设置"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 电机3旋转方向 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="旋转方向(0=正/1=反):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor3_direction"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0或1"/>
-        </LinearLayout>
-
-        <!-- 电机3正转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="正转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor3_forward_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机3反转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="反转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor3_reverse_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机4单独参数设置 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="直流电机4单独参数设置"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- 电机4旋转方向 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="旋转方向(0=正/1=反):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor4_direction"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0或1"/>
-        </LinearLayout>
-
-        <!-- 电机4正转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="正转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor4_forward_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 电机4反转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="反转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_motor4_reverse_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 推杆电机参数（保持独立） -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="推杆电机参数设置"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="16dp"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="高速速度(1-9):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_high_speed"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="1-9"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="低速速度(1-9):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_low_speed"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="1-9"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="高速时间(0-100):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_high_time"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0-100"/>
-        </LinearLayout>
-
-        <!-- 推杆电机旋转方向 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="旋转方向(0=正/1=反):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_direction"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="0或1"/>
-        </LinearLayout>
-
-        <!-- 推杆电机正转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="正转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_forward_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-        <!-- 推杆电机反转延时 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="反转延时(0.02ms):"
-                android:layout_gravity="center_vertical"
-                android:textSize="16sp"/>
-            <EditText
-                android:id="@+id/et_pusher_reverse_delay"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:inputType="number"
-                android:layout_marginStart="12dp"
-                android:hint="数值"/>
-        </LinearLayout>
-
-
-        <!-- 固定参数显示（不可修改） -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="固定参数（不可修改）"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tv_lock_current"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textSize="16sp"/>
-
-        <TextView
-            android:id="@+id/tv_electromagnet_time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:textSize="16sp"/>
-
-        <!-- 保存按钮 -->
-        <Button
-            android:id="@+id/btn_save_params"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="保存参数"
-            android:textSize="16sp"
-            android:padding="12dp"/>
-
+            android:src="@drawable/ic_arrow_back" />
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <!-- 统一控制所有直流电机的参数 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="所有直流电机参数设置（电机1-4共用）"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 统一高速速度（所有直流电机） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="高速速度(1-9):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_all_motor_high_speed"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="1-9"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 统一低速速度（所有直流电机） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="低速速度(1-9):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_all_motor_low_speed"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="1-9"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 统一高速时间（所有直流电机，单位100ms，0-100对应0-10秒） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="高速时间(0-100):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_all_motor_high_time"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0-100"
+                    android:inputType="number" />
+            </LinearLayout>
+            <!-- 电机1单独参数设置 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="直流电机1单独参数设置"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 电机1旋转方向 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="旋转方向(0=正/1=反):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor1_direction"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0或1"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机1正转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="正转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor1_forward_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机1反转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="反转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor1_reverse_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机2单独参数设置 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="直流电机2单独参数设置"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 电机2旋转方向 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="旋转方向(0=正/1=反):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor2_direction"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0或1"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机2正转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="正转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor2_forward_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机2反转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="反转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor2_reverse_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机3单独参数设置 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="直流电机3单独参数设置"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 电机3旋转方向 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="旋转方向(0=正/1=反):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor3_direction"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0或1"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机3正转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="正转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor3_forward_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机3反转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="反转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor3_reverse_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机4单独参数设置 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="直流电机4单独参数设置"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 电机4旋转方向 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="旋转方向(0=正/1=反):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor4_direction"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0或1"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机4正转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="正转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor4_forward_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 电机4反转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="反转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_motor4_reverse_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 推杆电机参数（保持独立） -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="推杆电机参数设置"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="高速速度(1-9):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_high_speed"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="1-9"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="低速速度(1-9):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_low_speed"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="1-9"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="高速时间(0-100):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_high_time"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0-100"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 推杆电机旋转方向 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="旋转方向(0=正/1=反):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_direction"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="0或1"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 推杆电机正转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="正转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_forward_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 推杆电机反转延时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="反转延时(0.02ms):"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/et_pusher_reverse_delay"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:hint="数值"
+                    android:inputType="number" />
+            </LinearLayout>
+
+            <!-- 固定参数显示（不可修改） -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"
+                android:text="固定参数（不可修改）"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_lock_current"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tv_electromagnet_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:textSize="16sp" />
+
+            <!-- 保存按钮 -->
+            <Button
+                android:id="@+id/btn_save_params"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/button_sea_blue_rect"
+                android:padding="12dp"
+                android:text="保存参数"
+                android:textSize="16sp"
+                android:textColor="@color/white"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

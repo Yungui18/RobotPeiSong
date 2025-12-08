@@ -2,95 +2,113 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
     android:background="@color/light_gray"
+    android:orientation="horizontal"
     android:padding="16dp">
 
     <!-- 左侧菜单栏 -->
     <LinearLayout
-        android:layout_width="240dp"
+        android:layout_width="200dp"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:background="@color/white"
-        android:elevation="4dp">
+        android:elevation="4dp"
+        android:orientation="vertical">
 
         <!-- 标题栏 -->
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@color/mint_green">
+            android:layout_height="45dp">
 
             <ImageButton
                 android:id="@+id/btn_back"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_arrow_back"
+                android:layout_margin="8dp"
                 android:background="?selectableItemBackgroundBorderless"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="8dp"/>
+                android:src="@drawable/ic_arrow_back" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:layout_height="43dp"
+                android:background="@color/skyblue"
+                android:gravity="center"
                 android:text="定时配送设置"
                 android:textColor="@color/white"
-                android:textSize="20sp"
-                android:layout_centerInParent="true"/>
-        </RelativeLayout>
+                android:textSize="20sp" />
+        </LinearLayout>
 
         <!-- 菜单项 -->
         <Button
             android:id="@+id/btn_enable"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="启用定时配送"
-            android:textAllCaps="false"
             android:background="@drawable/menu_item_background"
-            android:textColor="@color/black"
-            android:drawableStart="@drawable/ic_location"
             android:drawablePadding="8dp"
             android:gravity="start|center_vertical"
-            android:paddingStart="16dp"/>
+            android:paddingStart="16dp"
+            android:text="启用定时配送"
+            android:textAllCaps="false"
+            android:textColor="@color/black" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="@color/gray" />
 
         <Button
             android:id="@+id/btn_point_delivery"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="点位配送"
-            android:textAllCaps="false"
             android:background="@drawable/menu_item_background"
-            android:textColor="@color/black"
-            android:drawableStart="@drawable/ic_location"
             android:drawablePadding="8dp"
             android:gravity="start|center_vertical"
-            android:paddingStart="16dp"/>
+            android:paddingStart="16dp"
+            android:text="点位配送"
+            android:textAllCaps="false"
+            android:textColor="@color/black" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="@color/gray" />
 
         <Button
             android:id="@+id/btn_route_delivery"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="路线配送"
-            android:textAllCaps="false"
             android:background="@drawable/menu_item_background"
-            android:textColor="@color/black"
-            android:drawableStart="@drawable/ic_location"
             android:drawablePadding="8dp"
             android:gravity="start|center_vertical"
-            android:paddingStart="16dp"/>
+            android:paddingStart="16dp"
+            android:text="路线配送"
+            android:textAllCaps="false"
+            android:textColor="@color/black" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="@color/gray" />
 
         <Button
             android:id="@+id/btn_view_tasks"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:text="查看已有任务"
-            android:textAllCaps="false"
             android:background="@drawable/menu_item_background"
-            android:textColor="@color/black"
-            android:drawableStart="@drawable/ic_location"
             android:drawablePadding="8dp"
             android:gravity="start|center_vertical"
-            android:paddingStart="16dp"/>
+            android:paddingStart="16dp"
+            android:text="查看已有任务"
+            android:textAllCaps="false"
+            android:textColor="@color/black" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="16dp"
+            android:background="@color/gray" />
     </LinearLayout>
 
     <!-- 右侧内容区 -->
@@ -98,5 +116,5 @@
         android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/white"/>
+        android:background="@color/white" />
 </LinearLayout>

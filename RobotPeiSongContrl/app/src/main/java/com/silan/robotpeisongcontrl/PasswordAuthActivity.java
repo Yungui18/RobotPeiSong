@@ -125,8 +125,15 @@ public class PasswordAuthActivity extends BaseActivity {
         // 删除按钮
         Button btnDelete = new Button(this);
         btnDelete.setLayoutParams(buttonParams);
-        btnDelete.setText("");
-        btnDelete.setBackgroundResource(R.drawable.ic_backspace);
+        btnDelete.setText("删除");
+        btnDelete.setTextSize(25);
+        btnDelete.setTextColor(Color.BLACK);
+        // 设置与数字键相同的圆形背景
+        GradientDrawable bg = new GradientDrawable();
+        bg.setShape(GradientDrawable.OVAL);
+        bg.setColor(Color.WHITE);
+        bg.setStroke(dpToPx(1), Color.LTGRAY);
+        btnDelete.setBackground(bg);
         btnDelete.setOnClickListener(v -> removeDigit());
         row4.addView(btnDelete);
 

@@ -21,7 +21,9 @@
         <Switch
             android:id="@+id/switch_enable"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"/>
     </LinearLayout>
 
     <LinearLayout
@@ -36,7 +38,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="编辑"
-            android:layout_marginEnd="4dp"/>
+            android:textColor="@color/white"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/button_sky_blue_rect"/>
 
         <Button
             android:id="@+id/btn_delete"
@@ -44,7 +48,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="删除"
+            android:textColor="@color/white"
             android:layout_marginStart="4dp"
-            android:backgroundTint="@color/red"/>
+            android:background="@drawable/button_red_rect"/>
     </LinearLayout>
 </LinearLayout>

@@ -292,10 +292,8 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         tvTargetPosition = findViewById(R.id.tv_target_position);
         tvMoveStatus = findViewById(R.id.tv_move_status);
 
-        // 默认在调试模式下显示面板
-        if (Constants.DEBUG_MODE) {
-            debugContainer.setVisibility(View.VISIBLE);
-        }
+        debugContainer.setVisibility(View.GONE);
+
         // 初始状态
         clearDebugLogs();
         // 切换面板按钮
@@ -627,9 +625,11 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
     //应用背景
     private void applyBackground() {
-        SharedPreferences prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
-        int bgResId = prefs.getInt("background_res", R.drawable.bg_default);
-        mainLayout.setBackgroundResource(bgResId);
+//        SharedPreferences prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
+//        int bgResId = prefs.getInt("background_res", R.drawable.bg_default);
+//        mainLayout.setBackgroundResource(bgResId);
+        // 设置为白色背景
+        mainLayout.setBackgroundColor(getResources().getColor(android.R.color.white));
     }
 
     //时区更新

@@ -17,7 +17,7 @@
             android:id="@+id/btn_pickup"
             android:layout_width="200dp"
             android:layout_height="60dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:text="@string/pickup"
             android:textAllCaps="false" />
 
@@ -26,7 +26,7 @@
             android:layout_width="200dp"
             android:layout_height="60dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/button_mint_green_rect"
+            android:background="@drawable/button_sky_blue_rect"
             android:text="@string/complete"
             android:textAllCaps="false" />
         <TextView

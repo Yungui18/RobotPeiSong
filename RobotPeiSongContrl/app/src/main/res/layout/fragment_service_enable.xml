@@ -25,6 +25,8 @@
             android:id="@+id/switch_delivery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"
             android:checked="true"/>
     </LinearLayout>
     <LinearLayout
@@ -42,6 +44,8 @@
             android:id="@+id/switch_patrol"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"
             android:checked="true"/>
     </LinearLayout>
     <LinearLayout
@@ -59,6 +63,8 @@
             android:id="@+id/switch_multi_delivery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"
             android:checked="true"/>
     </LinearLayout>
 </LinearLayout>

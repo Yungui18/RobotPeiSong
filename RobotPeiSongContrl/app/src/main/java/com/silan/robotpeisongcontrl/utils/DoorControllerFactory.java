@@ -36,8 +36,9 @@ public class DoorControllerFactory {
             }
         }
 
+        // 实现抽象方法：发送开门指令
         @Override
-        public void open() {
+        protected void sendOpenCommand() {
             SerialPortManager.getInstance().sendModbusWriteCommand(0x01, controlReg, 0x0100);
         }
 
@@ -57,19 +58,21 @@ public class DoorControllerFactory {
         protected void stopDoorOperation() {}
     }
 
+
     // 电磁锁仓门控制器
     static class ElectromagnetDoorController extends DoorController {
         private int controlReg;
 
         public ElectromagnetDoorController(Context context, int lockId) {
             super(context, lockId);
-            this.controlReg = 0x58 + (lockId - 1);
+            int lockOffset = lockId - 8;
+            this.controlReg = 0x58 + lockOffset;
         }
 
+        // 实现抽象方法：发送开门指令
         @Override
-        public void open() {
-            SerialPortManager.getInstance().sendModbusWriteCommand(0x01, controlReg, 0x01
-            );
+        protected void sendOpenCommand() {
+            SerialPortManager.getInstance().sendModbusWriteCommand(0x01, controlReg, 0x01);
         }
 
         @Override
@@ -96,8 +99,9 @@ public class DoorControllerFactory {
             super(context, id);
         }
 
+        // 实现抽象方法：发送开门指令
         @Override
-        public void open() {
+        protected void sendOpenCommand() {
             SerialPortManager.getInstance().sendModbusWriteCommand(0x01, CONTROL_REG, 0x0100);
         }
 

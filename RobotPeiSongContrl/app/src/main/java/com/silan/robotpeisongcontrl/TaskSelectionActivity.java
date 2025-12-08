@@ -1,30 +1,19 @@
 package com.silan.robotpeisongcontrl;
 
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.InputType;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -38,9 +27,7 @@ import com.silan.robotpeisongcontrl.utils.TaskManager;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import okio.ByteString;
 
@@ -56,18 +43,16 @@ public class TaskSelectionActivity extends BaseActivity {
     private int doorCount; // 仓门数量
     private LinearLayout taskButtonsContainer; // 动态容器
     private DoorStateManager doorStateManager; // 仓门状态管理器
-    private List<Integer> doorNumbers; // 实际仓门编号列表（
+    private List<Integer> doorNumbers; // 实际仓门编号列表
+    private List<BasicSettingsFragment.DoorInfo> enabledDoors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
 
-        // 初始化任务状态数组（长度为仓门数量）
-        taskAssigned = new boolean[doorCount];
-
         //获取仓门
-        List<BasicSettingsFragment.DoorInfo> enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
+        enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
         doorCount = enabledDoors.size(); // 动态仓门数量
         doorNumbers = new ArrayList<>();
         for (BasicSettingsFragment.DoorInfo door : enabledDoors) {
@@ -151,15 +136,26 @@ public class TaskSelectionActivity extends BaseActivity {
         // 初始化按钮数组
         taskButtons = new Button[doorCount];
 
-        // 动态创建按钮
+        // 动态创建按钮（遍历完整的仓门信息，而非仅硬件ID）
         for (int i = 0; i < doorCount; i++) {
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
             Button button = new Button(this);
             button.setId(View.generateViewId());
-            button.setText("仓门 " + doorNumbers.get(i)); // 显示硬件ID
+
+            // 生成详细的按钮文本：行X-Y号（类型）-ID:硬件ID
+            String typeStr = getDoorTypeText(doorInfo.getType());
+            String buttonText = String.format("行%d-%d号（%s）ID:%d",
+                    doorInfo.getRow(),
+                    doorInfo.getPosition(),
+                    typeStr,
+                    doorInfo.getHardwareId());
+
+            button.setText(buttonText);
             button.setBackgroundResource(R.drawable.button_blue_rect);
             button.setTextColor(Color.WHITE);
-            button.setTextSize(18);
-            // 垂直布局
+            button.setTextSize(16);
+
+            // 垂直布局参数（保持原有样式）
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, // 宽度填满父容器
                     ViewGroup.LayoutParams.WRAP_CONTENT,   // 高度自适应
@@ -168,15 +164,31 @@ public class TaskSelectionActivity extends BaseActivity {
             params.setMargins(0, 10, 0, 10); // 上下边距10dp，增加间距
             button.setLayoutParams(params);
 
-            // 设置点击事件
+            // 设置点击事件（关联当前仓门的硬件ID）
             final int index = i;
+            final int currentHardwareId = doorInfo.getHardwareId();
             button.setOnClickListener(v -> {
                 selectTask(index);
-                doorStateManager.openDoor(doorNumbers.get(index)); // 打开对应硬件ID的仓门
+                doorStateManager.openDoor(currentHardwareId); // 打开对应硬件ID的仓门
+                Log.d("TaskSelection", "点击仓门：" + buttonText + "，硬件ID：" + currentHardwareId);
             });
 
             taskButtonsContainer.addView(button);
             taskButtons[i] = button;
+        }
+    }
+
+    // 新增：获取仓门类型文本（辅助方法）
+    private String getDoorTypeText(int type) {
+        switch (type) {
+            case 0:
+                return "电机";
+            case 1:
+                return "电磁锁";
+            case 2:
+                return "推杆";
+            default:
+                return "未知";
         }
     }
 
@@ -318,7 +330,15 @@ public class TaskSelectionActivity extends BaseActivity {
     // 清空任务按钮状态
     private void clearTaskButtons() {
         for (int i = 0; i < doorCount; i++) {
-            taskButtons[i].setText("仓门 " + doorNumbers.get(i));
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
+            String typeStr = getDoorTypeText(doorInfo.getType());
+            String resetText = String.format("行%d-%d号（%s）ID:%d",
+                    doorInfo.getRow(),
+                    doorInfo.getPosition(),
+                    typeStr,
+                    doorInfo.getHardwareId());
+
+            taskButtons[i].setText(resetText);
             taskButtons[i].setBackgroundResource(R.drawable.button_blue_rect);
             taskAssigned[i] = false;
         }

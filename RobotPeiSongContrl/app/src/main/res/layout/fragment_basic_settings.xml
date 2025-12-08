@@ -180,9 +180,10 @@
         android:id="@+id/btn_save_basic"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
         android:text="保存设置"
         android:textSize="16sp"
-        android:backgroundTint="@color/design_default_color_primary"
+        android:background="@drawable/button_sky_blue_rect"
         android:textColor="@android:color/white"/>
 
 </LinearLayout>

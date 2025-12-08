@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:padding="16dp"
-    android:background="@color/light_gray">
+    android:background="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"

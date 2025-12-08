@@ -33,7 +33,7 @@
             android:textSize="20sp"
             android:textColor="@color/white"
             android:gravity="center"
-            android:background="@color/mint_green"/>
+            android:background="@color/skyblue"/>
         </LinearLayout>
         <View
             android:layout_width="match_parent"

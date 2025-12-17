@@ -11,7 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 
-public class BasicSettingsHostActivity extends AppCompatActivity {
+public class BasicSettingsHostActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,4 +28,10 @@ public class BasicSettingsHostActivity extends AppCompatActivity {
                     .commit();
         }
     }
+
+    @Override
+    protected boolean isAdminPage() {
+        return true; // 标记为超级管理员页面
+    }
+
 }

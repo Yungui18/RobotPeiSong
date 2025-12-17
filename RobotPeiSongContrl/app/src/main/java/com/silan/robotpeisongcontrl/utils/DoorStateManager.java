@@ -18,11 +18,8 @@ public class DoorStateManager {
     private Set<Integer> openedDoors = new CopyOnWriteArraySet<>();
     private Context context;
     private final List<BasicSettingsFragment.DoorInfo> enabledDoors; // 存储完整仓门信息
-
-    // 新增：主线程Handler，用于延迟发送指令
     private Handler mHandler = new Handler(Looper.getMainLooper());
-    // 新增：指令间隔时间（500ms，可根据硬件调整）
-    private static final int CLOSE_INTERVAL_MS = 500;
+    private static final int CLOSE_INTERVAL_MS = 500; // 指令间隔时间（500ms，可根据硬件调整）
 
     private DoorStateManager(Context context) {
         this.context = context.getApplicationContext();
@@ -37,24 +34,32 @@ public class DoorStateManager {
         return instance;
     }
 
-    // 记录打开的仓门（不变）
+    // 记录打开的仓门
     public void addOpenedDoor(int doorId) {
         boolean added = openedDoors.add(doorId);
         Log.d("DoorStateManager", "添加打开仓门: " + doorId + " | 成功: " + added + " | 当前打开集合: " + openedDoors);
     }
 
-    // 移除已关闭的仓门（不变）
+    // 移除已关闭的仓门
     public void removeClosedDoor(int doorId) {
         boolean removed = openedDoors.remove(doorId);
         Log.d("DoorStateManager", "移除关闭仓门: " + doorId + " | 成功: " + removed + " | 当前打开集合: " + openedDoors);
     }
 
-    // 获取所有打开的仓门（不变）
+    // 获取所有打开的仓门
     public Set<Integer> getOpenedDoors() {
         return new CopyOnWriteArraySet<>(openedDoors);
     }
 
-    // 核心修改：关闭所有仓门（添加间隔延迟）
+    // 判断仓门是否已打开
+    public boolean isDoorOpened(int doorId) {
+        boolean isOpened = openedDoors.contains(doorId);
+        Log.d("DoorStateManager", "检查仓门[" + doorId + "]是否已打开：" + isOpened);
+        return isOpened;
+    }
+
+
+    // 关闭所有仓门
     public void closeAllOpenedDoors() {
         Log.d("DoorStateManager", "开始关闭所有仓门 | 待关闭列表: " + openedDoors);
         if (openedDoors.isEmpty()) {
@@ -62,12 +67,10 @@ public class DoorStateManager {
             return;
         }
 
-        // 1. 将待关闭的仓门转为有序列表（保证顺序）
         List<Integer> doorsToClose = new ArrayList<>(openedDoors);
-        // 2. 清空原集合（避免后续操作干扰）
         openedDoors.clear();
 
-        // 3. 逐个发送关门指令，每个间隔500ms
+        // 逐个发送关门指令，每个间隔500ms
         for (int i = 0; i < doorsToClose.size(); i++) {
             final int doorId = doorsToClose.get(i);
             // 计算延迟时间：第1个0ms发送，第2个500ms，第3个1000ms...
@@ -81,8 +84,13 @@ public class DoorStateManager {
         }
     }
 
-    // 打开指定仓门（不变）
+    // 打开指定仓门
     public void openDoor(int doorId) {
+        if (isDoorOpened(doorId)) {
+            Log.d("DoorStateManager", "仓门[" + doorId + "]已打开，跳过重复打开操作");
+            return;
+        }
+
         Log.d("DoorStateManager", "请求打开仓门: " + doorId);
         DoorController controller = getDoorController(doorId);
         if (controller != null) {
@@ -93,7 +101,7 @@ public class DoorStateManager {
         }
     }
 
-    // 关闭指定仓门（不变）
+    // 关闭指定仓门
     public void closeDoor(int doorId) {
         Log.d("DoorStateManager", "请求关闭仓门: " + doorId);
         DoorController controller = getDoorController(doorId);
@@ -105,7 +113,7 @@ public class DoorStateManager {
         }
     }
 
-    // 获取对应仓门的控制器（不变）
+    // 获取对应仓门的控制器
     private DoorController getDoorController(int hardwareId) {
         BasicSettingsFragment.DoorInfo doorInfo = getDoorInfoByHardwareId(hardwareId);
         if (doorInfo == null) {
@@ -114,12 +122,12 @@ public class DoorStateManager {
         // 根据仓门信息中的真实类型创建控制器
         return DoorControllerFactory.createDoorController(
                 context,
-                doorInfo.getType(), // 关键：传真实类型（0=电机，1=电磁锁，2=推杆）
+                doorInfo.getType(), // 传真实类型（0=电机，1=电磁锁，2=推杆）
                 hardwareId
         );
     }
 
-    // 根据硬件ID获取对应的DoorInfo（包含类型）
+    // 根据硬件ID获取对应的DoorInfo
     private BasicSettingsFragment.DoorInfo getDoorInfoByHardwareId(int hardwareId) {
         for (BasicSettingsFragment.DoorInfo info : enabledDoors) {
             if (info.getHardwareId() == hardwareId) {

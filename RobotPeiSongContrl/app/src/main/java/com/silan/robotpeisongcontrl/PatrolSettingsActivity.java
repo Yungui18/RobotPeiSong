@@ -4,6 +4,7 @@ package com.silan.robotpeisongcontrl;
 import static android.app.PendingIntent.getActivity;
 import static java.security.AccessController.getContext;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -101,19 +102,20 @@ public class PatrolSettingsActivity extends BaseActivity {
         taskButtons = new Button[enabledDoors.size()];
 
         // 加载对应数量的布局文件
-        LayoutInflater inflater = LayoutInflater.from(this);
         for (int i = 0; i < enabledDoors.size(); i++) {
             BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
-            int hardwareDoorId = doorInfo.getHardwareId(); // 获取硬件仓门ID
-
             // 动态创建按钮
             Button button = new Button(this);
             button.setId(View.generateViewId());
-            button.setText(String.format("仓门%d", hardwareDoorId)); // 显示硬件ID
+
+            // 标准化按钮文本
+            button.setText(BasicSettingsFragment.getStandardDoorButtonText(doorInfo));
+
             button.setBackgroundResource(R.drawable.button_sky_blue_rect);
             button.setTextColor(getResources().getColor(android.R.color.white));
+            button.setTextSize(16);
 
-            // 设置布局参数（均匀分布）
+            // 布局参数
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     0,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -122,12 +124,12 @@ public class PatrolSettingsActivity extends BaseActivity {
             params.setMargins(8, 8, 8, 8);
             button.setLayoutParams(params);
 
-            // 存储按钮引用（数组索引对应仓门列表索引）
+            // 存储按钮引用
             taskButtons[i] = button;
 
-            // 设置按钮点击事件（传递硬件仓门ID作为taskId）
-            final int currentHardwareId = hardwareDoorId;
-            button.setOnClickListener(v -> handleTaskButtonClick(currentHardwareId));
+            // 点击事件传递索引
+            final int index = i;
+            button.setOnClickListener(v -> handleTaskButtonClick(index));
 
             // 添加按钮到容器
             taskButtonsContainer.addView(button);
@@ -135,17 +137,37 @@ public class PatrolSettingsActivity extends BaseActivity {
     }
 
     // 任务按钮点击逻辑
-    private void handleTaskButtonClick(int taskId) {
+    private void handleTaskButtonClick(int index) {
         if (currentSelectedPoi != null) {
-            currentSelectedTask = taskId;// 存储硬件仓门ID
-            updateTaskButtonsUI(); // 高亮选中的按钮
+            // 通过索引直接获取硬件ID，无需解析文本
+            BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(index);
+            int currentHardwareId = doorInfo.getHardwareId();
+            currentSelectedTask = currentHardwareId; // 存储硬件ID
 
-            // 添加点到方案（传递硬件仓门ID作为任务ID）
-            addPointToScheme(currentSelectedPoi, taskId);
+            // 高亮选中按钮（通过索引直接定位）
+            highlightTaskButton(index);
+
+            // 添加点到方案
+            addPointToScheme(currentSelectedPoi, currentHardwareId);
             resetSelection();
         } else {
             Toast.makeText(this, "请先选择点位", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 通过索引高亮按钮
+    private void highlightTaskButton(int selectedIndex) {
+        if (taskButtons == null || selectedIndex < 0 || selectedIndex >= taskButtons.length) {
+            return;
+        }
+        // 重置所有按钮
+        for (Button button : taskButtons) {
+            if (button != null) {
+                button.setBackgroundResource(R.drawable.button_blue_rect);
+            }
+        }
+        // 高亮选中的按钮
+        taskButtons[selectedIndex].setBackgroundResource(R.drawable.button_red_rect);
     }
 
     private void loadPoiList() {
@@ -176,7 +198,8 @@ public class PatrolSettingsActivity extends BaseActivity {
             Button btn = new Button(this);
             btn.setText(poi.getDisplayName());
             btn.setTag(poi);
-            btn.setBackgroundResource(R.drawable.button_blue_rect);
+            btn.setBackgroundResource(R.drawable.button_sky_blue_rect);
+            btn.setTextColor(Color.WHITE);
             btn.setOnClickListener(v -> {
                 // 重置之前选中的POI按钮
                 resetPoiButtonsUI();
@@ -224,21 +247,7 @@ public class PatrolSettingsActivity extends BaseActivity {
                 button.setBackgroundResource(R.drawable.button_blue_rect);
             }
         }
-
-        // 高亮当前选中的任务按钮（根据硬件仓门ID匹配）
-        if (currentSelectedTask > 0) {
-            for (Button button : taskButtons) {
-                if (button != null) {
-                    // 从按钮文本中提取硬件仓门ID（格式：仓门X）
-                    String buttonText = button.getText().toString();
-                    int hardwareId = Integer.parseInt(buttonText.replace("仓门", ""));
-                    if (hardwareId == currentSelectedTask) {
-                        button.setBackgroundResource(R.drawable.button_red_rect);
-                        break;
-                    }
-                }
-            }
-        }
+        currentSelectedTask = 0;
     }
 
     private void resetPoiButtonsUI() {

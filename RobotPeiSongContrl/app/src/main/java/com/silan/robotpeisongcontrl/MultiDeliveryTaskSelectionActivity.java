@@ -139,18 +139,17 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
             // 动态创建按钮
             Button button = new Button(this);
             button.setId(View.generateViewId());
-            button.setText(String.format("仓门%d", hardwareDoorId));
+            button.setText(BasicSettingsFragment.getStandardDoorButtonText(doorInfo));
             button.setBackgroundResource(R.drawable.button_blue_rect);
-            button.setTextColor(getResources().getColor(android.R.color.white));
-            button.setTextSize(18);
+            button.setTextColor(Color.WHITE);
+            button.setTextSize(16);
 
-            // 设置布局参数，使其均匀分布
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, // 宽度填满
-                    ViewGroup.LayoutParams.WRAP_CONTENT,   // 高度自适应
-                    0 // weight=0
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    0
             );
-            params.setMargins(0, 10, 0, 10); // 上下边距
+            params.setMargins(0, 10, 0, 10);
             button.setLayoutParams(params);
 
             // 存储按钮引用
@@ -161,14 +160,24 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
             final int currentHardwareId = hardwareDoorId;
             button.setOnClickListener(v -> {
                 Log.d("TaskClick", "点击了仓门 " + currentHardwareId);
-                doorStateManager.openDoor(currentHardwareId); // 打开对应的硬件仓门
 
-                if (selectedButtonIndices.contains(currentIndex)) {
+                // 1. 判断仓门当前状态
+                if (doorStateManager.isDoorOpened(currentHardwareId)) {
+                    // 已打开：关闭仓门 + 按钮切蓝色 + 移除选中索引
+                    doorStateManager.closeDoor(currentHardwareId);
                     selectedButtonIndices.remove(currentIndex);
-                    button.setBackgroundResource(R.drawable.button_blue_rect);
+                    button.setBackgroundResource(R.drawable.button_sky_blue_rect);
+                    Toast.makeText(MultiDeliveryTaskSelectionActivity.this,
+                            "仓门" + currentHardwareId + "已关闭",
+                            Toast.LENGTH_SHORT).show();
                 } else {
+                    // 未打开：打开仓门 + 按钮切红色 + 添加选中索引
+                    doorStateManager.openDoor(currentHardwareId);
                     selectedButtonIndices.add(currentIndex);
                     button.setBackgroundResource(R.drawable.button_red_rect);
+                    Toast.makeText(MultiDeliveryTaskSelectionActivity.this,
+                            "仓门" + currentHardwareId + "已打开",
+                            Toast.LENGTH_SHORT).show();
                 }
             });
 

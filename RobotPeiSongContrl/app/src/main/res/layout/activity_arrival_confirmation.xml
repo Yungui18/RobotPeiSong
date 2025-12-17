@@ -19,6 +19,7 @@
             android:layout_height="60dp"
             android:background="@drawable/button_sky_blue_rect"
             android:text="@string/pickup"
+            android:textColor="@color/white"
             android:textAllCaps="false" />
 
         <Button
@@ -26,8 +27,9 @@
             android:layout_width="200dp"
             android:layout_height="60dp"
             android:layout_marginTop="16dp"
-            android:background="@drawable/button_sky_blue_rect"
+            android:background="@drawable/button_white_rect"
             android:text="@string/complete"
+            android:textColor="@color/skyblue"
             android:textAllCaps="false" />
         <TextView
             android:id="@+id/tv_point_name"

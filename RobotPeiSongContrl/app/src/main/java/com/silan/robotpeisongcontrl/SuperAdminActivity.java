@@ -61,6 +61,11 @@ public class SuperAdminActivity extends BaseActivity {
         });
     }
 
+    @Override
+    protected boolean isAdminPage() {
+        return true; // 标记为超级管理员页面
+    }
+
     private void showHardwareVersion() {
         // 获取硬件版本信息
         String hardwareInfo = "机器人型号: R1\n" +

@@ -48,6 +48,11 @@ public class SuperAdminPasswordActivity extends BaseActivity {
         });
     }
 
+    @Override
+    protected boolean isAdminPage() {
+        return true; // 标记为超级管理员页面
+    }
+
     private void showPasswordInputDialog(String title, String passwordType) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();

@@ -40,4 +40,10 @@ public class ServiceSettingsActivity extends BaseActivity  {
                     .commit();
         });
     }
+
+    @Override
+    protected boolean isAdminPage() {
+        return true; // 标记为超级管理员页面
+    }
+
 }

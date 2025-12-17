@@ -45,4 +45,9 @@ public class BackgroundChoiceActivity extends BaseActivity {
         SharedPreferences prefs = getSharedPreferences("personalization_prefs", Context.MODE_PRIVATE);
         prefs.edit().putInt("background_res", bgResId).apply();
     }
+
+    @Override
+    protected boolean isAdminPage() {
+        return true;
+    }
 }

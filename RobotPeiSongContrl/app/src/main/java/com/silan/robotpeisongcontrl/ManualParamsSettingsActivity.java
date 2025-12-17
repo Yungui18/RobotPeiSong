@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.silan.robotpeisongcontrl.utils.ManualParamManager;
 import com.silan.robotpeisongcontrl.utils.SerialPortManager;
 
-public class ManualParamsSettingsActivity extends AppCompatActivity {
+public class ManualParamsSettingsActivity extends BaseActivity {
 
     private ManualParamManager paramManager;
     private SerialPortManager serialPortManager;
@@ -59,6 +59,11 @@ public class ManualParamsSettingsActivity extends AppCompatActivity {
         if (findViewById(R.id.btn_back) != null) {
             findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         }
+    }
+
+    @Override
+    protected boolean isAdminPage() {
+        return true; // 标记为超级管理员页面
     }
 
     private void initViews() {

@@ -45,6 +45,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="定时配送功能状态"
+                android:textStyle="bold"
                 android:textSize="18sp" />
 
             <Switch

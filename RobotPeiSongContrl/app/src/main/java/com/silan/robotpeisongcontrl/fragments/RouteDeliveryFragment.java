@@ -78,28 +78,22 @@ public class RouteDeliveryFragment extends Fragment {
         // 清空容器
         container.removeAllViews();
         doorButtons = new Button[enabledDoors.size()]; // 仓门编号最大为9，数组容量设为10
-        LayoutInflater inflater = LayoutInflater.from(getContext());
         for (int i = 0; i < enabledDoors.size(); i++) {
             BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
-            int doorHardwareId  = doorInfo.getHardwareId();
 
-            // 创建按钮（或从基础布局inflate）
-            Button button = new Button(getContext());
+            // 创建按钮
+            Button button = new Button(requireContext());
             button.setId(View.generateViewId());
 
-            String doorType = "";
-            switch (doorInfo.getType()) {
-                case 0: doorType = "电机"; break;
-                case 1: doorType = "电磁锁"; break;
-                case 2: doorType = "推杆"; break;
-            }
+            // 标准化按钮文本
+            button.setText(BasicSettingsFragment.getStandardDoorButtonText(doorInfo));
 
-            button.setText(String.format("仓门%d", doorHardwareId, doorType)); // 显示硬件仓门ID
+            // 样式保留原有逻辑
             button.setBackgroundResource(R.drawable.button_sky_blue_rect);
             button.setTextColor(Color.WHITE);
             button.setTextSize(16);
 
-            // 设置布局参数（均匀分布）
+            // 布局参数
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -111,11 +105,11 @@ public class RouteDeliveryFragment extends Fragment {
             // 存储按钮引用
             doorButtons[i] = button;
 
-            // 设置点击事件
+            // 点击事件
             final int index = i;
             button.setOnClickListener(v -> {
                 selectedDoors[index] = !selectedDoors[index];
-                updateDoorButtonState(index); // 只传索引（不再需要doorId）
+                updateDoorButtonState(index);
             });
 
             // 添加到容器

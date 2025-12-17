@@ -168,8 +168,31 @@ public class TaskSelectionActivity extends BaseActivity {
             final int index = i;
             final int currentHardwareId = doorInfo.getHardwareId();
             button.setOnClickListener(v -> {
-                selectTask(index);
-                doorStateManager.openDoor(currentHardwareId); // 打开对应硬件ID的仓门
+                // 1. 已分配任务的按钮（绿色）不可操作仓门
+                if (taskAssigned[index]) {
+                    Toast.makeText(TaskSelectionActivity.this,
+                            "该任务已分配，无法操作仓门",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // 2. 判断仓门当前状态
+                if (doorStateManager.isDoorOpened(currentHardwareId)) {
+                    // 已打开：关闭仓门 + 按钮切蓝色 + 取消选中
+                    doorStateManager.closeDoor(currentHardwareId);
+                    taskButtons[index].setBackgroundResource(R.drawable.button_blue_rect);
+                    currentSelectedButtonIndex = -1; // 重置选中索引
+                    Toast.makeText(TaskSelectionActivity.this,
+                            "仓门" + currentHardwareId + "已关闭",
+                            Toast.LENGTH_SHORT).show();
+                } else {
+                    // 未打开：选中按钮（变红） + 打开仓门
+                    selectTask(index); // 原有方法：重置其他按钮+当前按钮变红
+                    doorStateManager.openDoor(currentHardwareId);
+                    Toast.makeText(TaskSelectionActivity.this,
+                            "仓门" + currentHardwareId + "已打开",
+                            Toast.LENGTH_SHORT).show();
+                }
                 Log.d("TaskSelection", "点击仓门：" + buttonText + "，硬件ID：" + currentHardwareId);
             });
 

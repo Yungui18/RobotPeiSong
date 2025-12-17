@@ -296,6 +296,25 @@ public class BasicSettingsFragment extends Fragment {
         return doors;
     }
 
+    // 仓门类型转文本（0=电机，1=电磁锁，2=推杆）
+    public static String getDoorTypeText(int type) {
+        switch (type) {
+            case 0: return "电机";
+            case 1: return "电磁锁";
+            case 2: return "推杆";
+            default: return "未知";
+        }
+    }
+
+    // 生成标准化仓门按钮文本（行X-Y号（类型））
+    public static String getStandardDoorButtonText(DoorInfo doorInfo) {
+        return String.format("行%d-%d号（%s）",
+                doorInfo.getRow(),
+                doorInfo.getPosition(),
+                getDoorTypeText(doorInfo.getType()),
+                doorInfo.getHardwareId());
+    }
+
     // 仓门信息模型
     public static class DoorInfo {
         private int row; // 行号1-5

@@ -4,13 +4,14 @@
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:padding="16dp">
+
     <ImageButton
         android:id="@+id/btn_back"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_arrow_back"
+        android:layout_margin="8dp"
         android:background="?selectableItemBackgroundBorderless"
-        android:layout_margin="8dp"/>
+        android:src="@drawable/ic_arrow_back" />
 
     <!-- 区域A: 任务按钮 -->
     <LinearLayout
@@ -25,14 +26,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:spacing="10dp"/>
+            android:spacing="10dp" />
 
-        <Button
-            android:id="@+id/btn_close_all_doors"
-            android:layout_width="200dp"
-            android:layout_height="50dp"
-            android:text="关闭所有仓门"
-            android:layout_margin="10dp"/>
+        <!-- 移除关闭所有仓门按钮 -->
 
         <Button
             android:id="@+id/btn_start"
@@ -40,7 +36,8 @@
             android:layout_height="50dp"
             android:layout_margin="10dp"
             android:background="@drawable/button_sky_blue_rect"
-            android:text="@string/start" />
+            android:text="@string/start"
+            android:textColor="@color/white" />
     </LinearLayout>
 
     <!-- 区域B: 数字键盘 -->
@@ -66,12 +63,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:columnCount="3"
-            android:rowCount="4">
+            android:rowCount="5"> <!-- 新增一行放完成并关闭仓门按钮 -->
 
-            <!-- 数字按钮1-9, 清除, 0, 完成 -->
+            <!-- 数字按钮1-9, 清除, 0, 退格（原完成按钮） -->
             <Button
                 android:id="@+id/btn_1"
-
                 android:backgroundTint="@color/mint_green"
                 android:text="1" />
 
@@ -125,10 +121,21 @@
                 android:backgroundTint="@color/mint_green"
                 android:text="0" />
 
+            <!-- 原完成按钮改为退格 -->
             <Button
                 android:id="@+id/btn_done"
                 android:backgroundTint="@color/mint_green"
-                android:text="@string/done" />
+                android:text="退格" />
+
+            <!-- 新增完成并关闭仓门按钮（跨3列） -->
+            <Button
+                android:id="@+id/btn_complete_close_door"
+                android:layout_width="270dp"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="3"
+                android:background="@drawable/button_sky_blue_rect"
+                android:text="完成并关闭仓门"
+                android:textColor="@color/white" />
         </GridLayout>
     </LinearLayout>
 

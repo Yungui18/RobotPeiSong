@@ -5,6 +5,7 @@
     android:orientation="vertical"
     android:padding="0dp">
 
+    <!-- 统一顶部布局 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
@@ -23,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="单任务配送选择"
+            android:text="单任务回收选择"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -32,23 +33,20 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" />
 
-        <!-- 右上角倒计时（整合到顶部栏） -->
         <TextView
             android:id="@+id/tv_countdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="150s"
+            android:text="60s"
             android:textSize="18sp" />
     </LinearLayout>
 
-    <!-- 原有功能区域（保留所有ID和布局逻辑） -->
+    <!-- 原有功能区域 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:padding="16dp">
-
-        <!-- 移除原有独立的返回按钮（已整合到顶部） -->
 
         <!-- 区域A: 任务按钮 -->
         <LinearLayout
@@ -71,7 +69,7 @@
                 android:layout_height="50dp"
                 android:layout_margin="10dp"
                 android:background="@drawable/button_sky_blue_rect"
-                android:text="@string/start"
+                android:text="开始回收"
                 android:textColor="@color/white" />
         </LinearLayout>
 
@@ -82,6 +80,30 @@
             android:layout_marginTop="200dp"
             android:layout_weight="1"
             android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="回收点位："
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/sp_recycle_point"
+                    android:layout_width="200dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/button_sky_blue_rect"
+                    android:paddingHorizontal="10dp" />
+            </LinearLayout>
+
 
             <TextView
                 android:id="@+id/tv_display"
@@ -148,7 +170,7 @@
                 <Button
                     android:id="@+id/btn_clear"
                     android:backgroundTint="@color/mint_green"
-                    android:text="@string/clear" />
+                    android:text="清除" />
 
                 <Button
                     android:id="@+id/btn_0"

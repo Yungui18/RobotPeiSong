@@ -39,6 +39,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
+import android.content.Intent;
+import android.widget.Button;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -110,6 +112,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
         // 初始化监控面板
         initDebugPanel();
+
+        // 初始化回收按钮
+        initRecycleButtons();
 
 
         // 初始化权限请求
@@ -215,7 +220,7 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
             if (verificationEnabled) {
                 // 显示送物密码验证对话框
-                showDeliveryPasswordDialog(false);
+                showDeliveryPasswordDialog(false,false);
             } else {
                 // 直接开始配送流程
                 getRobotStatus(false);
@@ -229,7 +234,7 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
             if (verificationEnabled) {
                 // 显示送物密码验证对话框
-                showDeliveryPasswordDialog(true);
+                showDeliveryPasswordDialog(true,false);
             } else {
                 // 直接开始多点配送流程
                 getRobotStatus(true);
@@ -256,6 +261,103 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         } else {
             Toast.makeText(this, "串口打开失败，无法初始化参数", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 新增：初始化回收按钮
+    private void initRecycleButtons() {
+        Button btnSingleRecycle = findViewById(R.id.btn_single_recycle);
+        Button btnMultiRecycle = findViewById(R.id.btn_multi_recycle);
+
+        // 调整按钮尺寸（复用原有方法）
+        adjustButtonSize(btnSingleRecycle);
+        adjustButtonSize(btnMultiRecycle);
+
+        // 读取超管开关状态，控制按钮显示
+        SharedPreferences prefs = getSharedPreferences("service_prefs", MODE_PRIVATE);
+        boolean singleRecycleEnabled = prefs.getBoolean("single_recycle_enabled", true);
+        boolean multiRecycleEnabled = prefs.getBoolean("multi_recycle_enabled", true);
+
+        btnSingleRecycle.setVisibility(singleRecycleEnabled ? View.VISIBLE : View.GONE);
+        btnMultiRecycle.setVisibility(multiRecycleEnabled ? View.VISIBLE : View.GONE);
+
+        // 单点回收按钮点击事件
+        btnSingleRecycle.setOnClickListener(v -> {
+            SharedPreferences deliveryPrefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+            boolean verificationEnabled = deliveryPrefs.getBoolean("verification_enabled", false);
+
+            if (verificationEnabled) {
+                // 显示回收密码验证对话框
+                showDeliveryPasswordDialog(false, true); // 新增boolean标记：是否为回收
+            } else {
+                // 直接跳转单点回收页面
+                getRobotStatusForRecycle(false);
+            }
+        });
+
+        // 多点回收按钮点击事件
+        btnMultiRecycle.setOnClickListener(v -> {
+            SharedPreferences deliveryPrefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+            boolean verificationEnabled = deliveryPrefs.getBoolean("verification_enabled", false);
+
+            if (verificationEnabled) {
+                showDeliveryPasswordDialog(true, true);
+            } else {
+                getRobotStatusForRecycle(true);
+            }
+        });
+    }
+
+    // 新增：回收专用的机器人状态检查
+    private void getRobotStatusForRecycle(boolean isMultiRecycle) {
+        RobotController.getRobotStatus(new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                String json = responseData.string(UTF_8);
+                RobotStatus status = RobotController.parseRobotStatus(json);
+                if (status != null && status.getBatteryPercentage() >= 20) {
+                    getPoiListForRecycle(isMultiRecycle);
+                } else {
+                    Toast.makeText(MainActivity.this, "电量不足，请充电", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.d("TAG", "获取机器人状态失败");
+            }
+        });
+    }
+
+    // 新增：回收专用的POI列表获取
+    private void getPoiListForRecycle(boolean isMultiRecycle) {
+        RobotController.getPoiList(new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                String json = responseData.string(UTF_8);
+                List<Poi> poiList = RobotController.parsePoiList(json);
+                Intent intent;
+                if (isMultiRecycle) {
+                    intent = new Intent(MainActivity.this, MultiRecycleTaskSelectionActivity.class);
+                } else {
+                    intent = new Intent(MainActivity.this, SingleRecycleTaskSelectionActivity.class);
+                }
+                intent.putExtra("poi_list", new Gson().toJson(poiList));
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.d("TAG", "获取POI信息失败" + e);
+            }
+        });
+    }
+
+    // 新增：扩展密码验证对话框，支持回收标记
+    private void showDeliveryPasswordDialog(boolean isMultiDelivery, boolean isRecycle) {
+        showPasswordDialog(isRecycle ? "回收验证" : "送物验证",
+                isRecycle ? "recycle_password" : "delivery_password",
+                isMultiDelivery,
+                isRecycle);
     }
 
     // 更新基站状态指示器
@@ -659,7 +761,7 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     }
 
     // 将密码验证相关方法重构为通用方法
-    private void showPasswordDialog(String title, String passwordType, boolean isMultiDelivery) {
+    private void showPasswordDialog(String title, String passwordType, boolean isMultiDelivery, boolean isRecycle) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_password_auth, null);
@@ -710,13 +812,22 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         // 重置输入状态
         enteredPassword = "";
         updateDotsDisplay();
+
+        if (validatePassword(enteredPassword, passwordType)) {
+            if (isRecycle) {
+                getRobotStatusForRecycle(isMultiDelivery);
+            } else {
+                getRobotStatus(isMultiDelivery);
+            }
+            passwordDialog.dismiss();
+        }
     }
 
-    /**
-     * 显示送物密码验证对话框
-     */
-    private void showDeliveryPasswordDialog(boolean isMultiDelivery) {
-        showPasswordDialog("送物验证", "delivery_password", isMultiDelivery);
+    // 通用密码验证方法（支持送物/回收）
+    private boolean validatePassword(String enteredPassword, String passwordType) {
+        SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+        String correctPassword = prefs.getString(passwordType, "");
+        return enteredPassword.equals(correctPassword);
     }
 
     /**

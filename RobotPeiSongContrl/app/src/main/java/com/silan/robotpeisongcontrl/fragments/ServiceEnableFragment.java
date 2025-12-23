@@ -20,6 +20,7 @@ import com.silan.robotpeisongcontrl.R;
 
 public class ServiceEnableFragment extends Fragment {
     private Switch switchDelivery, switchPatrol, switchMultiDelivery;
+    private Switch switchSingleRecycle, switchMultiRecycle;
     private SharedPreferences prefs;
 
     @Nullable
@@ -34,6 +35,8 @@ public class ServiceEnableFragment extends Fragment {
         switchDelivery = view.findViewById(R.id.switch_delivery);
         switchPatrol = view.findViewById(R.id.switch_patrol);
         switchMultiDelivery = view.findViewById(R.id.switch_multi_delivery);
+        switchSingleRecycle = view.findViewById(R.id.switch_single_recycle);
+        switchMultiRecycle = view.findViewById(R.id.switch_multi_recycle);
 
         // 加载保存的设置
         loadSettings();
@@ -42,7 +45,8 @@ public class ServiceEnableFragment extends Fragment {
         switchDelivery.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("delivery_enabled", isChecked));
         switchPatrol.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("patrol_enabled", isChecked));
         switchMultiDelivery.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("multi_delivery_enabled", isChecked));
-
+        switchSingleRecycle.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("single_recycle_enabled", isChecked));
+        switchMultiRecycle.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("multi_recycle_enabled", isChecked));
         return view;
     }
 
@@ -50,10 +54,14 @@ public class ServiceEnableFragment extends Fragment {
         boolean deliveryEnabled = prefs.getBoolean("delivery_enabled", true);
         boolean patrolEnabled = prefs.getBoolean("patrol_enabled", true);
         boolean multiDeliveryEnabled = prefs.getBoolean("multi_delivery_enabled", true);
+        boolean singleRecycleEnabled = prefs.getBoolean("single_recycle_enabled", true);
+        boolean multiRecycleEnabled = prefs.getBoolean("multi_recycle_enabled", true);
 
         switchDelivery.setChecked(deliveryEnabled);
         switchPatrol.setChecked(patrolEnabled);
         switchMultiDelivery.setChecked(multiDeliveryEnabled);
+        switchSingleRecycle.setChecked(singleRecycleEnabled);
+        switchMultiRecycle.setChecked(multiRecycleEnabled);
     }
 
     private void saveSetting(String key, boolean value) {

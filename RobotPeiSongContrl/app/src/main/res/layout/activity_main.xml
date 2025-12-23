@@ -15,7 +15,6 @@
         android:layout_marginTop="20dp"
         android:textColor="@color/black"
         android:textSize="24sp" />
-
     <!-- 主按钮容器 -->
     <LinearLayout
         android:id="@+id/button_container"
@@ -78,6 +77,33 @@
             android:text="跟随模式"
             android:textAllCaps="false"
             android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/btn_single_recycle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:background="@drawable/button_sky_blue_rect"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:textColor="@color/white"
+            android:text="单点回收"
+            android:textAllCaps="false"
+            android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/btn_multi_recycle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="30dp"
+            android:background="@drawable/button_sky_blue_rect"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:textColor="@color/white"
+            android:text="多点回收"
+            android:textAllCaps="false"
+            android:textSize="25sp" />
+
     </LinearLayout>
 
     <!-- 设置按钮 -->

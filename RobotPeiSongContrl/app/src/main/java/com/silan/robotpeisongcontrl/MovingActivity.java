@@ -49,6 +49,10 @@ public class MovingActivity extends BaseActivity {
     private static final int MAX_RETRY_COUNT = 3; // 最大重试次数
     private Poi currentPoi;
 
+    // 回收任务相关
+    private boolean isRecycleTask = false; // 是否为回收任务
+    private String recyclePointId; // 回收点位ID
+    private Poi recyclePoi; // 回收点位对象
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +70,19 @@ public class MovingActivity extends BaseActivity {
             poiList = gson.fromJson(poiListJson, type);
         }
 
+        // 接收回收任务参数
+        isRecycleTask = intent.getBooleanExtra("is_recycle", false);
+        recyclePointId = intent.getStringExtra("recycle_point_id");
+        // 查找回收点位对象
+        if (isRecycleTask && recyclePointId != null && poiList != null) {
+            for (Poi poi : poiList) {
+                if (poi.getId().equals(recyclePointId)) {
+                    recyclePoi = poi;
+                    break;
+                }
+            }
+        }
+
         isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
         if (getIntent().hasExtra("selected_doors")) {
             selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
@@ -75,7 +92,6 @@ public class MovingActivity extends BaseActivity {
         if (selectedDoors == null) {
             selectedDoors = new boolean[4]; // 默认4个false值
         }
-
 
         startNextTask();
 
@@ -96,16 +112,58 @@ public class MovingActivity extends BaseActivity {
         startActivity(intent);
         finish();
     }
+
     private void startNextTask() {
         Poi nextPoi = taskManager.getNextTask();
 
         if (nextPoi != null) {
             currentPoi = nextPoi;
-            statusText.setText("正在前往点位: " + nextPoi.getDisplayName());
+            statusText.setText(isRecycleTask ?
+                    "正在前往回收点位: " + nextPoi.getDisplayName() :
+                    "正在前往点位: " + nextPoi.getDisplayName());
             moveToPoint(nextPoi);
         } else {
-            returnToHome();
+            // 任务完成：回收任务导航到回收点位，配送任务回桩
+            if (isRecycleTask && recyclePoi != null) {
+                navigateToRecyclePoint();
+            } else {
+                returnToHome();
+            }
         }
+    }
+
+    // 导航到回收点位
+    private void navigateToRecyclePoint() {
+        statusText.setText("任务完成，正在前往回收点位: " + recyclePoi.getDisplayName());
+        RobotController.createMoveAction(recyclePoi, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                runOnUiThread(() -> {
+                    try {
+                        String json = responseData.string(StandardCharsets.UTF_8);
+                        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+
+                        if (jsonObject.has("action_id")) {
+                            currentActionId = jsonObject.get("action_id").getAsString();
+                            isReturningHome = true; // 标记为回收点位导航
+                            // 开始状态轮询
+                            startStatusPolling();
+                        } else {
+                            handleMoveFailure("响应中未找到action_id");
+                        }
+                    } catch (Exception e) {
+                        handleMoveFailure("解析响应失败: " + e.getMessage());
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                runOnUiThread(() ->
+                        handleMoveFailure("回收点位导航任务创建失败: " + e.getMessage())
+                );
+            }
+        });
     }
 
     private void moveToPoint(Poi poi) {
@@ -241,7 +299,6 @@ public class MovingActivity extends BaseActivity {
         }, 3000); // 3秒后重试
     }
 
-
     private void continuePolling() {
         // 继续轮询
         handler.postDelayed(statusPollingRunnable, POLLING_INTERVAL);
@@ -250,19 +307,24 @@ public class MovingActivity extends BaseActivity {
     private void onMoveComplete() {
         Log.d(TAG, "移动任务完成");
         handler.removeCallbacks(statusPollingRunnable);
-        if (isReturningHome) {
-            // 回桩任务完成，检查是否有配送失败的任务
+
+        // 区分回收点位导航完成和普通任务完成
+        if (isReturningHome && isRecycleTask) {
+            // 回收点位导航完成，返回主界面
+            finishAndReturnToMain();
+        } else if (isReturningHome) {
+            // 普通回桩完成
             checkForDeliveryFailures();
         } else {
-            // 跳转到到达确认页面
-            Intent intent = new Intent(MovingActivity.this, ArrivalConfirmationActivity.class);
+            // 普通任务完成，跳转到到达确认页面
+            Intent intent = new Intent(this, ArrivalConfirmationActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             intent.putExtra("scheduled_task", isScheduledTask);
-            intent.putExtra("selected_doors", selectedDoors); // 传递默认值
+            intent.putExtra("selected_doors", selectedDoors);
+            intent.putExtra("is_recycle", isRecycleTask); // 传递回收标记
             startActivity(intent);
+            finish();
         }
-
-        finish();
     }
 
     private void checkForDeliveryFailures() {
@@ -308,7 +370,6 @@ public class MovingActivity extends BaseActivity {
         finish();
     }
 
-
     private void handleMoveFailure(String errorMessage) {
         Log.e(TAG, "移动失败: " + errorMessage);
         handler.removeCallbacks(statusPollingRunnable);
@@ -321,35 +382,41 @@ public class MovingActivity extends BaseActivity {
     private void returnToHome() {
         isReturningHome = true; // 标记当前是回桩任务
         currentPoi = null;
-        statusText.setText("正在前往充电桩");
-        RobotController.createReturnHomeAction(new OkHttpUtils.ResponseCallback() {
-            @Override
-            public void onSuccess(ByteString responseData) {
-                try {
-                    String json = responseData.string(StandardCharsets.UTF_8);
-                    JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-                    if (jsonObject.has("action_id")) {
-                        currentActionId = jsonObject.get("action_id").getAsString();
-                        Log.d(TAG, "回桩任务创建成功，action_id: " + currentActionId);
+        statusText.setText(isRecycleTask ? "正在前往回收点位" : "正在前往充电桩");
+        if (isRecycleTask && recyclePoi != null) {
+            // 回收任务：导航到回收点位而非充电桩
+            navigateToRecyclePoint();
+        } else {
+            // 配送任务：正常回桩
+            RobotController.createReturnHomeAction(new OkHttpUtils.ResponseCallback() {
+                @Override
+                public void onSuccess(ByteString responseData) {
+                    try {
+                        String json = responseData.string(StandardCharsets.UTF_8);
+                        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+                        if (jsonObject.has("action_id")) {
+                            currentActionId = jsonObject.get("action_id").getAsString();
+                            Log.d(TAG, "回桩任务创建成功，action_id: " + currentActionId);
 
-                        // 开始轮询任务状态
-                        handler.postDelayed(statusPollingRunnable, POLLING_INTERVAL);
-                    } else {
-                        Log.e(TAG, "响应中未找到action_id");
-                        handleReturnHomeFailure("无法获取回桩任务ID");
+                            // 开始轮询任务状态
+                            handler.postDelayed(statusPollingRunnable, POLLING_INTERVAL);
+                        } else {
+                            Log.e(TAG, "响应中未找到action_id");
+                            handleReturnHomeFailure("无法获取回桩任务ID");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "解析响应失败: " + e.getMessage());
+                        handleReturnHomeFailure("解析响应失败");
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "解析响应失败: " + e.getMessage());
-                    handleReturnHomeFailure("解析响应失败");
                 }
-            }
 
-            @Override
-            public void onFailure(Exception e) {
-                Log.e(TAG, "回桩任务创建失败: " + e.getMessage());
-                handleReturnHomeFailure("回桩任务创建失败");
-            }
-        });
+                @Override
+                public void onFailure(Exception e) {
+                    Log.e(TAG, "回桩任务创建失败: " + e.getMessage());
+                    handleReturnHomeFailure("回桩任务创建失败");
+                }
+            });
+        }
     }
 
     private void handleReturnHomeFailure(String errorMessage) {
@@ -370,7 +437,7 @@ public class MovingActivity extends BaseActivity {
     @Override
     public void onBackPressed() {
         if (isReturningHome) {
-            // 如果正在回桩，则直接回到主页面
+            // 如果正在回桩/前往回收点位，则直接回到主页面
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);

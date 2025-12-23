@@ -52,7 +52,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="8dp">
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -61,6 +61,44 @@
             android:textSize="16sp"/>
         <Switch
             android:id="@+id/switch_multi_delivery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"
+            android:checked="true"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="单点回收"
+            android:textSize="16sp"/>
+        <Switch
+            android:id="@+id/switch_single_recycle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:thumb="@drawable/switch_thumb"
+            android:track="@drawable/switch_track"
+            android:checked="true"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="多点回收"
+            android:textSize="16sp"/>
+        <Switch
+            android:id="@+id/switch_multi_recycle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:thumb="@drawable/switch_thumb"

@@ -38,13 +38,14 @@ public class DoorStateManager {
 
     // 单点配送打开仓门（互斥校验）
     public boolean openSingleDoor(int doorId) {
-        // 已有仓门打开，返回false
-        if (singleOpenedDoorId != null && singleOpenedDoorId != doorId) {
+        // 已有仓门打开，返回false（先判断singleOpenedDoorId非空，再比较）
+        if (singleOpenedDoorId != null && singleOpenedDoorId != doorId) { // 此处已非空，安全比较
             Log.d("DoorStateManager", "单点配送已有仓门打开：" + singleOpenedDoorId + "，无法打开" + doorId);
             return false;
         }
         // 关闭当前仓门（如果是同一个）
-        if (singleOpenedDoorId == doorId) {
+        // 核心修复：先判断singleOpenedDoorId非空，再比较数值，避免拆箱崩溃
+        if (singleOpenedDoorId != null && singleOpenedDoorId == doorId) {
             closeDoor(doorId);
             singleOpenedDoorId = null;
             return true;
@@ -73,7 +74,7 @@ public class DoorStateManager {
     public void removeClosedDoor(int doorId) {
         boolean removed = openedDoors.remove(doorId);
         Log.d("DoorStateManager", "移除关闭仓门: " + doorId + " | 成功: " + removed + " | 当前打开集合: " + openedDoors);
-        // 单点仓门关闭时清空记录
+        // 单点仓门关闭时清空记录（先判断singleOpenedDoorId非空）
         if (singleOpenedDoorId != null && singleOpenedDoorId == doorId) {
             singleOpenedDoorId = null;
         }

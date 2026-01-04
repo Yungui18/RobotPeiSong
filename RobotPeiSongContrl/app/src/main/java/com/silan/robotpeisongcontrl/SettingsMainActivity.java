@@ -22,6 +22,7 @@ public class SettingsMainActivity extends BaseActivity{
             "声音选择",
             "巡航配送设置",
             "定时配送",
+            "图表管理设置",
             "关于本机"
     };
 
@@ -48,13 +49,16 @@ public class SettingsMainActivity extends BaseActivity{
                 case 2: // 声音选择
                     startActivity(new Intent(this, SoundSettingsActivity.class));
                     break;
-                case 3:
+                case 3: // 巡航设置
                     startActivity(new Intent(this, PatrolSettingsActivity.class));
                     break;
                 case 4: // 定时配送
                     startActivity(new Intent(this, ScheduledDeliveryActivity.class));
                     break;
-                case 5: // 关于本机
+                case 5: // 图表管理设置
+                    startActivity(new Intent(this, ChartManagementActivity.class));
+                    break;
+                case 6: // 关于本机
                     startActivity(new Intent(this, AboutDeviceActivity.class));
                     break;
             }

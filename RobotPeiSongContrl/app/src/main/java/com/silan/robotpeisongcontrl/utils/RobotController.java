@@ -10,8 +10,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.silan.robotpeisongcontrl.model.MileageResponse;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.RobotStatus;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,7 +29,7 @@ import okio.ByteString;
 public class RobotController {
     private static final String TAG = "RobotController";
     public static final String BASE_URL = "http://192.168.11.1:1448";
-    private static final Gson gson = new Gson();
+    public static final Gson gson = new Gson();
 
     // 获取机器人状态
     public static void getRobotStatus(OkHttpUtils.ResponseCallback callback) {
@@ -137,6 +139,112 @@ public class RobotController {
             }
         });
     }
+
+    public static void getMileageData(OkHttpUtils.ResponseCallback callback) {
+        String url = BASE_URL + "/api/core/statistics/v1/odometry";
+        OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String json = responseData.string(StandardCharsets.UTF_8);
+                    // 关键1：先去除首尾空白字符（空格/换行/制表符等）
+                    String trimJson = json.trim();
+                    Log.d(TAG, "里程接口返回原始数据（trim后）：" + trimJson);
+
+                    MileageResponse response;
+                    // 关键2：优化正则，匹配任意浮点数（包括超长小数），且基于trim后的字符串判断
+                    if (trimJson.matches("^-?\\d+(\\.\\d+)?$")) {
+                        double totalMileage = Double.parseDouble(trimJson);
+                        // 手动构建MileageResponse对象
+                        response = new MileageResponse();
+                        // ===== 务必确认MileageResponse的字段名，示例用setTotalMileage，需替换为你的实际字段 =====
+                        response.setTotalMileage(totalMileage);
+                        response.setTimestamp(System.currentTimeMillis());
+                    }
+                    // 兼容JSON对象格式
+                    else if (trimJson.startsWith("{") && trimJson.endsWith("}")) {
+                        response = gson.fromJson(trimJson, MileageResponse.class);
+                        response.setTimestamp(System.currentTimeMillis());
+                    }
+                    // 非法格式兜底
+                    else {
+                        Log.e(TAG, "里程接口返回非法格式（trim后）：" + trimJson);
+                        callback.onFailure(new Exception("接口返回格式非法，既非数字也非JSON对象"));
+                        return;
+                    }
+
+                    // 回调成功
+                    callback.onSuccess(responseData);
+
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "里程数值解析失败：" + e.getMessage());
+                    callback.onFailure(new Exception("里程数值解析失败：" + e.getMessage()));
+                } catch (Exception e) {
+                    Log.e(TAG, "里程数据处理异常：" + e.getMessage());
+                    callback.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    public static interface MileageDataCallback {
+        void onSuccess(MileageResponse response);
+        void onFailure(Exception e);
+    }
+
+    // ========== 新增：重载方法（返回处理好的MileageResponse，核心修改2） ==========
+    public static void getMileageData(MileageDataCallback callback) {
+        String url = BASE_URL + "/api/core/statistics/v1/odometry";
+        OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String json = responseData.string(StandardCharsets.UTF_8);
+                    String trimJson = json.trim();
+                    Log.d(TAG, "里程接口返回原始数据（trim后）：" + trimJson);
+
+                    MileageResponse response;
+                    // 1. 纯数字处理
+                    if (trimJson.matches("^-?\\d+(\\.\\d+)?$")) {
+                        double totalMileage = Double.parseDouble(trimJson);
+                        response = new MileageResponse();
+                        // ===== 务必确认MileageResponse的实际字段名，示例用setTotalMileage，需替换 =====
+                        response.setTotalMileage(totalMileage);
+                        response.setTimestamp(System.currentTimeMillis());
+                    }
+                    // 2. JSON对象兼容
+                    else if (trimJson.startsWith("{") && trimJson.endsWith("}")) {
+                        response = gson.fromJson(trimJson, MileageResponse.class);
+                        response.setTimestamp(System.currentTimeMillis());
+                    }
+                    // 3. 非法格式
+                    else {
+                        callback.onFailure(new Exception("接口返回格式非法：" + trimJson));
+                        return;
+                    }
+
+                    // 回调：直接返回处理好的MileageResponse
+                    callback.onSuccess(response);
+
+                } catch (NumberFormatException e) {
+                    callback.onFailure(new Exception("数字解析失败：" + e.getMessage()));
+                } catch (Exception e) {
+                    callback.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
     public interface RobotPoseCallback {
         void onSuccess(RobotPose pose);
         void onFailure(Exception e);

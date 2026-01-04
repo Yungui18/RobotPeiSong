@@ -296,15 +296,24 @@ public class TaskSelectionActivity extends BaseActivity {
                 Toast.makeText(this, "请先选择仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // 关闭选中的仓门
             int doorId = doorNumbers.get(currentSelectedButtonIndex);
-            doorStateManager.closeDoor(doorId);
-            // 清空输入框
-            display.setText("");
-            // 更新按钮样式
-            taskButtons[currentSelectedButtonIndex].setBackgroundResource(R.drawable.button_blue_rect);
-            currentSelectedButtonIndex = -1;
-            Toast.makeText(this, "仓门" + doorId + "已关闭", Toast.LENGTH_SHORT).show();
+            // 获取输入框点位名称并判空
+            String pointName = display.getText().toString().trim();
+            if (pointName.isEmpty()) {
+                Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // 调用validatePoint创建任务
+            validatePoint(pointName);
+            // 任务创建成功后再执行关闭仓门逻辑
+            if (taskManager.isPointAssigned(pointName)) {
+                doorStateManager.closeDoor(doorId);
+                display.setText("");
+                currentSelectedButtonIndex = -1;
+                Toast.makeText(this, "仓门" + doorId + "已关闭，任务创建成功", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -368,6 +377,10 @@ public class TaskSelectionActivity extends BaseActivity {
     }
 
     private void clearTaskButtons() {
+        if (taskButtons == null || enabledDoors == null || taskButtons.length != enabledDoors.size()) {
+            Log.e("TaskSelection", "任务按钮或仓门数据异常，无法清空按钮");
+            return;
+        }
         for (int i = 0; i < doorCount; i++) {
             BasicSettingsFragment.DoorInfo doorInfo = enabledDoors.get(i);
             String typeStr = getDoorTypeText(doorInfo.getType());
@@ -394,8 +407,10 @@ public class TaskSelectionActivity extends BaseActivity {
                 Intent intent = new Intent(this, MovingActivity.class);
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 startActivity(intent);
-                for (Button button : taskButtons) {
-                    button.setBackgroundResource(R.drawable.button_green_rect);
+                if (taskButtons != null) {
+                    for (Button button : taskButtons) {
+                        button.setBackgroundResource(R.drawable.button_green_rect);
+                    }
                 }
                 finish();
             }, 10000);

@@ -33,6 +33,7 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
+import com.silan.robotpeisongcontrl.utils.TaskSuccessManager;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -233,6 +234,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         Poi currentPoi = taskManager.getCurrentPoi(); // 获取当前正在处理的点位
         if (currentPoi != null) {
             taskManager.removeTask(currentPoi); // 只删除当前点位的任务
+            TaskSuccessManager.addSuccess(getApplicationContext(), currentPoi.getDisplayName()); // 记录任务成功
         }
         // 延迟5秒后再继续下一个任务（关键修改）
         new Handler(Looper.getMainLooper()).postDelayed(() -> {

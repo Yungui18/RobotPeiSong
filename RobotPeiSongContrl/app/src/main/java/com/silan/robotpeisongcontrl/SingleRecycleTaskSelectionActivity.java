@@ -385,11 +385,26 @@ public class SingleRecycleTaskSelectionActivity extends AppCompatActivity {
                 Toast.makeText(this, "请先选择仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // 清空绑定状态
-            taskButtons[currentSelectedButtonIndex].setBackgroundResource(R.drawable.button_blue_rect);
-            currentSelectedButtonIndex = -1;
-            display.setText("");
-            Toast.makeText(this, "已取消仓门绑定", Toast.LENGTH_SHORT).show();
+            // 获取输入框点位名称并判空
+            String pointName = display.getText().toString().trim();
+            if (pointName.isEmpty()) {
+                Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int tempIndex = currentSelectedButtonIndex;
+            // 调用validatePoint创建回收任务
+            validatePoint(pointName);
+            // 任务创建成功后再执行取消绑定逻辑
+            if (taskManager.isPointAssigned(pointName)) {
+                if (tempIndex >= 0 && tempIndex < taskButtons.length) {
+                    taskButtons[tempIndex].setBackgroundResource(R.drawable.button_blue_rect);
+                }
+                currentSelectedButtonIndex = -1;
+                display.setText("");
+                Toast.makeText(this, "已取消仓门绑定，回收任务创建成功", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

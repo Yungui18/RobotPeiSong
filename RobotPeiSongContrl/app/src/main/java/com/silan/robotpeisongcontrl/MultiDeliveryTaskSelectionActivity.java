@@ -239,16 +239,32 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity {
                 Toast.makeText(this, "请先选择至少一个仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // 关闭所有选中的仓门
-            for (int index : selectedButtonIndices) {
-                int doorId = enabledDoors.get(index).getHardwareId();
-                doorStateManager.closeDoor(doorId);
-                taskButtons[index].setBackgroundResource(R.drawable.button_blue_rect);
+            Set<Integer> tempSelectedIndices = new HashSet<>(selectedButtonIndices);
+            // 获取输入框点位名称并判空
+            String pointName = display.getText().toString().trim();
+            if (pointName.isEmpty()) {
+                Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
+                return;
             }
-            // 清空输入框和选中状态
-            display.setText("");
-            selectedButtonIndices.clear();
-            Toast.makeText(this, "已关闭所有选中的仓门", Toast.LENGTH_SHORT).show();
+            // 调用validatePoint创建任务
+            validatePoint(pointName);
+            // 任务创建成功后再执行关闭仓门逻辑
+            if (taskManager.isPointAssigned(pointName)) {
+                for (int index : tempSelectedIndices) {
+                    if (index >= 0 && index < enabledDoors.size()) {
+                        int doorId = enabledDoors.get(index).getHardwareId();
+                        doorStateManager.closeDoor(doorId);
+                        if (index < taskButtons.length) {
+                            taskButtons[index].setBackgroundResource(R.drawable.button_blue_rect);
+                        }
+                    }
+                }
+                display.setText("");
+                selectedButtonIndices.clear();
+                Toast.makeText(this, "已关闭所有选中仓门，任务创建成功", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

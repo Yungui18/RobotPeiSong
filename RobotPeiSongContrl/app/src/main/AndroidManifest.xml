@@ -31,6 +31,10 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".ChartManagementActivity"
+            android:exported="false"
+            android:theme="@style/ChartMaterialTheme"/>
+        <activity
             android:name=".MultiRecycleTaskSelectionActivity"
             android:exported="false" />
         <activity

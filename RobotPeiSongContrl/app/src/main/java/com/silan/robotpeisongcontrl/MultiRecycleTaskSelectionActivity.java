@@ -30,6 +30,7 @@ import com.google.gson.reflect.TypeToken;
 import com.silan.robotpeisongcontrl.fragments.BasicSettingsFragment;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
+import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
@@ -39,7 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
+public class MultiRecycleTaskSelectionActivity extends AppCompatActivity implements MainActivity.OnMainInitCompleteListener {
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
@@ -108,6 +109,10 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
         countdownText = findViewById(R.id.tv_countdown);
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
+            //  显示加载弹窗
+            LoadingDialogUtil.showLoadingDialog(this, "主界面初始化中，请稍候...");
+            //  添加MainActivity初始化监听
+            MainActivity.addMainInitListener(this);
             // 退回按钮逻辑
             closeDoorDialog.show();
             new Thread(() -> {
@@ -128,7 +133,6 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
                 // 主线程关闭弹窗并退出
                 runOnUiThread(() -> {
                     closeDoorDialog.dismiss();
-                    finish();
                 });
             }).start();
         });
@@ -464,6 +468,10 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        // 显示加载弹窗并添加监听
+        LoadingDialogUtil.showLoadingDialog(this, "主界面初始化中，请稍候...");
+        MainActivity.addMainInitListener(this);
+
         // 复用退回按钮逻辑
         closeDoorDialog.show();
         new Thread(() -> {
@@ -488,6 +496,9 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // 移除监听器+关闭弹窗
+        MainActivity.removeMainInitListener(this);
+        LoadingDialogUtil.dismissLoadingDialog();
         if (timer != null) {
             timer.cancel();
         }
@@ -497,5 +508,19 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity {
         if (doorStateManager != null) {
             doorStateManager.closeAllOpenedDoors();
         }
+    }
+
+    @Override
+    public void onInitComplete() {
+        //  关闭加载弹窗
+        LoadingDialogUtil.dismissLoadingDialog();
+        //  返回主界面
+        finish();
+    }
+
+    @Override
+    public void onInitFailed() {
+        LoadingDialogUtil.dismissLoadingDialog();
+        Log.i("SettingMainActivity", "onInitFailed: 主界面初始化失败，请重试");
     }
 }

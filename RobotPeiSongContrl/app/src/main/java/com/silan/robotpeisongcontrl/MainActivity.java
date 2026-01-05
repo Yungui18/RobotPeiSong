@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -59,6 +60,7 @@ import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.SerialPortManager;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 import java.util.List;
@@ -98,12 +100,83 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     // 跟随模式管理器
     private FollowModeManager followModeManager;
 
+    private static boolean isMainInitCompleted = false; // 主界面是否初始化完成
+    private static List<OnMainInitCompleteListener> mInitListeners = new ArrayList<>(); // 初始化监听器列表
+    private Handler mMainHandler = new Handler(Looper.getMainLooper()); // 主线程Handler
+
+    // 初始化完成监听接口
+    public interface OnMainInitCompleteListener {
+        void onInitComplete(); // 初始化成功
+        void onInitFailed();   // 初始化失败（备用）
+    }
+
+    // 添加初始化监听器
+    public static void addMainInitListener(OnMainInitCompleteListener listener) {
+        if (listener == null) return;
+        // 若已初始化完成，直接回调
+        if (isMainInitCompleted) {
+            listener.onInitComplete();
+            return;
+        }
+        // 未初始化完成，添加到列表
+        if (!mInitListeners.contains(listener)) {
+            mInitListeners.add(listener);
+        }
+    }
+
+    // 移除初始化监听器（防止内存泄漏）
+    public static void removeMainInitListener(OnMainInitCompleteListener listener) {
+        if (listener != null && mInitListeners.contains(listener)) {
+            mInitListeners.remove(listener);
+        }
+    }
+
+    // 通知所有监听器初始化完成
+    private void notifyInitComplete() {
+        isMainInitCompleted = true;
+        for (OnMainInitCompleteListener listener : mInitListeners) {
+            listener.onInitComplete();
+        }
+        mInitListeners.clear(); // 清空列表，释放资源
+    }
+
+    // 通知所有监听器初始化失败
+    private void notifyInitFailed() {
+        for (OnMainInitCompleteListener listener : mInitListeners) {
+            listener.onInitFailed();
+        }
+        mInitListeners.clear();
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 先初始化视图（非耗时操作）
+        initView();
+
+        // 异步执行耗时初始化操作（避免主线程阻塞）
+        new Thread(() -> {
+            try {
+                // 耗时初始化操作：串口、手动参数、权限检查等
+                initHardwareAndData();
+                // 主线程通知初始化完成
+                mMainHandler.post(this::notifyInitComplete);
+            } catch (Exception e) {
+                e.printStackTrace();
+                // 初始化失败，主线程通知
+                mMainHandler.post(() -> {
+                    notifyInitFailed();
+                    isMainInitCompleted = false;
+                });
+            }
+        }).start();
+    }
+
+    // 初始化非耗时视图
+    private void initView() {
         // 获取基站指示器视图
         tvFrontBase = findViewById(R.id.tv_front_base);
         tvRearBase = findViewById(R.id.tv_rear_base);
@@ -116,39 +189,62 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         // 初始化回收按钮
         initRecycleButtons();
 
-
-        // 初始化权限请求
+        // 初始化权限请求（仅视图注册，不执行耗时操作）
         alarmPermissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> ExactAlarmPermissionHelper.handlePermissionResult(this)
         );
 
-        // 检查精确闹钟权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                !ExactAlarmPermissionHelper.canScheduleExactAlarms(this)) {
-
-            // 请求权限
-            ExactAlarmPermissionHelper.requestExactAlarmPermission(this, alarmPermissionLauncher);
-        }
-
         // 初始化时间显示
         tvTime = findViewById(R.id.tv_time);
-        startTimeUpdater();
-
         mainLayout = findViewById(R.id.main_layout);
 
         // 应用背景
         applyBackground();
 
-        // 应用服务设置
-        applyServiceSettings();
-
         // 初始化待机动画视图
         standbyAnimationView = findViewById(R.id.standby_animation);
-
         // 初始化调试视图
         tvDebugInfo = findViewById(R.id.tv_debug_info);
 
+        // 初始化按钮视图并调整尺寸
+        Button startDeliveryBtn = findViewById(R.id.btn_start_delivery);
+        adjustButtonSize(startDeliveryBtn);
+        Button patrolModeBtn = findViewById(R.id.btn_patrol_mode);
+        adjustButtonSize(patrolModeBtn);
+        Button multiDeliveryBtn = findViewById(R.id.btn_multi_delivery);
+        adjustButtonSize(multiDeliveryBtn);
+        ImageButton btnSettings = findViewById(R.id.btn_settings);
+        Button btnFollowMode = findViewById(R.id.btn_follow_mode);
+        adjustButtonSize(btnFollowMode);
+
+        // 按钮点击事件（仅绑定，不执行耗时逻辑）
+        btnFollowMode.setOnClickListener(v -> toggleFollowMode());
+        startDeliveryBtn.setOnClickListener(v -> checkDeliveryVerification(false, false));
+        multiDeliveryBtn.setOnClickListener(v -> checkDeliveryVerification(true, false));
+        patrolModeBtn.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, PatrolActivity.class)));
+        btnSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, PasswordAuthActivity.class);
+            intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
+            startActivity(intent);
+        });
+    }
+
+    // 耗时初始化操作
+    private void initHardwareAndData() {
+        // 检查精确闹钟权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !ExactAlarmPermissionHelper.canScheduleExactAlarms(this)) {
+            mMainHandler.post(() -> ExactAlarmPermissionHelper.requestExactAlarmPermission(this, alarmPermissionLauncher));
+        }
+
+        // 启动时间更新
+        startTimeUpdater();
+
+        // 应用服务设置
+        applyServiceSettings();
+
+        // 初始化VideoView
         initVideoView();
 
         // 加载待机设置
@@ -157,26 +253,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         // 初始化待机检测
         initStandbyDetection();
 
-        // 配送按钮
-        Button startDeliveryBtn = findViewById(R.id.btn_start_delivery);
-        adjustButtonSize(startDeliveryBtn);
-
-        // 巡游模式按钮
-        Button patrolModeBtn = findViewById(R.id.btn_patrol_mode);
-        adjustButtonSize(patrolModeBtn);
-
-        // 多点配送按钮
-        Button multiDeliveryBtn = findViewById(R.id.btn_multi_delivery);
-        adjustButtonSize(multiDeliveryBtn);
-
-        // 设置按钮
-        ImageButton btnSettings = findViewById(R.id.btn_settings);
-
-        Button btnFollowMode = findViewById(R.id.btn_follow_mode);
-        adjustButtonSize(btnFollowMode);
-        btnFollowMode.setOnClickListener(v -> toggleFollowMode());
         // 初始化跟随模式管理器
         followModeManager = new FollowModeManager(this, new FollowModeManager.FollowModeListener() {
+            // 保留原有跟随模式监听实现
             @Override
             public void onUwbDataUpdate(double distance, double azimuth, double elevation) {
                 updateUwbDataDisplay(distance, azimuth, elevation);
@@ -213,45 +292,6 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
             }
         });
 
-        startDeliveryBtn.setOnClickListener(v -> {
-            // 检查是否启用了配送验证
-            SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
-            boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
-
-            if (verificationEnabled) {
-                // 显示送物密码验证对话框
-                showDeliveryPasswordDialog(false,false);
-            } else {
-                // 直接开始配送流程
-                getRobotStatus(false);
-            }
-        });
-
-        multiDeliveryBtn.setOnClickListener(v -> {
-            // 检查是否启用了配送验证
-            SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
-            boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
-
-            if (verificationEnabled) {
-                // 显示送物密码验证对话框
-                showDeliveryPasswordDialog(true,false);
-            } else {
-                // 直接开始多点配送流程
-                getRobotStatus(true);
-            }
-        });
-
-        patrolModeBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, PatrolActivity.class);
-            startActivity(intent);
-        });
-
-        btnSettings.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, PasswordAuthActivity.class);
-            intent.putExtra("auth_type", PasswordAuthActivity.AUTH_TYPE_SETTINGS);
-            startActivity(intent);
-        });
-
         // 初始化电机串口
         SerialPortManager serialPortManager = SerialPortManager.getInstance();
         if (serialPortManager.openSerialPort()) {
@@ -259,11 +299,26 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
             ManualParamManager paramManager = ManualParamManager.getInstance(this);
             paramManager.initParams(serialPortManager);
         } else {
-            Toast.makeText(this, "串口打开失败，无法初始化参数", Toast.LENGTH_SHORT).show();
+            mMainHandler.post(() -> Toast.makeText(MainActivity.this, "串口打开失败，无法初始化参数", Toast.LENGTH_SHORT).show());
         }
     }
 
-    // 新增：初始化回收按钮
+    // 提取配送验证检查逻辑
+    private void checkDeliveryVerification(boolean isMultiDelivery, boolean isRecycle) {
+        SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
+        boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
+        if (verificationEnabled) {
+            showDeliveryPasswordDialog(isMultiDelivery, isRecycle);
+        } else {
+            if (isRecycle) {
+                getRobotStatusForRecycle(isMultiDelivery);
+            } else {
+                getRobotStatus(isMultiDelivery);
+            }
+        }
+    }
+
+    // 初始化回收按钮
     private void initRecycleButtons() {
         Button btnSingleRecycle = findViewById(R.id.btn_single_recycle);
         Button btnMultiRecycle = findViewById(R.id.btn_multi_recycle);
@@ -736,15 +791,14 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
     //时区更新
     private void startTimeUpdater() {
-        final Handler handler = new Handler();
-        final Runnable timeUpdater = new Runnable() {
+        Handler timeHandler = new Handler(Looper.getMainLooper()); // 显式指定主线程Looper
+        timeHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                updateTime();
-                handler.postDelayed(this, 1000);
+                // 原有时间更新逻辑（如刷新UI、同步时间等）
+                timeHandler.postDelayed(this, 1000); // 循环执行
             }
-        };
-        handler.post(timeUpdater);
+        }, 1000);
     }
 
     private void updateTime() {
@@ -997,6 +1051,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // 页面销毁后重置初始化标记
+        isMainInitCompleted = false;
+        mInitListeners.clear();
         if (mediaController != null) {
             mediaController.setAnchorView(null);
             mediaController = null;

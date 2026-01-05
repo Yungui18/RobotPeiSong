@@ -2,6 +2,7 @@ package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -11,11 +12,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.silan.robotpeisongcontrl.model.PatrolScheme;
+import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.PatrolSchemeManager;
 
 import java.util.Map;
 
-public class PatrolActivity extends BaseActivity {
+public class PatrolActivity extends BaseActivity implements MainActivity.OnMainInitCompleteListener {
 
     private LinearLayout patrolSchemeContainer;
     private int selectedSchemeId = -1;
@@ -39,7 +41,12 @@ public class PatrolActivity extends BaseActivity {
 
         // 返回按钮
         Button btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            // 1. 显示加载弹窗
+            LoadingDialogUtil.showLoadingDialog(this, "主界面初始化中，请稍候...");
+            // 2. 添加MainActivity初始化监听
+            MainActivity.addMainInitListener(this);
+        });
     }
 
     @Override
@@ -88,5 +95,28 @@ public class PatrolActivity extends BaseActivity {
         } else {
             Toast.makeText(this, "请先选择巡航方案", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onInitComplete() {
+        //  关闭加载弹窗
+        LoadingDialogUtil.dismissLoadingDialog();
+        //  跳转主界面（或finish返回，根据你的业务逻辑选择）
+        finish();
+    }
+
+    @Override
+    public void onInitFailed() {
+        LoadingDialogUtil.dismissLoadingDialog();
+        Log.i("SettingMainActivity", "onInitFailed: 主界面初始化失败，请重试");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 移除监听器，防止内存泄漏
+        MainActivity.removeMainInitListener(this);
+        // 关闭弹窗，避免残留
+        LoadingDialogUtil.dismissLoadingDialog();
     }
 }

@@ -2,10 +2,12 @@ package com.silan.robotpeisongcontrl;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
+import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 
 /**
  * 设置主设置界面，包含导航
@@ -14,7 +16,7 @@ import com.silan.robotpeisongcontrl.adapter.SettingsAdapter;
  * 2. 提供垂直排列导航菜单列表
  * 3. 处理导航项点击事件
  */
-public class SettingsMainActivity extends BaseActivity{
+public class SettingsMainActivity extends BaseActivity implements MainActivity.OnMainInitCompleteListener {
 
     private static final String[] SETTINGS_MENU = {
             "通用设置",
@@ -32,7 +34,12 @@ public class SettingsMainActivity extends BaseActivity{
         setContentView(R.layout.activity_settings_main);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
-        btnBack.setOnClickListener(v -> finish());
+        btnBack.setOnClickListener(v -> {
+            // 1. 显示加载弹窗
+            LoadingDialogUtil.showLoadingDialog(this, "主界面初始化中，请稍候...");
+            // 2. 添加MainActivity初始化监听
+            MainActivity.addMainInitListener(this);
+        });
 
         ListView listView = findViewById(R.id.settings_list);
         SettingsAdapter adapter = new SettingsAdapter(this, SETTINGS_MENU);
@@ -63,5 +70,29 @@ public class SettingsMainActivity extends BaseActivity{
                     break;
             }
         });
+    }
+
+    @Override
+    public void onInitComplete() {
+        // 关闭加载弹窗
+        LoadingDialogUtil.dismissLoadingDialog();
+        // 跳转主界面
+        finish();
+    }
+
+    @Override
+    public void onInitFailed() {
+        // 初始化失败，关闭弹窗并提示
+        LoadingDialogUtil.dismissLoadingDialog();
+        Log.i("SettingMainActivity", "onInitFailed: 主界面初始化失败，请重试");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 移除监听器，防止内存泄漏
+        MainActivity.removeMainInitListener(this);
+        // 关闭弹窗，避免残留
+        LoadingDialogUtil.dismissLoadingDialog();
     }
 }

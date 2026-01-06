@@ -6,10 +6,14 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +28,10 @@ import java.util.Locale;
 public class BaseActivity extends AppCompatActivity {
 
     protected NavBarManager mNavBarManager;
+    // ===== 新增：灰化逻辑相关 =====
+    protected boolean isButtonLocked = false; // 按钮锁定状态
+    protected View mRootView; // 页面根布局
+    protected Handler mMainHandler = new Handler(Looper.getMainLooper()); // 全局Handler
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -38,24 +46,27 @@ public class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         // 初始化导航栏管理器
         mNavBarManager = NavBarManager.getInstance(getApplicationContext());
+
+        // ===== 新增：延迟获取根布局（确保布局加载完成）=====
+        mMainHandler.post(() -> {
+            mRootView = findViewById(android.R.id.content);
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // 关键修改：调用新的状态栏+导航栏控制方法
+        // 原有导航栏逻辑
         getWindow().getDecorView().postDelayed(() -> {
             if (!isAdminPage()) {
-                mNavBarManager.hideSystemBars(BaseActivity.this); // 普通页面隐藏
+                mNavBarManager.hideSystemBars(BaseActivity.this);
             } else {
                 clearImmersiveFlags();
-                mNavBarManager.showSystemBars(BaseActivity.this); // 管理员页面显示
+                mNavBarManager.showSystemBars(BaseActivity.this);
             }
         }, 50);
-        // 隐藏原生标题栏（原有逻辑补充）
         if (getSupportActionBar() != null) getSupportActionBar().hide();
 
-        // 额外保障：监听UI变化，防止手势唤醒后重新隐藏
         getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(visibility -> {
             if (!isAdminPage() && (visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
                 mNavBarManager.hideSystemBars(this);
@@ -63,20 +74,15 @@ public class BaseActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * 新增：清除沉浸式Flag（解决IMMERSIVE_STICKY粘性问题）
-     */
+    // 原有清除沉浸式Flag逻辑
     private void clearImmersiveFlags() {
         View decorView = getWindow().getDecorView();
-        // 先清除所有沉浸式Flag
         decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-        // 清除全屏Flag
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(true);
             WindowInsetsController controller = decorView.getWindowInsetsController();
             if (controller != null) {
-                // 强制显示系统栏
                 controller.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                 controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
             }
@@ -86,21 +92,18 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // 管理员页面退出时（销毁），恢复隐藏状态栏+导航栏
+        // 原有管理员页面逻辑
         if (isAdminPage() && isFinishing()) {
-            mNavBarManager.hideSystemBars(this); // 隐藏状态栏+导航栏
+            mNavBarManager.hideSystemBars(this);
         }
     }
 
-    /**
-     * 子类重写此方法标记是否为超级管理员页面
-     * @return true=管理员页面（显示导航栏+状态栏），false=普通页面（隐藏）
-     */
+    // 原有管理员页面标记方法
     protected boolean isAdminPage() {
         return false;
     }
 
-    // 原有语言设置逻辑（无修改）
+    // 原有语言设置逻辑
     private Context updateBaseContextLocale(Context context) {
         SharedPreferences prefs = context.getSharedPreferences("personalization_prefs", Context.MODE_PRIVATE);
         String langCode = prefs.getString("selected_language", "zh");
@@ -108,7 +111,7 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     private void updateLanguage() {
-        SharedPreferences prefs = getSharedPreferences("personalization_prefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("personalization_prefs", Context.MODE_PRIVATE);
         String langCode = prefs.getString("selected_language", "zh");
         setLocale(this, langCode);
     }
@@ -139,5 +142,86 @@ public class BaseActivity extends AppCompatActivity {
             case "ja": return Locale.JAPANESE;
             default: return Locale.getDefault();
         }
+    }
+
+    // ===== 核心新增：按钮灰化锁定/解锁方法 =====
+    /**
+     * 锁定当前页面所有按钮（灰化+禁止点击）
+     */
+    protected void lockAllButtons() {
+        if (isButtonLocked || mRootView == null) return;
+        isButtonLocked = true;
+        traverseAndLock(mRootView);
+    }
+
+    /**
+     * 解锁当前页面所有按钮（恢复样式+允许点击）
+     */
+    protected void unlockAllButtons() {
+        if (!isButtonLocked || mRootView == null) return;
+        isButtonLocked = false;
+        traverseAndUnlock(mRootView);
+    }
+
+    // 递归遍历View树，锁定所有Button
+    private void traverseAndLock(View view) {
+        if (view instanceof Button) {
+            Button btn = (Button) view;
+            // 保存原有状态（用于解锁恢复）
+            btn.setTag(R.id.btn_origin_background, btn.getBackground());
+            btn.setTag(R.id.btn_origin_alpha, btn.getAlpha());
+            btn.setTag(R.id.btn_origin_clickable, btn.isClickable());
+            // 灰化+禁止点击
+            btn.setAlpha(0.5f);
+            btn.setClickable(false);
+        } else if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                traverseAndLock(viewGroup.getChildAt(i));
+            }
+        }
+    }
+
+    // 递归遍历View树，解锁所有Button
+    private void traverseAndUnlock(View view) {
+        if (view instanceof Button) {
+            Button btn = (Button) view;
+            // 恢复原有状态
+            if (btn.getTag(R.id.btn_origin_background) != null) {
+                btn.setBackground((android.graphics.drawable.Drawable) btn.getTag(R.id.btn_origin_background));
+            }
+            if (btn.getTag(R.id.btn_origin_alpha) != null) {
+                btn.setAlpha((float) btn.getTag(R.id.btn_origin_alpha));
+            }
+            if (btn.getTag(R.id.btn_origin_clickable) != null) {
+                btn.setClickable((boolean) btn.getTag(R.id.btn_origin_clickable));
+            }
+            // 清空标签，避免内存泄漏
+            btn.setTag(R.id.btn_origin_background, null);
+            btn.setTag(R.id.btn_origin_alpha, null);
+            btn.setTag(R.id.btn_origin_clickable, null);
+        } else if (view instanceof ViewGroup) {
+            ViewGroup viewGroup = (ViewGroup) view;
+            for (int i = 0; i < viewGroup.getChildCount(); i++) {
+                traverseAndUnlock(viewGroup.getChildAt(i));
+            }
+        }
+    }
+
+    // ===== 新增：生命周期兜底（防止按钮永久锁定）=====
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unlockAllButtons(); // 页面销毁时强制解锁
+        mMainHandler.removeCallbacksAndMessages(null); // 清空Handler回调
+    }
+
+    // ===== 新增：Fragment适配方法（如果需要）=====
+    public static void lockButtonsInFragment(BaseActivity activity) {
+        if (activity != null) activity.lockAllButtons();
+    }
+
+    public static void unlockButtonsInFragment(BaseActivity activity) {
+        if (activity != null) activity.unlockAllButtons();
     }
 }

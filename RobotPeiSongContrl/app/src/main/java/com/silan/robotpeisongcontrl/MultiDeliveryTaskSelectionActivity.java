@@ -74,7 +74,10 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
         // 移除关闭所有仓门按钮的代码
 
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
-        btnStart.setOnClickListener(v -> startMultiDelivery());
+        btnStart.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
+            startMultiDelivery();
+        });
 
         loadTaskButtonsLayout(doorCount);
 
@@ -240,7 +243,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
 
         // 完成并关闭仓门功能（多点：关闭所有选中仓门）
         btnCompleteCloseDoor.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
             if (selectedButtonIndices.isEmpty()) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请先选择至少一个仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -248,6 +253,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
             // 获取输入框点位名称并判空
             String pointName = display.getText().toString().trim();
             if (pointName.isEmpty()) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -270,6 +276,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
             } else {
                 Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
             }
+            unlockAllButtons(); // 执行完解锁
         });
     }
 
@@ -315,6 +322,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
     private void startMultiDelivery() {
         int taskCount = taskDetailsContainer.getChildCount();
         if (taskCount == 0) {
+            unlockAllButtons(); // 无任务解锁
             Toast.makeText(this, "请至少选择一个任务", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -327,6 +335,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
             Intent intent = new Intent(this, MovingActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             startActivity(intent);
+            unlockAllButtons(); // 延迟执行后解锁
             finish();
         }, 10000);
     }

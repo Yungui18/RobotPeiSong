@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="btn_origin_background" type="id"/>
+    <item name="btn_origin_alpha" type="id"/>
+    <item name="btn_origin_clickable" type="id"/>
+</resources>

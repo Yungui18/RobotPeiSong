@@ -103,6 +103,8 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     private static boolean isMainInitCompleted = false; // 主界面是否初始化完成
     private static List<OnMainInitCompleteListener> mInitListeners = new ArrayList<>(); // 初始化监听器列表
     private Handler mMainHandler = new Handler(Looper.getMainLooper()); // 主线程Handler
+    private Handler timeHandler;
+    private Runnable timeUpdaterRunnable;
 
     // 初始化完成监听接口
     public interface OnMainInitCompleteListener {
@@ -791,14 +793,19 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
 
     //时区更新
     private void startTimeUpdater() {
-        Handler timeHandler = new Handler(Looper.getMainLooper()); // 显式指定主线程Looper
-        timeHandler.postDelayed(new Runnable() {
+        timeHandler = new Handler(Looper.getMainLooper());
+
+        timeUpdaterRunnable = new Runnable() {
             @Override
             public void run() {
-                // 原有时间更新逻辑（如刷新UI、同步时间等）
-                timeHandler.postDelayed(this, 1000); // 循环执行
+                updateTime(); // 更新UI
+                // 循环执行：延迟1秒后再次调用自己
+                timeHandler.postDelayed(this, 1000);
             }
-        }, 1000);
+        };
+
+        // 启动第一次执行
+        timeHandler.post(timeUpdaterRunnable);
     }
 
     private void updateTime() {
@@ -1064,6 +1071,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         }
         if (followModeManager != null) {
             followModeManager.cleanup();
+        }
+        if (timeHandler != null && timeUpdaterRunnable != null) {
+            timeHandler.removeCallbacks(timeUpdaterRunnable);
         }
 
     }

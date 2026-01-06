@@ -43,7 +43,7 @@ import java.util.List;
 
 import okio.ByteString;
 
-public class SingleRecycleTaskSelectionActivity extends AppCompatActivity implements MainActivity.OnMainInitCompleteListener {
+public class SingleRecycleTaskSelectionActivity extends BaseActivity implements MainActivity.OnMainInitCompleteListener {
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
@@ -115,7 +115,10 @@ public class SingleRecycleTaskSelectionActivity extends AppCompatActivity implem
 
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
-        btnStart.setOnClickListener(v -> startRecycleTasks());
+        btnStart.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
+            startRecycleTasks();
+        });
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
@@ -385,13 +388,16 @@ public class SingleRecycleTaskSelectionActivity extends AppCompatActivity implem
 
         // 完成并关闭仓门功能（回收逻辑：仅清空绑定状态）
         btnCompleteCloseDoor.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
             if (currentSelectedButtonIndex == -1) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请先选择仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
             // 获取输入框点位名称并判空
             String pointName = display.getText().toString().trim();
             if (pointName.isEmpty()) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -409,6 +415,7 @@ public class SingleRecycleTaskSelectionActivity extends AppCompatActivity implem
             } else {
                 Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
             }
+            unlockAllButtons(); // 执行完解锁
         });
     }
 
@@ -484,9 +491,11 @@ public class SingleRecycleTaskSelectionActivity extends AppCompatActivity implem
                 intent.putExtra("is_recycle", true); // 标记为回收任务
                 intent.putExtra("recycle_point_id", selectedRecyclePointId); // 回收点位ID
                 startActivity(intent);
+                unlockAllButtons(); // 延迟执行后解锁
                 finish();
             }, 1000);
         } else {
+            unlockAllButtons(); // 无任务解锁
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
         }
     }

@@ -40,7 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MultiRecycleTaskSelectionActivity extends AppCompatActivity implements MainActivity.OnMainInitCompleteListener {
+public class MultiRecycleTaskSelectionActivity extends BaseActivity implements MainActivity.OnMainInitCompleteListener {
     private TextView countdownText;
     private CountDownTimer timer;
     private final TaskManager taskManager = TaskManager.getInstance();
@@ -85,7 +85,10 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
         spRecyclePoint = findViewById(R.id.sp_recycle_point);
 
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
-        btnStart.setOnClickListener(v -> startMultiRecycle());
+        btnStart.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
+            startMultiRecycle();
+        });
 
         loadTaskButtonsLayout(doorCount);
 
@@ -335,7 +338,9 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
 
         // 完成并取消仓门绑定（多点：取消所有选中仓门绑定）
         btnCompleteCloseDoor.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
             if (selectedButtonIndices.isEmpty()) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请先选择至少一个仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -344,6 +349,7 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
             // 获取输入框点位名称并判空
             String pointName = display.getText().toString().trim();
             if (pointName.isEmpty()) {
+                unlockAllButtons(); // 异常解锁
                 Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -361,6 +367,7 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
             } else {
                 Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
             }
+            unlockAllButtons(); // 执行完解锁
         });
     }
 
@@ -406,6 +413,7 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
     private void startMultiRecycle() {
         int taskCount = taskDetailsContainer.getChildCount();
         if (taskCount == 0) {
+            unlockAllButtons(); // 无任务解锁
             Toast.makeText(this, "请至少选择一个任务", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -420,6 +428,7 @@ public class MultiRecycleTaskSelectionActivity extends AppCompatActivity impleme
             intent.putExtra("is_recycle", true); // 标记为回收任务
             intent.putExtra("recycle_point_id", selectedRecyclePointId); // 回收点位ID
             startActivity(intent);
+            unlockAllButtons(); // 延迟执行后解锁
             finish();
         }, 1000);
     }

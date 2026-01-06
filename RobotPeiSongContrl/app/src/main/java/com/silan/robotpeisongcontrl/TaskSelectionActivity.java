@@ -94,10 +94,14 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
 
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
-        btnStart.setOnClickListener(v -> startTasks());
+        btnStart.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
+            startTasks();
+        });
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
             // 1. 显示加载弹窗
             LoadingDialogUtil.showLoadingDialog(this, "主界面初始化中，请稍候...");
             // 2. 添加MainActivity初始化监听
@@ -114,7 +118,10 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                runOnUiThread(() -> closeDoorDialog.dismiss());
+                runOnUiThread(() -> {
+                    closeDoorDialog.dismiss();
+                    unlockAllButtons(); // 执行完解锁
+                });
             }).start();
         });
 
@@ -291,7 +298,9 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
 
         // 完成并关闭仓门功能
         btnCompleteCloseDoor.setOnClickListener(v -> {
+            lockAllButtons(); // 新增：锁定按钮
             if (currentSelectedButtonIndex == -1) {
+                unlockAllButtons(); // 异常时解锁
                 Toast.makeText(this, "请先选择仓门", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -299,6 +308,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             // 获取输入框点位名称并判空
             String pointName = display.getText().toString().trim();
             if (pointName.isEmpty()) {
+                unlockAllButtons(); // 异常时解锁
                 Toast.makeText(this, "请输入点位名称", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -313,6 +323,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             } else {
                 Toast.makeText(this, "任务创建失败，请检查点位名称", Toast.LENGTH_SHORT).show();
             }
+            unlockAllButtons(); // 执行完解锁
         });
     }
 
@@ -411,9 +422,11 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
                         button.setBackgroundResource(R.drawable.button_green_rect);
                     }
                 }
+                unlockAllButtons(); // 延迟执行后解锁
                 finish();
             }, 10000);
         } else {
+            unlockAllButtons(); // 无任务时解锁
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
         }
     }

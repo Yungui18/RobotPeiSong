@@ -52,6 +52,11 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
     // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
+    private boolean isDropdownMode = true;
+    private Button btnSwitchInputMode;
+    private LinearLayout llDropdownMode;
+    private LinearLayout llKeyboardMode;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,9 +83,16 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
             return;
         }
 
-        // 新增：绑定输入显示框和下拉菜单
+        // 绑定输入显示框和下拉菜单
         tvDisplay = findViewById(R.id.tv_display);
         spTaskPoi = findViewById(R.id.sp_task_poi);
+
+        btnSwitchInputMode = findViewById(R.id.btn_switch_input_mode);
+        llDropdownMode = findViewById(R.id.ll_dropdown_mode);
+        llKeyboardMode = findViewById(R.id.ll_keyboard_mode);
+
+        llDropdownMode.setVisibility(View.VISIBLE);
+        llKeyboardMode.setVisibility(View.GONE);
 
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
         btnStart.setOnClickListener(v -> {
@@ -89,6 +101,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
         });
 
         loadTaskButtonsLayout(doorCount);
+
+        bindSwitchInputModeListener();
 
         setupNumberButtons();
 
@@ -143,7 +157,38 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
         taskDetailsContainer = findViewById(R.id.task_details_container);
     }
 
-    // ===== 新增2：设置仓门状态监听（多点配送）=====
+    /**
+     * 绑定输入模式切换按钮点击事件
+     */
+    private void bindSwitchInputModeListener() {
+        if (btnSwitchInputMode == null) return;
+
+        btnSwitchInputMode.setOnClickListener(v -> {
+            // 1. 切换模式标记
+            isDropdownMode = !isDropdownMode;
+
+            // 2. 根据标记控制两个模式容器的显隐
+            if (isDropdownMode) {
+                // 切换为：下拉列表模式（显示下拉，隐藏数字键盘）
+                llDropdownMode.setVisibility(View.VISIBLE);
+                llKeyboardMode.setVisibility(View.GONE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：数字键入模式");
+            } else {
+                // 切换为：数字键入模式（隐藏下拉，显示数字键盘）
+                llDropdownMode.setVisibility(View.GONE);
+                llKeyboardMode.setVisibility(View.VISIBLE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：点位列表模式");
+                // 可选：清空数字键入框，避免残留
+                if (tvDisplay != null) {
+                    tvDisplay.setText("");
+                }
+            }
+        });
+    }
+
+    // ===== 设置仓门状态监听（多点配送）=====
     private void setDoorStateListener() {
         doorStateManager.setOnDoorStateChangeListener(new DoorStateManager.OnDoorStateChangeListener() {
             @Override

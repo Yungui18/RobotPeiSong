@@ -67,6 +67,10 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
     // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
+    private boolean isDropdownMode = true;
+    private Button btnSwitchInputMode;
+    private LinearLayout llDropdownMode;
+    private LinearLayout llKeyboardMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +105,14 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
         // 新增：绑定输入显示框和任务点位下拉菜单
         tvDisplay = findViewById(R.id.tv_display);
         spTaskPoi = findViewById(R.id.sp_task_poi);
+
+        // 绑定切换按钮和模式容器
+        btnSwitchInputMode = findViewById(R.id.btn_switch_input_mode);
+        llDropdownMode = findViewById(R.id.ll_dropdown_mode);
+        llKeyboardMode = findViewById(R.id.ll_keyboard_mode);
+        // 初始化模式（默认下拉列表显示，数字键入隐藏）
+        llDropdownMode.setVisibility(View.VISIBLE);
+        llKeyboardMode.setVisibility(View.GONE);
 
         loadTaskButtonsLayout();
 
@@ -158,6 +170,8 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
             }).start();
         });
 
+        bindSwitchInputModeListener();
+
         // 数字按钮逻辑
         setupNumberButtons();
 
@@ -200,7 +214,38 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
         });
     }
 
-    // 新增：从完整点位名称中提取数字部分
+    /**
+     * 绑定输入模式切换按钮点击事件
+     */
+    private void bindSwitchInputModeListener() {
+        if (btnSwitchInputMode == null) return;
+
+        btnSwitchInputMode.setOnClickListener(v -> {
+            // 1. 切换模式标记
+            isDropdownMode = !isDropdownMode;
+
+            // 2. 根据标记控制两个模式容器的显隐
+            if (isDropdownMode) {
+                // 切换为：下拉列表模式（显示下拉，隐藏数字键盘）
+                llDropdownMode.setVisibility(View.VISIBLE);
+                llKeyboardMode.setVisibility(View.GONE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：数字键入模式");
+            } else {
+                // 切换为：数字键入模式（隐藏下拉，显示数字键盘）
+                llDropdownMode.setVisibility(View.GONE);
+                llKeyboardMode.setVisibility(View.VISIBLE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：点位列表模式");
+                // 可选：清空数字键入框，避免残留
+                if (tvDisplay != null) {
+                    tvDisplay.setText("");
+                }
+            }
+        });
+    }
+
+    // 从完整点位名称中提取数字部分
     private String getNumberPartFromFullName(String fullName) {
         if (fullName == null || !fullName.contains("_")) {
             return fullName; // 兼容原有格式，无下划线直接返回

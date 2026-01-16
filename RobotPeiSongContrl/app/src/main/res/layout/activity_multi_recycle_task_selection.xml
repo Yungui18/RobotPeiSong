@@ -79,6 +79,7 @@
             android:layout_marginTop="16dp"
             android:layout_weight="1"
             android:orientation="vertical">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -102,19 +103,43 @@
                     android:paddingHorizontal="10dp" />
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="点位列表"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-            <Spinner
-                android:id="@+id/sp_task_poi"
+            <Button
+                android:id="@+id/btn_switch_input_mode"
                 android:layout_width="256dp"
                 android:layout_height="40dp"
-                android:layout_marginTop="8dp"
+                android:layout_margin="8dp"
                 android:background="@drawable/button_sky_blue_rect"
-                android:paddingHorizontal="10dp"/>
+                android:text="切换为：数字键入模式"
+                android:textColor="@color/white" />
+
+            <LinearLayout
+                android:id="@+id/ll_dropdown_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="点位列表"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/sp_task_poi"
+                    android:layout_width="256dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/button_sky_blue_rect"
+                    android:paddingHorizontal="10dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ll_keyboard_mode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
 
             <TextView
                 android:id="@+id/tv_display"
@@ -195,16 +220,18 @@
                     android:backgroundTint="@color/mint_green"
                     android:text="退格" />
 
-                <!-- 完成并关闭仓门按钮（跨3列） -->
-                <Button
-                    android:id="@+id/btn_complete_close_door"
-                    android:layout_width="270dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnSpan="3"
-                    android:background="@drawable/button_sky_blue_rect"
-                    android:text="准备就绪，点击出发"
-                    android:textColor="@color/white" />
             </GridLayout>
+            </LinearLayout>
+
+            <!-- 完成并关闭仓门按钮（跨3列） -->
+            <Button
+                android:id="@+id/btn_complete_close_door"
+                android:layout_width="270dp"
+                android:layout_height="wrap_content"
+                android:layout_columnSpan="3"
+                android:background="@drawable/button_sky_blue_rect"
+                android:text="准备就绪，点击出发"
+                android:textColor="@color/white" />
 
             <LinearLayout
                 android:layout_width="398dp"

@@ -54,6 +54,10 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
     // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
+    private boolean isDropdownMode = true;
+    private Button btnSwitchInputMode;
+    private LinearLayout llDropdownMode;
+    private LinearLayout llKeyboardMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +92,11 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         // 新增：绑定输入显示框和下拉菜单
         tvDisplay = findViewById(R.id.tv_display);
         spTaskPoi = findViewById(R.id.sp_task_poi);
+        btnSwitchInputMode = findViewById(R.id.btn_switch_input_mode);
+        llDropdownMode = findViewById(R.id.ll_dropdown_mode);
+        llKeyboardMode = findViewById(R.id.ll_keyboard_mode);
+        llDropdownMode.setVisibility(View.VISIBLE);
+        llKeyboardMode.setVisibility(View.GONE);
 
         loadTaskButtonsLayout();
 
@@ -140,6 +149,8 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             }).start();
         });
 
+        bindSwitchInputModeListener();
+
         // 数字按钮逻辑
         setupNumberButtons();
 
@@ -176,7 +187,38 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         });
     }
 
-    // 新增：初始化任务点位下拉菜单（显示点位全名）
+    /**
+     * 绑定输入模式切换按钮点击事件
+     */
+    private void bindSwitchInputModeListener() {
+        if (btnSwitchInputMode == null) return;
+
+        btnSwitchInputMode.setOnClickListener(v -> {
+            // 1. 切换模式标记
+            isDropdownMode = !isDropdownMode;
+
+            // 2. 根据标记控制两个模式容器的显隐
+            if (isDropdownMode) {
+                // 切换为：下拉列表模式（显示下拉，隐藏数字键盘）
+                llDropdownMode.setVisibility(View.VISIBLE);
+                llKeyboardMode.setVisibility(View.GONE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：数字键入模式");
+            } else {
+                // 切换为：数字键入模式（隐藏下拉，显示数字键盘）
+                llDropdownMode.setVisibility(View.GONE);
+                llKeyboardMode.setVisibility(View.VISIBLE);
+                // 更新按钮文字
+                btnSwitchInputMode.setText("切换为：点位列表模式");
+                // 可选：清空数字键入框，避免残留
+                if (tvDisplay != null) {
+                    tvDisplay.setText("");
+                }
+            }
+        });
+    }
+
+    // 初始化任务点位下拉菜单（显示点位全名）
     private void initTaskPoiSpinner() {
         if (poiList.isEmpty()) {
             Toast.makeText(this, "暂无可用点位", Toast.LENGTH_SHORT).show();

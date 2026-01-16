@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import androidx.fragment.app.Fragment;
 import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -13,6 +14,7 @@ import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.CombinedData;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.silan.robotpeisongcontrl.R;
 import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.PointSuccessFailure;
@@ -26,9 +28,11 @@ import java.util.Map;
 public class PointSuccessFailureFragment extends Fragment {
 
     private BarChart barChart;
+    private boolean isFragmentDestroyed = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        isFragmentDestroyed = false;
         View view = inflater.inflate(R.layout.fragment_point_success_failure, container, false);
         barChart = view.findViewById(R.id.bar_chart);
         initChart();
@@ -36,33 +40,80 @@ public class PointSuccessFailureFragment extends Fragment {
         return view;
     }
 
-    // 初始化图表
+    // 销毁时标记
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isFragmentDestroyed = true;
+    }
+
+    // 初始化图
     private void initChart() {
+        if (isFragmentDestroyed || getContext() == null) {
+            return;
+        }
+        // 禁用所有交互
+        barChart.setTouchEnabled(false);
+        barChart.setScaleEnabled(false);
+        barChart.setScaleXEnabled(false);
+        barChart.setScaleYEnabled(false);
+        barChart.setDragEnabled(false);
+        barChart.setDoubleTapToZoomEnabled(false);
+        barChart.setHighlightPerTapEnabled(false);
+        barChart.setHighlightPerDragEnabled(false);
+        barChart.setPinchZoom(false);
+        barChart.setLongClickable(false);
         barChart.setDrawBarShadow(false);
         barChart.setDrawValueAboveBar(true);
         barChart.getDescription().setEnabled(false);
-        barChart.setPinchZoom(false);
         barChart.setDrawGridBackground(false);
+        barChart.setExtraOffsets(10, 10, 10, 20); // 内边距
 
-        // X轴
+        // X轴美化
         XAxis xAxis = barChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
         xAxis.setLabelRotationAngle(-45);
         xAxis.setGranularity(1f);
+        xAxis.setTextSize(12f);
+        xAxis.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme()));
+        xAxis.setAxisLineColor(getResources().getColor(R.color.gray_300, getContext().getTheme()));
+        xAxis.setAxisLineWidth(1f);
 
-        // Y轴
+        // Y轴美化
         YAxis leftAxis = barChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(getResources().getColor(R.color.gray_200, getContext().getTheme()));
+        leftAxis.setGridLineWidth(0.5f);
         leftAxis.setAxisMinimum(0f);
+        leftAxis.setTextSize(12f);
+        leftAxis.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme()));
+        leftAxis.setAxisLineColor(getResources().getColor(R.color.gray_300, getContext().getTheme()));
+        // Y轴整数格式化（原有逻辑保留）
+        leftAxis.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int) value);
+            }
+        });
         barChart.getAxisRight().setEnabled(false);
 
-        // 图例
-        barChart.getLegend().setEnabled(true);
+        // 图例美化
+        Legend legend = barChart.getLegend();
+        legend.setEnabled(true);
+        legend.setTextSize(12f);
+        legend.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme()));
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
     }
 
     // 加载点位成败数据
     private void loadPointData() {
+        if (isFragmentDestroyed || getContext() == null) {
+            return;
+        }
         // 1. 统计成功数
         Map<String, Integer> successMap = new HashMap<>();
         List<TaskSuccessManager.TaskSuccess> successList = TaskSuccessManager.loadAllSuccess(getContext());
@@ -79,7 +130,6 @@ public class PointSuccessFailureFragment extends Fragment {
 
         // 3. 合并数据
         List<PointSuccessFailure> dataList = new ArrayList<>();
-        // 合并所有点位
         Map<String, PointSuccessFailure> tempMap = new HashMap<>();
         // 先加成功的
         for (String point : successMap.keySet()) {
@@ -101,13 +151,16 @@ public class PointSuccessFailureFragment extends Fragment {
         drawChart(dataList);
     }
 
-    // 绘制图表（分组柱状图）
+    // 绘制图表（美化版）
     private void drawChart(List<PointSuccessFailure> dataList) {
-        // 1. 数据为空时：清空图表+显示无数据提示，避免空指针
+        if (isFragmentDestroyed || getContext() == null) {
+            return;
+        }
+        // 1. 数据为空时：清空图表+显示无数据提示
         if (dataList.isEmpty()) {
             barChart.clear();
             barChart.setNoDataText("暂无点位成败数据");
-            barChart.setNoDataTextColor(getContext() != null ? getResources().getColor(R.color.seablue, getContext().getTheme()) : android.graphics.Color.GRAY);
+            barChart.setNoDataTextColor(getResources().getColor(R.color.gray_500, getContext().getTheme()));
             barChart.invalidate();
             return;
         }
@@ -118,27 +171,49 @@ public class PointSuccessFailureFragment extends Fragment {
 
         for (int i = 0; i < dataList.size(); i++) {
             PointSuccessFailure item = dataList.get(i);
-            successEntries.add(new BarEntry(i, item.getSuccessCount()));
-            failureEntries.add(new BarEntry(i, item.getFailureCount()));
+            // 强制整数
+            int successInt = item.getSuccessCount();
+            int failureInt = item.getFailureCount();
+
+            successEntries.add(new BarEntry(i, successInt));
+            failureEntries.add(new BarEntry(i, failureInt));
             xLabels.add(item.getPointName());
         }
 
-        // 成功数据集（修复getResources()空指针）
+        // 成功柱子：淡绿色
         BarDataSet successSet = new BarDataSet(successEntries, "成功数");
-        successSet.setColor(getContext() != null ? getResources().getColor(R.color.green, getContext().getTheme()) : android.graphics.Color.GREEN);
-        successSet.setValueTextSize(10f);
+        successSet.setColor(getResources().getColor(R.color.green_light, getContext().getTheme()));
+        successSet.setValueTextSize(11f);
+        successSet.setValueTextColor(getResources().getColor(R.color.gray_800, getContext().getTheme()));
+        successSet.setBarBorderWidth(0.5f);
+        successSet.setBarBorderColor(getResources().getColor(R.color.green, getContext().getTheme()));
+        // 数值标签强制整数
+        successSet.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int) value);
+            }
+        });
 
-        // 失败数据集（修复getResources()空指针）
+        // 失败柱子：淡红色
         BarDataSet failureSet = new BarDataSet(failureEntries, "失败数");
-        failureSet.setColor(getContext() != null ? getResources().getColor(R.color.red, getContext().getTheme()) : android.graphics.Color.RED);
-        failureSet.setValueTextSize(10f);
+        failureSet.setColor(getResources().getColor(R.color.red_light, getContext().getTheme()));
+        failureSet.setValueTextSize(11f);
+        failureSet.setValueTextColor(getResources().getColor(R.color.gray_800, getContext().getTheme()));
+        failureSet.setBarBorderWidth(0.5f);
+        failureSet.setBarBorderColor(getResources().getColor(R.color.red, getContext().getTheme()));
+        // 数值标签强制整数
+        failureSet.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int) value);
+            }
+        });
 
-        // 组合数据（核心修复：移除barChart.getBarData()的空指针调用）
+        // 调整柱子宽度和分组间距
         BarData barData = new BarData(successSet, failureSet);
-        barData.setBarWidth(0.4f); // 单根柱子宽度
-        // 删掉这行错误代码：barChart.getBarData().setBarWidth(0.4f);
-        // 设置分组间距
-        barData.groupBars(-0.4f, 0.1f, 0.05f);
+        barData.setBarWidth(0.35f);
+        barData.groupBars(-0.4f, 0.15f, 0.05f);
 
         // X轴标签
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(xLabels));
@@ -147,6 +222,8 @@ public class PointSuccessFailureFragment extends Fragment {
         barChart.setData(barData);
         barChart.getXAxis().setAxisMinimum(-0.5f);
         barChart.getXAxis().setAxisMaximum(dataList.size() - 0.5f);
+        // 新增动画
+        barChart.animateY(800);
         barChart.invalidate();
     }
 }

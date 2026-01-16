@@ -5,9 +5,11 @@
     android:orientation="vertical"
     android:padding="8dp">
 
+    <!-- 点位成败图表：优化宽高 -->
     <com.github.mikephil.charting.charts.BarChart
         android:id="@+id/bar_chart"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:minHeight="350dp"/>
 
 </LinearLayout>

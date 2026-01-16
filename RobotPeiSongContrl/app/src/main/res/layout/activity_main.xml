@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,20 +17,25 @@
         android:textColor="@color/black"
         android:textSize="24sp" />
     <!-- 主按钮容器 -->
-    <LinearLayout
+    <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/button_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:padding="16dp"
+        app:alignContent="center"
+        app:alignItems="center"
+        app:flexDirection="row"
+        app:flexWrap="wrap"
+        app:justifyContent="center"
+        app:spanCount="4">
 
+        <!-- 原有按钮保持不变，移除原LinearLayout的margin（统一由FlexboxLayout管理） -->
         <Button
             android:id="@+id/btn_start_delivery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="30dp"
-            android:layout_marginBottom="30dp"
+            android:layout_margin="16dp"
             android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
@@ -42,69 +48,69 @@
             android:id="@+id/btn_patrol_mode"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="30dp"
-            android:layout_marginBottom="30dp"
+            android:layout_margin="16dp"
             android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
-            android:textColor="@color/white"
             android:text="巡游模式"
             android:textAllCaps="false"
+            android:textColor="@color/white"
             android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_multi_delivery"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="30dp"
+            android:layout_margin="16dp"
             android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
-            android:textColor="@color/white"
             android:text="多点配送"
             android:textAllCaps="false"
+            android:textColor="@color/white"
             android:textSize="25sp" />
 
-        <Button
-            android:id="@+id/btn_follow_mode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="30dp"
-            android:background="@drawable/button_sky_blue_rect"
-            android:minWidth="150dp"
-            android:minHeight="80dp"
-            android:textColor="@color/white"
-            android:text="跟随模式"
-            android:textAllCaps="false"
-            android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_single_recycle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="30dp"
+            android:layout_margin="16dp"
             android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
-            android:textColor="@color/white"
             android:text="单点回收"
             android:textAllCaps="false"
+            android:textColor="@color/white"
             android:textSize="25sp" />
 
         <Button
             android:id="@+id/btn_multi_recycle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="30dp"
+            android:layout_margin="16dp"
             android:background="@drawable/button_sky_blue_rect"
             android:minWidth="150dp"
             android:minHeight="80dp"
-            android:textColor="@color/white"
             android:text="多点回收"
             android:textAllCaps="false"
+            android:textColor="@color/white"
             android:textSize="25sp" />
 
-    </LinearLayout>
+        <Button
+            android:id="@+id/btn_follow_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:background="@drawable/button_sky_blue_rect"
+            android:minWidth="150dp"
+            android:minHeight="80dp"
+            android:text="跟随模式"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="25sp" />
+
+    </com.google.android.flexbox.FlexboxLayout>
 
     <!-- 设置按钮 -->
     <ImageButton
@@ -126,8 +132,8 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
         android:contentDescription="待机动画视频"
-        android:visibility="gone"
-        android:scaleType="fitXY" />
+        android:scaleType="fitXY"
+        android:visibility="gone" />
 
     <!-- 基站选择指示器 -->
     <LinearLayout
@@ -188,11 +194,11 @@
         android:id="@+id/debug_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_above="@id/base_station_indicator"
-        android:orientation="vertical"
-        android:background="#80000000"
+        android:layout_alignParentBottom="true"
         android:layout_marginBottom="60dp"
+        android:background="#80000000"
+        android:orientation="vertical"
         android:visibility="gone">
 
         <!-- 数据包统计 -->
@@ -205,27 +211,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="数据包数量: "
-                android:textColor="@color/white"/>
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/tv_packet_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="@color/white"/>
+                android:textColor="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="  频率: "
-                android:textColor="@color/white"/>
+                android:textColor="@color/white" />
 
             <TextView
                 android:id="@+id/tv_packet_rate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0 Hz"
-                android:textColor="@color/white"/>
+                android:textColor="@color/white" />
         </LinearLayout>
 
         <!-- UWB数据 -->
@@ -234,7 +240,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="UWB数据: 等待数据..."
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <!-- 坐标系转换 -->
         <TextView
@@ -242,7 +248,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="坐标系转换: 未计算"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <!-- 机器人位姿 -->
         <TextView
@@ -250,7 +256,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="机器人位姿: 未获取"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <!-- 目标位置 -->
         <TextView
@@ -258,7 +264,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="目标位置: 未计算"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <!-- 移动状态 -->
         <TextView
@@ -266,14 +272,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="移动状态: 空闲"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <TextView
             android:id="@+id/tv_positioning_quality"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="定位质量：无"
-            android:textColor="@color/white"/>
+            android:textColor="@color/white" />
 
         <!-- 详细调试信息 -->
         <TextView
@@ -282,29 +288,30 @@
             android:layout_height="wrap_content"
             android:text="调试信息..."
             android:textColor="@color/white"
-            android:textSize="12sp"/>
+            android:textSize="12sp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#40000000"
             android:orientation="vertical"
-            android:padding="4dp"
-            android:background="#40000000">
+            android:padding="4dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:paddingBottom="4dp"
                 android:text="基站数据"
                 android:textColor="#4FC3F7"
-                android:textSize="16sp"
-                android:paddingBottom="4dp"/>
+                android:textSize="16sp" />
 
             <!-- 基站数据表格 -->
             <TableLayout
                 android:id="@+id/base_station_table"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:stretchColumns="*"
-                android:shrinkColumns="*">
+                android:shrinkColumns="*"
+                android:stretchColumns="*">
 
                 <!-- 表头 -->
                 <TableRow
@@ -312,186 +319,190 @@
                     android:padding="2dp">
 
                     <TextView
+                        android:gravity="center"
+                        android:padding="4dp"
                         android:text="位置"
-                        android:textColor="#E1F5FE"
-                        android:gravity="center"
-                        android:padding="4dp"/>
+                        android:textColor="#E1F5FE" />
 
                     <TextView
+                        android:gravity="center"
+                        android:padding="4dp"
                         android:text="距离"
-                        android:textColor="#E1F5FE"
-                        android:gravity="center"
-                        android:padding="4dp"/>
+                        android:textColor="#E1F5FE" />
 
                     <TextView
+                        android:gravity="center"
+                        android:padding="4dp"
                         android:text="方位角"
-                        android:textColor="#E1F5FE"
-                        android:gravity="center"
-                        android:padding="4dp"/>
+                        android:textColor="#E1F5FE" />
 
                     <TextView
+                        android:gravity="center"
+                        android:padding="4dp"
                         android:text="仰角"
-                        android:textColor="#E1F5FE"
-                        android:gravity="center"
-                        android:padding="4dp"/>
+                        android:textColor="#E1F5FE" />
 
                     <TextView
-                        android:text="状态"
-                        android:textColor="#E1F5FE"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="状态"
+                        android:textColor="#E1F5FE" />
                 </TableRow>
 
                 <!-- 前方基站 -->
                 <TableRow android:id="@+id/row_front_base">
+
                     <TextView
                         android:id="@+id/cell_front_label"
-                        android:text="前方"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="前方"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_front_distance"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_front_azimuth"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_front_elevation"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_front_status"
-                        android:text="离线"
-                        android:textColor="#FF5252"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="离线"
+                        android:textColor="#FF5252" />
                 </TableRow>
 
                 <!-- 后方基站 -->
                 <TableRow android:id="@+id/row_rear_base">
+
                     <TextView
                         android:id="@+id/cell_rear_label"
-                        android:text="后方"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="后方"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_rear_distance"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_rear_azimuth"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_rear_elevation"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_rear_status"
-                        android:text="离线"
-                        android:textColor="#FF5252"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="离线"
+                        android:textColor="#FF5252" />
                 </TableRow>
 
                 <!-- 左侧基站 -->
                 <TableRow android:id="@+id/row_left_base">
+
                     <TextView
                         android:id="@+id/cell_left_label"
-                        android:text="左侧"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="左侧"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_left_distance"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_left_azimuth"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_left_elevation"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_left_status"
-                        android:text="离线"
-                        android:textColor="#FF5252"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="离线"
+                        android:textColor="#FF5252" />
                 </TableRow>
 
                 <!-- 右侧基站 -->
                 <TableRow android:id="@+id/row_right_base">
+
                     <TextView
                         android:id="@+id/cell_right_label"
-                        android:text="右侧"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="右侧"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_right_distance"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_right_azimuth"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_right_elevation"
-                        android:text="--"
-                        android:textColor="#FFFFFF"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="--"
+                        android:textColor="#FFFFFF" />
 
                     <TextView
                         android:id="@+id/cell_right_status"
-                        android:text="离线"
-                        android:textColor="#FF5252"
                         android:gravity="center"
-                        android:padding="4dp"/>
+                        android:padding="4dp"
+                        android:text="离线"
+                        android:textColor="#FF5252" />
                 </TableRow>
             </TableLayout>
         </LinearLayout>
@@ -500,22 +511,22 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btn_toggle_debug"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="隐藏监控面板"
-                android:layout_margin="4dp"/>
+                android:layout_margin="4dp"
+                android:text="隐藏监控面板" />
 
             <Button
                 android:id="@+id/btn_clear_logs"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="清除日志"
-                android:layout_margin="4dp"/>
+                android:layout_margin="4dp"
+                android:text="清除日志" />
         </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

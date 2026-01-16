@@ -21,6 +21,7 @@ import com.silan.robotpeisongcontrl.R;
 public class ServiceEnableFragment extends Fragment {
     private Switch switchDelivery, switchPatrol, switchMultiDelivery;
     private Switch switchSingleRecycle, switchMultiRecycle;
+    private Switch switchFollowMode;
     private SharedPreferences prefs;
 
     @Nullable
@@ -37,6 +38,7 @@ public class ServiceEnableFragment extends Fragment {
         switchMultiDelivery = view.findViewById(R.id.switch_multi_delivery);
         switchSingleRecycle = view.findViewById(R.id.switch_single_recycle);
         switchMultiRecycle = view.findViewById(R.id.switch_multi_recycle);
+        switchFollowMode = view.findViewById(R.id.switch_follow_mode);
 
         // 加载保存的设置
         loadSettings();
@@ -47,6 +49,7 @@ public class ServiceEnableFragment extends Fragment {
         switchMultiDelivery.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("multi_delivery_enabled", isChecked));
         switchSingleRecycle.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("single_recycle_enabled", isChecked));
         switchMultiRecycle.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("multi_recycle_enabled", isChecked));
+        switchFollowMode.setOnCheckedChangeListener((buttonView, isChecked) -> saveSetting("follow_mode_enabled", isChecked));
         return view;
     }
 
@@ -56,12 +59,15 @@ public class ServiceEnableFragment extends Fragment {
         boolean multiDeliveryEnabled = prefs.getBoolean("multi_delivery_enabled", true);
         boolean singleRecycleEnabled = prefs.getBoolean("single_recycle_enabled", true);
         boolean multiRecycleEnabled = prefs.getBoolean("multi_recycle_enabled", true);
+        boolean followModeEnabled = prefs.getBoolean("follow_mode_enabled", true);
+
 
         switchDelivery.setChecked(deliveryEnabled);
         switchPatrol.setChecked(patrolEnabled);
         switchMultiDelivery.setChecked(multiDeliveryEnabled);
         switchSingleRecycle.setChecked(singleRecycleEnabled);
         switchMultiRecycle.setChecked(multiRecycleEnabled);
+        switchFollowMode.setChecked(followModeEnabled);
     }
 
     private void saveSetting(String key, boolean value) {

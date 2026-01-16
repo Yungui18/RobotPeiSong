@@ -753,33 +753,35 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         boolean deliveryEnabled = prefs.getBoolean("delivery_enabled", true);
         boolean patrolEnabled = prefs.getBoolean("patrol_enabled", true);
         boolean multiDeliveryEnabled = prefs.getBoolean("multi_delivery_enabled", true);
+        boolean followModeEnabled = prefs.getBoolean("follow_mode_enabled", true);
 
         // 设置按钮可见性
         findViewById(R.id.btn_start_delivery).setVisibility(deliveryEnabled ? View.VISIBLE : View.GONE);
         findViewById(R.id.btn_patrol_mode).setVisibility(patrolEnabled ? View.VISIBLE : View.GONE);
         findViewById(R.id.btn_multi_delivery).setVisibility(multiDeliveryEnabled ? View.VISIBLE : View.GONE);
+        findViewById(R.id.btn_follow_mode).setVisibility(followModeEnabled ? View.VISIBLE : View.GONE);
 
         // 调整布局
         adjustLayoutForServiceSettings();
     }
 
     private void adjustLayoutForServiceSettings() {
-        LinearLayout buttonContainer = findViewById(R.id.button_container);
-        int visibleButtonCount = 0;
-
-        for (int i = 0; i < buttonContainer.getChildCount(); i++) {
-            View child = buttonContainer.getChildAt(i);
-            if (child.getVisibility() == View.VISIBLE) {
-                visibleButtonCount++;
-            }
-        }
-
-        // 根据可见按钮数量调整布局
-        if (visibleButtonCount == 1) {
-            buttonContainer.setGravity(Gravity.CENTER);
-        } else {
-            buttonContainer.setGravity(Gravity.CENTER_HORIZONTAL);
-        }
+//        LinearLayout buttonContainer = findViewById(R.id.button_container);
+//        int visibleButtonCount = 0;
+//
+//        for (int i = 0; i < buttonContainer.getChildCount(); i++) {
+//            View child = buttonContainer.getChildAt(i);
+//            if (child.getVisibility() == View.VISIBLE) {
+//                visibleButtonCount++;
+//            }
+//        }
+//
+//        // 根据可见按钮数量调整布局
+//        if (visibleButtonCount == 1) {
+//            buttonContainer.setGravity(Gravity.CENTER);
+//        } else {
+//            buttonContainer.setGravity(Gravity.CENTER_HORIZONTAL);
+//        }
     }
 
     //应用背景

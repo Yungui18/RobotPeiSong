@@ -65,6 +65,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private static final int DOOR_OPEN_DELAY = 300;
     private Handler doorHandler = new Handler(Looper.getMainLooper());
     private List<BasicSettingsFragment.DoorInfo> enabledDoors;
+    private Button btnComplete;
+    private Button btnPickup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,8 +85,10 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         }
 
         TextView countdownText = findViewById(R.id.tv_countdown);
-        Button btnPickup = findViewById(R.id.btn_pickup);
-        Button btnComplete = findViewById(R.id.btn_complete);
+        btnPickup = findViewById(R.id.btn_pickup);
+        btnComplete = findViewById(R.id.btn_complete);
+
+        btnComplete.setVisibility(View.GONE);
 
         doorStateManager = DoorStateManager.getInstance(this);
 
@@ -113,6 +117,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             // ===== 修改：定时任务执行取物时加灰化 =====
             lockAllButtons();
             performPickupAction();
+            btnComplete.setVisibility(View.VISIBLE);
             unlockAllButtons();
         }
 
@@ -198,6 +203,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             showPickupPasswordDialog();
         } else {
             performPickupAction();
+            btnComplete.setVisibility(View.VISIBLE);
+            btnPickup.setVisibility(View.GONE);
             unlockAllButtons(); // 执行完取物逻辑后解锁
         }
     }

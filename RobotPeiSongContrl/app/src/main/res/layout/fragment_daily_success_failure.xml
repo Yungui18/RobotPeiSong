@@ -5,30 +5,70 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 年月筛选按钮 -->
+    <!-- 日期范围筛选：优化高度和样式 -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_marginBottom="16dp">
 
-        <Spinner
-            android:id="@+id/spinner_year"
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="开始日期："
+            android:textSize="14sp"
+            android:textColor="@color/gray_700"/>
 
-        <Spinner
-            android:id="@+id/spinner_month"
+        <EditText
+            android:id="@+id/et_start_date"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="yyyy-MM-dd"
+            android:focusable="false"
+            android:clickable="true"
+            android:padding="8dp"
+            android:textSize="14sp"
+            android:background="@drawable/shape_edittext_border"/>
+
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="结束日期："
+            android:textSize="14sp"
+            android:textColor="@color/gray_700"
+            android:layout_marginLeft="16dp"/>
+
+        <EditText
+            android:id="@+id/et_end_date"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:hint="yyyy-MM-dd"
+            android:focusable="false"
+            android:clickable="true"
+            android:padding="8dp"
+            android:textSize="14sp"
+            android:background="@drawable/shape_edittext_border"/>
+
+        <Button
+            android:id="@+id/btn_query"
+            android:layout_width="80dp"
+            android:layout_height="40dp"
+            android:text="查询"
+            android:textSize="14sp"
+            android:backgroundTint="@color/seablue"
+            android:textColor="@color/white"
+            android:layout_marginLeft="8dp"/>
     </LinearLayout>
 
-    <!-- 里程图表 -->
-
-    <!-- 成败图表 -->
+    <!-- 成败图表：优化宽高 -->
     <com.github.mikephil.charting.charts.BarChart
         android:id="@+id/bar_chart"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="300dp"/>
 
 </LinearLayout>

@@ -11,9 +11,12 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -27,15 +30,18 @@ import com.silan.robotpeisongcontrl.R;
 import com.silan.robotpeisongcontrl.model.DailyMileage;
 import com.silan.robotpeisongcontrl.model.MileageResponse;
 import com.silan.robotpeisongcontrl.utils.DateFilterUtil;
+import com.silan.robotpeisongcontrl.utils.DateRangeUtil;
 import com.silan.robotpeisongcontrl.utils.MileageManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.YearMonthSelectorUtil;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import okio.ByteString;
@@ -43,298 +49,249 @@ import okio.ByteString;
 
 public class DailyMileageFragment extends Fragment {
     private BarChart barChart;
-    private Spinner spinnerYear;   // 年份Spinner
-    private Spinner spinnerMonth;  // 月份Spinner
-    private int selectedYear;      // 选中的年
-    private int selectedMonth;     // 选中的月
-    private List<DailyMileage> allMileageData; // 缓存所有里程数据（用于提取年份）
+    private EditText etStartDate, etEndDate;
+    private Button btnQuery;
+    private List<DailyMileage> allMileageData; // 缓存所有里程数据
+
+    private boolean isDestroyed = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        isDestroyed = false; // 初始化标记
         View view = inflater.inflate(R.layout.fragment_daily_mileage, container, false);
         barChart = view.findViewById(R.id.bar_chart);
-        spinnerYear = view.findViewById(R.id.spinner_year);
-        spinnerMonth = view.findViewById(R.id.spinner_month);
+        etStartDate = view.findViewById(R.id.et_start_date);
+        etEndDate = view.findViewById(R.id.et_end_date);
+        btnQuery = view.findViewById(R.id.btn_query);
 
         initChart();
-        // 初始化选中年月为当前月
-        int[] currentYm = DateFilterUtil.getCurrentYearMonth();
-        selectedYear = currentYm[0];
-        selectedMonth = currentYm[1];
+        initDatePickers(); // 初始化日期选择器
+        loadAllMileageData(); // 加载所有里程数据
 
-        // ========== 新增：提前初始化默认Spinner（立即显示+默认选当年） ==========
-        initTemporaryDefaultSpinner();
-
-        // 先加载所有数据（用于提取年份选项）
-        loadAllMileageData();
+        // 查询按钮点击事件
+        btnQuery.setOnClickListener(v -> queryByDateRange());
 
         return view;
     }
 
-    private void initTemporaryDefaultSpinner() {
-        if (getActivity() == null) return;
-
-        // 年份：近10年，默认选当年
-        List<Integer> tempYears = YearMonthSelectorUtil.generateDefaultYears(10);
-        ArrayAdapter<Integer> tempYearAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                tempYears
-        );
-        tempYearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerYear.setAdapter(tempYearAdapter);
-
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentYearPos = tempYears.indexOf(currentYear);
-        spinnerYear.setSelection(currentYearPos != -1 ? currentYearPos : tempYears.size() - 1);
-
-        // 月份：1-12月，默认选当月
-        List<String> tempMonths = YearMonthSelectorUtil.generateMonthOptions();
-        ArrayAdapter<String> tempMonthAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                tempMonths
-        );
-        tempMonthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerMonth.setAdapter(tempMonthAdapter);
-        spinnerMonth.setSelection(selectedMonth - 1);
-
-        // 临时选择事件（数据加载后会替换）
-        spinnerYear.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedYear = tempYears.get(position);
-                if (allMileageData != null) filterAndDrawData();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-        spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedMonth = YearMonthSelectorUtil.parseMonth(tempMonths.get(position));
-                if (allMileageData != null) filterAndDrawData();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+    // 新增：Fragment销毁时标记
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        isDestroyed = true;
     }
 
-    // 加载所有里程数据（缓存+初始化年月Spinner）
+    /**
+     * 初始化日期选择器
+     */
+    private void initDatePickers() {
+        // 先校验Fragment是否存活
+        if (isDestroyed || getContext() == null) {
+            return;
+        }
+        // 默认开始日期为30天前，结束日期为今天
+        String defaultStart = DateRangeUtil.getDateBefore(30);
+        String defaultEnd = DateRangeUtil.getCurrentDate();
+        etStartDate.setText(defaultStart);
+        etEndDate.setText(defaultEnd);
+
+        // 开始日期选择器
+        etStartDate.setOnClickListener(v -> showDatePicker(true));
+        // 结束日期选择器
+        etEndDate.setOnClickListener(v -> showDatePicker(false));
+    }
+
+    /**
+     * 显示日期选择器
+     * @param isStart 是否为开始日期
+     */
+    private void showDatePicker(boolean isStart) {
+        // 先校验Fragment是否存活
+        if (isDestroyed || getActivity() == null) {
+            return;
+        }
+        MaterialDatePicker<Long> datePicker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(isStart ? "选择开始日期" : "选择结束日期")
+                .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+                .build();
+
+        datePicker.addOnPositiveButtonClickListener(selection -> {
+            // 转换为yyyy-MM-dd格式
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA);
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+            String selectedDate = sdf.format(selection);
+
+            if (isStart) {
+                etStartDate.setText(selectedDate);
+            } else {
+                etEndDate.setText(selectedDate);
+            }
+        });
+
+        datePicker.show(getActivity().getSupportFragmentManager(), "DATE_PICKER");
+    }
+
+    /**
+     * 加载所有里程数据
+     */
     private void loadAllMileageData() {
-        // 调用新的getMileageData，使用正确的MileageDataCallback
         RobotController.getMileageData(new RobotController.MileageDataCallback() {
             @Override
             public void onSuccess(MileageResponse response) {
+                // 核心修复1：校验Fragment是否存活+Context是否有效
+                if (isDestroyed || getContext() == null) {
+                    return;
+                }
                 try {
-                    // 直接使用处理好的response，无需解析
                     MileageManager.processMileageResponse(getContext(), response);
-
-                    // 缓存所有里程数据
                     allMileageData = MileageManager.loadDailyMileage(getContext());
+                    // 核心修复2：切换到主线程且校验Activity是否存在
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
-                            initYearMonthSpinners();
-                            filterAndDrawData();
+                            if (!isDestroyed) {
+                                queryByDateRange();
+                            }
                         });
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> initDefaultYearMonthSpinners());
-                    }
+                    loadLocalData();
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
                 e.printStackTrace();
-                // 加载本地缓存
-                allMileageData = MileageManager.loadDailyMileage(getContext());
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                        if (allMileageData.isEmpty()) {
-                            initDefaultYearMonthSpinners();
-                        } else {
-                            initYearMonthSpinners();
-                        }
-                        filterAndDrawData();
-                    });
+                // 核心修复3：失败回调也校验Fragment状态
+                if (!isDestroyed) {
+                    loadLocalData();
                 }
             }
         });
     }
 
-    // 初始化年月Spinner（基于数据中的年份）
-    private void initYearMonthSpinners() {
-        Log.d("MileageFragment", "里程数据条数：" + (allMileageData == null ? 0 : allMileageData.size()));
-        // 1. 初始化年份Spinner（提取数据中所有年份）
-        List<Integer> yearList = YearMonthSelectorUtil.getYearsFromMileageData(allMileageData);
-        // 兜底：无数据时显示近10年
-        if (yearList.isEmpty()) {
-            Log.d("MileageFragment", "无里程数据，使用默认近10年");
-            yearList = YearMonthSelectorUtil.generateDefaultYears(10);
+    /**
+     * 加载本地缓存数据（核心修复：增加Context校验）
+     */
+    private void loadLocalData() {
+        // 先校验Context和Fragment状态
+        if (isDestroyed || getContext() == null) {
+            return;
         }
-        // 年份适配器（显示数字，如2022、2023...）
-        ArrayAdapter<Integer> yearAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                yearList
-        );
-        yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerYear.setAdapter(yearAdapter);
-
-        // ========== 核心修改：确保默认选中当年 ==========
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentYearPos = yearList.indexOf(currentYear);
-        if (currentYearPos != -1) {
-            spinnerYear.setSelection(currentYearPos); // 有当年则选当年
-        } else {
-            spinnerYear.setSelection(yearList.size() - 1); // 无当年则选最新年
-            selectedYear = yearList.get(yearList.size() - 1); // 同步选中值
+        allMileageData = MileageManager.loadDailyMileage(getContext());
+        // 切换主线程且校验
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (!isDestroyed) {
+                    queryByDateRange();
+                }
+            });
         }
-
-        // 2. 初始化月份Spinner（固定1-12月）
-        List<String> monthList = YearMonthSelectorUtil.generateMonthOptions();
-        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                monthList
-        );
-        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerMonth.setAdapter(monthAdapter);
-
-        // 默认选中当前月（如6月→索引5）
-        spinnerMonth.setSelection(selectedMonth - 1);
-
-        // 3. 年份选择事件
-        spinnerYear.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedYear = (Integer) parent.getItemAtPosition(position);
-                filterAndDrawData(); // 选中年份后过滤数据
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                selectedYear = Calendar.getInstance().get(Calendar.YEAR);
-            }
-        });
-
-        // 4. 月份选择事件
-        spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String monthStr = (String) parent.getItemAtPosition(position);
-                selectedMonth = YearMonthSelectorUtil.parseMonth(monthStr);
-                filterAndDrawData(); // 选中月份后过滤数据
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                selectedMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
-            }
-        });
     }
 
-    // 兜底：无数据时初始化默认年月Spinner（近10年+12月）
-    private void initDefaultYearMonthSpinners() {
-        // 年份：近10年（升序：2015-2025）
-        List<Integer> defaultYears = YearMonthSelectorUtil.generateDefaultYears(10);
-        ArrayAdapter<Integer> yearAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                defaultYears
-        );
-        yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerYear.setAdapter(yearAdapter);
+    /**
+     * 按日期范围查询数据
+     */
+    private void queryByDateRange() {
+        // 先校验Fragment状态
+        if (isDestroyed || getContext() == null) {
+            return;
+        }
+        String startDate = etStartDate.getText().toString().trim();
+        String endDate = etEndDate.getText().toString().trim();
 
-        // ========== 核心修改：找到当年在默认列表中的位置并选中 ==========
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        int currentYearPos = defaultYears.indexOf(currentYear);
-        // 找不到则选最后一个（最新年）
-        spinnerYear.setSelection(currentYearPos != -1 ? currentYearPos : defaultYears.size() - 1);
-        selectedYear = currentYear; // 强制赋值为当年
+        // 校验日期范围
+        int checkResult = DateRangeUtil.checkDateRange(startDate, endDate);
+        switch (checkResult) {
+            case -1:
+                Toast.makeText(getContext(), "结束日期不能早于开始日期", Toast.LENGTH_SHORT).show();
+                return;
+            case -2:
+                Toast.makeText(getContext(), "筛选天数最多支持31天", Toast.LENGTH_SHORT).show();
+                return;
+            case -3:
+                Toast.makeText(getContext(), "日期格式错误（请输入yyyy-MM-dd）", Toast.LENGTH_SHORT).show();
+                return;
+            case -4:
+                Toast.makeText(getContext(), "请选择开始和结束日期", Toast.LENGTH_SHORT).show();
+                return;
+        }
 
-        // 月份：1-12月（默认选中当月）
-        List<String> monthList = YearMonthSelectorUtil.generateMonthOptions();
-        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                monthList
-        );
-        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerMonth.setAdapter(monthAdapter);
-        spinnerMonth.setSelection(selectedMonth - 1);
-
-        // 绑定选择事件
-        spinnerYear.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedYear = (Integer) parent.getItemAtPosition(position);
-                filterAndDrawData();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-        spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String monthStr = (String) parent.getItemAtPosition(position);
-                selectedMonth = YearMonthSelectorUtil.parseMonth(monthStr);
-                filterAndDrawData();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-    }
-
-    // 过滤选中年月的数据并绘制图表
-    private void filterAndDrawData() {
+        // 过滤数据
         if (allMileageData == null) allMileageData = new ArrayList<>();
-        // 过滤选中年月的数据（仅保留1个月）
-        List<DailyMileage> filteredData = DateFilterUtil.filterMileageByMonth(allMileageData, selectedYear, selectedMonth);
+        List<DailyMileage> filteredData = DateRangeUtil.filterMileageByDateRange(allMileageData, startDate, endDate);
         drawChart(filteredData);
     }
 
-    // 初始化图表样式（原有逻辑不变）
+    // 初始化图表样式（美化版）
     private void initChart() {
+        if (isDestroyed || getContext() == null) {
+            return;
+        }
+        // 禁用所有交互（原有逻辑保留）
+        barChart.setTouchEnabled(false);
+        barChart.setScaleEnabled(false);
+        barChart.setScaleXEnabled(false);
+        barChart.setScaleYEnabled(false);
+        barChart.setDragEnabled(false);
+        barChart.setDoubleTapToZoomEnabled(false);
+        barChart.setHighlightPerTapEnabled(false);
+        barChart.setHighlightPerDragEnabled(false);
+        barChart.setPinchZoom(false);
+        barChart.setLongClickable(false);
+
+        // ========== 新增美化配置 ==========
         barChart.setDrawBarShadow(false);
         barChart.setDrawValueAboveBar(true);
         barChart.getDescription().setEnabled(false);
-        barChart.setPinchZoom(false);
         barChart.setDrawGridBackground(false);
+        barChart.setExtraOffsets(10, 10, 10, 20); // 图表内边距，避免贴边
 
+        // X轴美化
         XAxis xAxis = barChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
         xAxis.setLabelRotationAngle(-45);
         xAxis.setGranularity(1f);
+        xAxis.setTextSize(12f); // 文字大小
+        xAxis.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme())); // 文字颜色
+        xAxis.setAxisLineColor(getResources().getColor(R.color.gray_300, getContext().getTheme())); // 轴线颜色
+        xAxis.setAxisLineWidth(1f); // 轴线宽度
 
+        // Y轴美化
         YAxis leftAxis = barChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(getResources().getColor(R.color.gray_200, getContext().getTheme())); // 网格线浅灰
+        leftAxis.setGridLineWidth(0.5f); // 网格线细一点
         leftAxis.setAxisMinimum(0f);
+        leftAxis.setTextSize(12f); // 文字大小
+        leftAxis.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme())); // 文字颜色
+        leftAxis.setAxisLineColor(getResources().getColor(R.color.gray_300, getContext().getTheme())); // 轴线颜色
         barChart.getAxisRight().setEnabled(false);
 
-        barChart.getLegend().setEnabled(true);
+        // 图例美化
+        Legend legend = barChart.getLegend();
+        legend.setEnabled(true);
+        legend.setTextSize(12f);
+        legend.setTextColor(getResources().getColor(R.color.gray_700, getContext().getTheme()));
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP); // 图例在顶部
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT); // 图例在右侧
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
     }
 
-    // 绘制图表（原有逻辑不变）
-    private void drawChart(List<DailyMileage> dataList) {if (dataList.isEmpty()) {
-        barChart.clear();
-        // 新增：无数据提示
-        barChart.setNoDataText("暂无当日里程数据");
-        barChart.setNoDataTextColor(getContext() != null ? getResources().getColor(R.color.seablue, getContext().getTheme()) : android.graphics.Color.GRAY);
-        barChart.invalidate();
-        return;
-    }
+    // 绘制图表（美化版）
+    private void drawChart(List<DailyMileage> dataList) {
+        if (isDestroyed || getContext() == null) {
+            return;
+        }
+        if (dataList.isEmpty()) {
+            barChart.clear();
+            barChart.setNoDataText("暂无当日里程数据");
+            barChart.setNoDataTextColor(getResources().getColor(R.color.gray_500, getContext().getTheme()));
+            barChart.invalidate();
+            return;
+        }
 
         ArrayList<BarEntry> entries = new ArrayList<>();
         ArrayList<String> xLabels = new ArrayList<>();
@@ -345,16 +302,25 @@ public class DailyMileageFragment extends Fragment {
             xLabels.add(item.getDate());
         }
 
-        // 修复getResources()空指针
+        // 美化柱子：淡蓝色（柔和）
         BarDataSet dataSet = new BarDataSet(entries, "当日里程（米）");
-        dataSet.setColor(getContext() != null ? getResources().getColor(R.color.blue, getContext().getTheme()) : android.graphics.Color.BLUE);
-        dataSet.setValueTextSize(10f);
+        dataSet.setColor(getResources().getColor(R.color.blue_light, getContext().getTheme()));
+        dataSet.setValueTextSize(11f); // 数值文字大小
+        dataSet.setValueTextColor(getResources().getColor(R.color.gray_800, getContext().getTheme())); // 数值颜色
+        dataSet.setBarBorderWidth(0.5f); // 柱子边框
+        dataSet.setBarBorderColor(getResources().getColor(R.color.blue, getContext().getTheme())); // 边框颜色
 
+        // 调整柱子宽度（0.6更适中）
         BarData barData = new BarData(dataSet);
-        barData.setBarWidth(0.8f);
+        barData.setBarWidth(0.6f);
 
         barChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(xLabels));
         barChart.setData(barData);
+        // 调整X轴范围，避免柱子贴边
+        barChart.getXAxis().setAxisMinimum(-0.5f);
+        barChart.getXAxis().setAxisMaximum(dataList.size() - 0.5f);
+        // 新增动画，刷新更流畅
+        barChart.animateY(800);
         barChart.invalidate();
     }
 }

@@ -144,7 +144,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
-    // ===== 核心新增：按钮灰化锁定/解锁方法 =====
+    // 按钮灰化锁定/解锁方法
     /**
      * 锁定当前页面所有按钮（灰化+禁止点击）
      */

@@ -84,12 +84,12 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="回收点位："
+                    android:text="这里设置回收点位："
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -101,6 +101,20 @@
                     android:background="@drawable/button_sky_blue_rect"
                     android:paddingHorizontal="10dp" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="点位列表"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+            <Spinner
+                android:id="@+id/sp_task_poi"
+                android:layout_width="256dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/button_sky_blue_rect"
+                android:paddingHorizontal="10dp"/>
 
             <TextView
                 android:id="@+id/tv_display"
@@ -188,7 +202,7 @@
                     android:layout_height="wrap_content"
                     android:layout_columnSpan="3"
                     android:background="@drawable/button_sky_blue_rect"
-                    android:text="完成并关闭仓门"
+                    android:text="准备就绪，点击出发"
                     android:textColor="@color/white" />
             </GridLayout>
 

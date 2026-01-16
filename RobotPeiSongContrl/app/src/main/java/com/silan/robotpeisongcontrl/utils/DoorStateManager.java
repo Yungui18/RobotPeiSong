@@ -24,6 +24,19 @@ public class DoorStateManager {
     // 单点配送当前打开的仓门ID（互斥用）
     private Integer singleOpenedDoorId = null;
 
+    // ===== 新增：仓门状态监听接口 =====
+    public interface OnDoorStateChangeListener {
+        void onDoorOpened(int hardwareId); // 仓门打开回调
+        void onDoorClosed(int hardwareId); // 仓门关闭回调
+    }
+
+    private OnDoorStateChangeListener doorStateChangeListener; // 监听实例
+
+    // ===== 新增：设置监听器的方法 =====
+    public void setOnDoorStateChangeListener(OnDoorStateChangeListener listener) {
+        this.doorStateChangeListener = listener;
+    }
+
     private DoorStateManager(Context context) {
         this.context = context.getApplicationContext();
         this.enabledDoors = BasicSettingsFragment.getEnabledDoors(context);
@@ -38,30 +51,24 @@ public class DoorStateManager {
 
     // 单点配送打开仓门（互斥校验）
     public boolean openSingleDoor(int doorId) {
-        // 已有仓门打开，返回false（先判断singleOpenedDoorId非空，再比较）
-        if (singleOpenedDoorId != null && singleOpenedDoorId != doorId) { // 此处已非空，安全比较
+        if (singleOpenedDoorId != null && singleOpenedDoorId != doorId) {
             Log.d("DoorStateManager", "单点配送已有仓门打开：" + singleOpenedDoorId + "，无法打开" + doorId);
             return false;
         }
-        // 关闭当前仓门（如果是同一个）
-        // 核心修复：先判断singleOpenedDoorId非空，再比较数值，避免拆箱崩溃
         if (singleOpenedDoorId != null && singleOpenedDoorId == doorId) {
             closeDoor(doorId);
             singleOpenedDoorId = null;
             return true;
         }
-        // 打开新仓门
         openDoor(doorId);
         singleOpenedDoorId = doorId;
         return true;
     }
 
-    // 获取单点当前打开的仓门ID
     public Integer getSingleOpenedDoorId() {
         return singleOpenedDoorId;
     }
 
-    // 清空单点打开的仓门记录
     public void clearSingleOpenedDoor() {
         singleOpenedDoorId = null;
     }
@@ -69,14 +76,33 @@ public class DoorStateManager {
     public void addOpenedDoor(int doorId) {
         boolean added = openedDoors.add(doorId);
         Log.d("DoorStateManager", "添加打开仓门: " + doorId + " | 成功: " + added + " | 当前打开集合: " + openedDoors);
+        // ===== 新增：通知仓门打开 =====
+        notifyDoorOpened(doorId);
     }
 
     public void removeClosedDoor(int doorId) {
         boolean removed = openedDoors.remove(doorId);
         Log.d("DoorStateManager", "移除关闭仓门: " + doorId + " | 成功: " + removed + " | 当前打开集合: " + openedDoors);
-        // 单点仓门关闭时清空记录（先判断singleOpenedDoorId非空）
         if (singleOpenedDoorId != null && singleOpenedDoorId == doorId) {
             singleOpenedDoorId = null;
+        }
+        // ===== 新增：通知仓门关闭 =====
+        notifyDoorClosed(doorId);
+    }
+
+    // ===== 新增：分发仓门打开事件 =====
+    private void notifyDoorOpened(int hardwareId) {
+        if (doorStateChangeListener != null) {
+            // 确保在主线程更新UI（避免线程异常）
+            mHandler.post(() -> doorStateChangeListener.onDoorOpened(hardwareId));
+        }
+    }
+
+    // ===== 新增：分发仓门关闭事件 =====
+    private void notifyDoorClosed(int hardwareId) {
+        if (doorStateChangeListener != null) {
+            // 确保在主线程更新UI（避免线程异常）
+            mHandler.post(() -> doorStateChangeListener.onDoorClosed(hardwareId));
         }
     }
 
@@ -94,13 +120,13 @@ public class DoorStateManager {
         Log.d("DoorStateManager", "开始关闭所有仓门 | 待关闭列表: " + openedDoors);
         if (openedDoors.isEmpty()) {
             Log.d("DoorStateManager", "无打开的仓门，无需关闭");
-            clearSingleOpenedDoor(); // 清空单点记录
+            clearSingleOpenedDoor();
             return;
         }
 
         List<Integer> doorsToClose = new ArrayList<>(openedDoors);
         openedDoors.clear();
-        clearSingleOpenedDoor(); // 清空单点记录
+        clearSingleOpenedDoor();
 
         for (int i = 0; i < doorsToClose.size(); i++) {
             final int doorId = doorsToClose.get(i);

@@ -24,4 +24,13 @@
     <color name="skyblue">#0079FE</color>
     <color name="seablue">#3FA2FD</color>
 
+    <color name="blue_light">#BBDEFB</color>
+    <color name="green_light">#C8E6C9</color>
+    <color name="red_light">#FFCDD2</color>
+    <color name="gray_200">#E0E0E0</color>
+    <color name="gray_300">#CCCCCC</color>
+    <color name="gray_500">#9E9E9E</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_800">#424242</color>
+
 </resources>

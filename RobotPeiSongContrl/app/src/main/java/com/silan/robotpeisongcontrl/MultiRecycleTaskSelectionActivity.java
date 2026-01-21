@@ -91,7 +91,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
 
         // 初始化回收点位Spinner
         spRecyclePoint = findViewById(R.id.sp_recycle_point);
-        // 新增：绑定输入显示框和任务点位下拉菜单
+        // 绑定输入显示框和任务点位下拉菜单
         tvDisplay = findViewById(R.id.tv_display);
         spTaskPoi = findViewById(R.id.sp_task_poi);
 
@@ -210,10 +210,10 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
         if (btnSwitchInputMode == null) return;
 
         btnSwitchInputMode.setOnClickListener(v -> {
-            // 1. 切换模式标记
+            //  切换模式标记
             isDropdownMode = !isDropdownMode;
 
-            // 2. 根据标记控制两个模式容器的显隐
+            // 根据标记控制两个模式容器的显隐
             if (isDropdownMode) {
                 // 切换为：下拉列表模式（显示下拉，隐藏数字键盘）
                 llDropdownMode.setVisibility(View.VISIBLE);
@@ -226,7 +226,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
                 llKeyboardMode.setVisibility(View.VISIBLE);
                 // 更新按钮文字
                 btnSwitchInputMode.setText("切换为：点位列表模式");
-                // 可选：清空数字键入框，避免残留
+                // 清空数字键入框，避免残留
                 if (tvDisplay != null) {
                     tvDisplay.setText("");
                 }
@@ -234,7 +234,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
         });
     }
 
-    // 新增：从完整点位名称中提取数字部分
+    // 从完整点位名称中提取数字部分
     private String getNumberPartFromFullName(String fullName) {
         if (fullName == null || !fullName.contains("_")) {
             return fullName; // 兼容原有格式，无下划线直接返回
@@ -242,7 +242,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
         return fullName.split("_")[0].trim();
     }
 
-    // 新增：根据数字部分查找点位
+    // 根据数字部分查找点位
     private Poi getPoiByNumberPart(String numberPart) {
         if (numberPart == null || numberPart.isEmpty() || poiList.isEmpty()) {
             return null;

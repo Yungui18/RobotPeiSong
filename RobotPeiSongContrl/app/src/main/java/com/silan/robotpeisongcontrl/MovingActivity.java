@@ -23,6 +23,7 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.model.ScheduledDeliveryTask;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
+import com.silan.robotpeisongcontrl.utils.RecyclingTaskManager;
 import com.silan.robotpeisongcontrl.utils.RobotController;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
@@ -311,7 +312,7 @@ public class MovingActivity extends BaseActivity {
         // 区分回收点位导航完成和普通任务完成
         if (isReturningHome && isRecycleTask) {
             // 回收点位导航完成，返回主界面
-            finishAndReturnToMain();
+            navigateToRecyclingSummaryPage();
         } else if (isReturningHome) {
             // 普通回桩完成
             checkForDeliveryFailures();
@@ -325,6 +326,18 @@ public class MovingActivity extends BaseActivity {
             startActivity(intent);
             finish();
         }
+    }
+
+    private void navigateToRecyclingSummaryPage() {
+        // 1. 存储回收点位到全局管理器（供新页面使用）
+        RecyclingTaskManager.getInstance().setRecyclePoi(recyclePoi);
+
+        // 2. 跳转至新增的回收汇总页面
+        Intent intent = new Intent(this, RecyclingSummaryActivity.class);
+        // 传递POI列表（可选，保障页面数据完整性）
+        intent.putExtra("poi_list", new Gson().toJson(poiList));
+        startActivity(intent);
+        finish();
     }
 
     private void checkForDeliveryFailures() {

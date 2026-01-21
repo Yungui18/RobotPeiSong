@@ -305,7 +305,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
                     doorInfo.getHardwareId());
 
             button.setText(buttonText);
-            // ===== 修改1：单点默认绿色（button_green_rect），未分配任务时的初始状态 =====
+            // ===== 单点默认绿色（button_green_rect），未分配任务时的初始状态 =====
             button.setBackgroundResource(R.drawable.button_sea_blue_rect);
             button.setTextColor(Color.WHITE);
             button.setTextSize(16);

@@ -32,6 +32,7 @@ import com.silan.robotpeisongcontrl.model.DeliveryFailure;
 import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
+import com.silan.robotpeisongcontrl.utils.RecyclingTaskManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 import com.silan.robotpeisongcontrl.utils.TaskSuccessManager;
 
@@ -67,6 +68,8 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private List<BasicSettingsFragment.DoorInfo> enabledDoors;
     private Button btnComplete;
     private Button btnPickup;
+    private boolean isRecycleTask = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +86,9 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             }.getType();
             poiList = gson.fromJson(poiListJson, type);
         }
+
+        isRecycleTask = intent.getBooleanExtra("is_recycle", false);
+        Log.d("ArrivalConfirmation", "是否为回收任务：" + isRecycleTask);
 
         TextView countdownText = findViewById(R.id.tv_countdown);
         btnPickup = findViewById(R.id.btn_pickup);
@@ -205,6 +211,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             performPickupAction();
             btnComplete.setVisibility(View.VISIBLE);
             btnPickup.setVisibility(View.GONE);
+            saveRecyclingTaskRecord();
             unlockAllButtons(); // 执行完取物逻辑后解锁
         }
     }
@@ -219,6 +226,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
                 taskManager.removeTask(currentPoi);
                 TaskSuccessManager.addSuccess(getApplicationContext(), currentPoi.getDisplayName());
             }
+            saveRecyclingTaskRecord();
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 proceedToNextTask();
                 unlockAllButtons(); // 延迟执行后解锁
@@ -302,6 +310,9 @@ public class ArrivalConfirmationActivity extends BaseActivity {
                     if (passwordDialog != null && passwordDialog.isShowing()) {
                         passwordDialog.dismiss();
                     }
+                    saveRecyclingTaskRecord();
+                    btnComplete.setVisibility(View.VISIBLE);
+                    btnPickup.setVisibility(View.GONE);
                     unlockAllButtons(); // 取物完成后解锁
                 } else {
                     Toast.makeText(ArrivalConfirmationActivity.this, "密码错误", Toast.LENGTH_SHORT).show();
@@ -339,6 +350,38 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         SharedPreferences prefs = getSharedPreferences("delivery_prefs", MODE_PRIVATE);
         String correctPassword = prefs.getString("pickup_password", "");
         return enteredPassword.equals(correctPassword);
+    }
+
+    /**
+     * 保存回收任务记录到全局管理器（核心补充）
+     */
+    private void saveRecyclingTaskRecord() {
+        // 1. 非回收任务直接返回，不执行存储
+        if (!isRecycleTask) {
+            return;
+        }
+
+        // 2. 获取当前任务的点位和关联仓门（复用原有 TaskManager 逻辑）
+        TaskManager taskManager = TaskManager.getInstance();
+        Poi currentPoi = taskManager.getCurrentPoi();
+        if (currentPoi == null) {
+            Log.e("ArrivalConfirmation", "回收任务记录失败：当前点位为空");
+            Toast.makeText(this, "回收任务记录失败：点位数据缺失", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 3. 获取点位名称和关联仓门ID列表（复用原有任务数据）
+        String pointName = currentPoi.getDisplayName();
+        List<Integer> doorIds = taskManager.getDoorIdsForPoint(pointName);
+        if (doorIds == null || doorIds.isEmpty()) {
+            Log.w("ArrivalConfirmation", "回收任务记录提醒：当前点位无关联仓门");
+            return;
+        }
+
+        // 4. 存入全局回收任务管理器（核心步骤）
+        RecyclingTaskManager.getInstance().addTaskRecord(pointName, doorIds);
+        Log.d("ArrivalConfirmation", "回收任务记录成功：点位=" + pointName + "，仓门=" + doorIds);
+        Toast.makeText(this, "回收任务记录成功", Toast.LENGTH_SHORT).show();
     }
 
     private void performPickupAction() {

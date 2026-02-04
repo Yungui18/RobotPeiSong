@@ -94,6 +94,18 @@
         <item>20分钟</item>
     </string-array>
 
+    <!-- 机器人导航模式选项 -->
+    <string-array name="nav_mode_entries">
+        <item>0：自由导航</item>
+        <item>1：严格轨道模式（遇障停止）</item>
+        <item>2：轨道优先模式（遇障绕行）</item>
+    </string-array>
+    <integer-array name="nav_mode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </integer-array>
+
     <!-- 时区名称 -->
     <string name="timezone_china">中国</string>
     <string name="timezone_korea">韩国</string>

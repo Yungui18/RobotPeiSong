@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- 方案名称输入 -->
+    <EditText
+        android:id="@+id/et_plan_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入路线方案名称（如：一楼配送路线）"
+        android:inputType="textCapWords"
+        android:background="@drawable/edittext_white_rect"
+        android:padding="10dp"/>
+
+    <!-- 点位选择 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="选择要添加的点位"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"/>
+
+    <Spinner
+        android:id="@+id/spinner_poi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/edittext_white_rect"
+        android:padding="8dp"/>
+
+    <!-- 仓门选择（动态加载） -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="为该点位选择开启的仓门（可多选）"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"/>
+
+    <LinearLayout
+        android:id="@+id/door_buttons_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 添加点位按钮 -->
+    <Button
+        android:id="@+id/btn_add_point"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="添加点位到方案"
+        android:background="@drawable/button_sky_blue_rect"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"/>
+
+    <!-- 已选点位+仓门展示列表 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="已选点位（配送顺序）"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"/>
+
+    <LinearLayout
+        android:id="@+id/ll_point_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/edittext_white_rect"
+        android:padding="12dp"
+        android:minHeight="100dp"/>
+
+    <!-- 保存方案按钮 -->
+    <Button
+        android:id="@+id/btn_save_plan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存路线方案"
+        android:background="@drawable/button_sky_blue_rect"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"/>
+
+</LinearLayout>

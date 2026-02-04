@@ -1061,8 +1061,6 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     protected void onDestroy() {
         super.onDestroy();
         // 页面销毁后重置初始化标记
-        isMainInitCompleted = false;
-        mInitListeners.clear();
         if (mediaController != null) {
             mediaController.setAnchorView(null);
             mediaController = null;
@@ -1078,6 +1076,13 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
             timeHandler.removeCallbacks(timeUpdaterRunnable);
         }
 
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // 重置初始化状态（当主界面重新打开时）
+        isMainInitCompleted = true;
     }
 
 }

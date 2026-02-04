@@ -579,7 +579,7 @@ public class FollowModeManager {
         targetPoi.setY(globalY);
         targetPoi.setYaw(cachedPose.yaw); // 保持当前朝向
 
-        RobotController.createMoveAction(targetPoi, new OkHttpUtils.ResponseCallback() {
+        RobotController.createMoveAction(context, targetPoi, new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 try {
@@ -753,7 +753,7 @@ public class FollowModeManager {
         target.setY(y);
         target.setYaw(yaw);
 
-        RobotController.createMoveAction(target, new OkHttpUtils.ResponseCallback() {
+        RobotController.createMoveAction(context, target, new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 try {

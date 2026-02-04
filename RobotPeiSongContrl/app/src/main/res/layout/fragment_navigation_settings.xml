@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center_horizontal">
+
+    <!-- 导航设置标题（Fragment内独立标题） -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="导航设置"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- 分割线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="15dp"
+        android:background="#CCCCCC"/>
+
+    <!-- 导航模式配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginVertical="10dp">
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="导航模式："
+            android:textSize="16sp"/>
+        <Spinner
+            android:id="@+id/spinner_nav_mode"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="@android:drawable/spinner_dropdown_background"
+            android:entries="@array/nav_mode_entries"
+            android:entryValues="@array/nav_mode_values"/>
+    </LinearLayout>
+
+    <!-- 到点精度配置 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginVertical="10dp">
+        <TextView
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="到点精度："
+            android:textSize="16sp"/>
+        <EditText
+            android:id="@+id/et_precision"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:hint="0.1~2.0"
+            android:inputType="numberDecimal"
+            android:maxLines="1"
+            android:paddingHorizontal="10dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="米"
+            android:textSize="16sp"
+            android:layout_marginLeft="5dp"/>
+    </LinearLayout>
+
+    <!-- 保存按钮 -->
+    <Button
+        android:id="@+id/btn_save_nav_config"
+        android:layout_width="500dp"
+        android:layout_height="45dp"
+        android:text="保存导航配置"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/button_sea_blue_rect"/>
+
+</LinearLayout>

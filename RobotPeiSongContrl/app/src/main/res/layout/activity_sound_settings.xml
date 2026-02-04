@@ -1,23 +1,532 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    tools:context=".SoundSettingsActivity">
-    <ImageButton
-        android:id="@+id/btn_back"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_arrow_back"
-        android:background="?selectableItemBackgroundBorderless"
-        android:layout_margin="8dp"/>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="声音选择页面"
-        android:textSize="50dp"/>
+    android:orientation="vertical"
+    android:padding="0dp"> <!-- 移除全局padding，避免滚动区域边距错乱，内部子布局单独设置padding -->
 
+    <!-- ********************* 顶部固定区域（始终不动）********************* -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        android:orientation="vertical"
+        android:padding="16dp"> <!-- 背景色与页面一致，避免滚动时穿透 -->
+
+        <!-- 标题+返回按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_back" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:text="音量设置"
+                android:textAlignment="center"
+                android:textColor="@color/black"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <!-- 音量调节+自动音量开关 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="手动音量：" />
+
+            <SeekBar
+                android:id="@+id/seekbar_volume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/tv_volume_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:text="100%" />
+        </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/cb_auto_volume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="开启时间自动调节音量（8:00-22:00正常音量，其余时间50%）" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="16dp"
+            android:background="#EEEEEE" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:padding="16dp"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 语音素材绑定区域 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="语音素材绑定"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- 1. 仓门开启 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="仓门开启：" />
+
+                <Spinner
+                    android:id="@+id/spinner_door_open"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_door_open"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 3. 出发后 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="出发后：" />
+
+                <Spinner
+                    android:id="@+id/spinner_after_start"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_after_start"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 4. 取物后完成 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="取物完成：" />
+
+                <Spinner
+                    android:id="@+id/spinner_complete_take"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_complete_take"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 5. 倒计时超时 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="倒计时超时：" />
+
+                <Spinner
+                    android:id="@+id/spinner_time_out"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_time_out"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 6. 任务到达 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="任务到达：" />
+
+                <Spinner
+                    android:id="@+id/spinner_task_arrive"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_task_arrive"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 7. 行进路径被阻挡 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="路径被挡：" />
+
+                <Spinner
+                    android:id="@+id/spinner_path_occupied"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_path_occupied"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 8. 当前位姿被占据 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="位姿被占：" />
+
+                <Spinner
+                    android:id="@+id/spinner_current_pose_occupied"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_current_pose_occupied"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 9. 机器人上桩 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="机器人上桩：" />
+
+                <Spinner
+                    android:id="@+id/spinner_on_dock"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_on_dock"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 10. 机器人下桩 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="机器人下桩：" />
+
+                <Spinner
+                    android:id="@+id/spinner_off_dock"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_off_dock"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 11. 通过窄走廊 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="通过窄走廊：" />
+
+                <Spinner
+                    android:id="@+id/spinner_pass_narrow_corridor"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_pass_narrow_corridor"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 12. 正在关机 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="正在关机：" />
+
+                <Spinner
+                    android:id="@+id/spinner_power_off"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_power_off"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 13. 前往充电桩失败 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="前往桩失败：" />
+
+                <Spinner
+                    android:id="@+id/spinner_move_dock_failed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_move_dock_failed"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 14. 找桩失败 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="找桩失败：" />
+
+                <Spinner
+                    android:id="@+id/spinner_search_dock_failed"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_search_dock_failed"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 15. 刹车释放 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="刹车释放：" />
+
+                <Spinner
+                    android:id="@+id/spinner_brake_released"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_brake_released"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 16. 碰撞传感器触发 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="碰撞触发：" />
+
+                <Spinner
+                    android:id="@+id/spinner_bumper_triggered"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ImageButton
+                    android:id="@+id/btn_play_bumper_triggered"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_media_play" />
+            </LinearLayout>
+
+            <!-- 保存按钮 -->
+            <Button
+                android:id="@+id/btn_save"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="保存设置" />
+
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>

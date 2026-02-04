@@ -34,6 +34,7 @@ import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
+import com.silan.robotpeisongcontrl.utils.SoundPlayerManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -59,24 +60,24 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
     private List<BasicSettingsFragment.DoorInfo> enabledDoors;
     private ProgressDialog closeDoorDialog;
 
-    // 回收点位相关
     private Spinner spRecyclePoint;
     private String selectedRecyclePointId;
     private String currentDepartPointId; // 默认回收点位（当前出发点）
 
-    // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
     private boolean isDropdownMode = true;
     private Button btnSwitchInputMode;
     private LinearLayout llDropdownMode;
     private LinearLayout llKeyboardMode;
+    private SoundPlayerManager soundPlayerManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_single_recycle_task_selection);
 
+        soundPlayerManager = SoundPlayerManager.getInstance(this);
         // 初始化关闭仓门弹窗
         closeDoorDialog = new ProgressDialog(this);
         closeDoorDialog.setMessage("正在关闭仓门，请稍候...");
@@ -137,7 +138,8 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
         btnStart.setOnClickListener(v -> {
-            lockAllButtons(); // 新增：锁定按钮
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_CLICK_START);
+            lockAllButtons();
             startRecycleTasks();
         });
 
@@ -606,6 +608,7 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
             Toast.makeText(this, "开始单点回收任务...", Toast.LENGTH_SHORT).show();
 
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
+//                soundPlayerManager.playSound(SoundPlayerManager.KEY_AFTER_START);
                 Intent intent = new Intent(this, MovingActivity.class);
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 intent.putExtra("is_recycle", true); // 标记为回收任务
@@ -613,7 +616,7 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
                 startActivity(intent);
                 unlockAllButtons(); // 延迟执行后解锁
                 finish();
-            }, 1000);
+            }, 5000);
         } else {
             unlockAllButtons(); // 无任务解锁
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
@@ -655,6 +658,9 @@ public class SingleRecycleTaskSelectionActivity extends BaseActivity implements 
         }
         if (closeDoorDialog != null && closeDoorDialog.isShowing()) {
             closeDoorDialog.dismiss();
+        }
+        if (soundPlayerManager != null) {
+            soundPlayerManager.stopSound();
         }
     }
 

@@ -111,6 +111,20 @@
             android:layout_height="1dp"
             android:background="@color/gray"
             android:layout_marginHorizontal="16dp"/>
+
+        <Button
+            android:id="@+id/btn_navigation_settings"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="导航设置"
+            android:background="@drawable/menu_item_background"
+            android:textColor="@color/black"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/gray"
+            android:layout_marginHorizontal="16dp"/>
+
     </LinearLayout>
 
     <!-- 右侧内容区 -->

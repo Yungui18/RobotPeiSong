@@ -41,6 +41,23 @@ public class EnableScheduledDeliveryFragment extends Fragment {
         boolean isEnabled = prefs.getBoolean("scheduled_delivery_enabled", false);
         switchEnable.setChecked(isEnabled);
 
+        // 应用启动时自动检查，若启用则调度任务
+        if (isEnabled) {
+            // 检查精确闹钟权限（Android 12+）
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
+                if (alarmManager.canScheduleExactAlarms()) {
+                    enableAllTasks(); // 有权限，直接调度
+                } else {
+                    switchEnable.setChecked(false); // 无权限，重置开关为关闭
+                    prefs.edit().putBoolean("scheduled_delivery_enabled", false).apply();
+                    Toast.makeText(getContext(), "缺少精确闹钟权限，定时功能已自动禁用", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                enableAllTasks(); // 低版本无需权限，直接调度
+            }
+        }
+
         switchEnable.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 // 检查并请求权限
@@ -58,10 +75,25 @@ public class EnableScheduledDeliveryFragment extends Fragment {
 
             if (isChecked) {
                 enableAllTasks();
+            } else {
+                // 关闭功能时取消所有已注册的闹钟
+                cancelAllScheduledTasks();
             }
         });
 
         return view;
+    }
+
+    private void cancelAllScheduledTasks() {
+        try {
+            List<ScheduledDeliveryTask> tasks = ScheduledDeliveryManager.loadAllTasks(requireContext());
+            for (ScheduledDeliveryTask task : tasks) {
+                ScheduledDeliveryManager.cancelTask(requireContext(), task.getId());
+            }
+            Log.d("ScheduledDelivery", "所有定时任务闹钟已取消");
+        } catch (Exception e) {
+            Log.e("ScheduledDelivery", "取消任务闹钟失败", e);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.S)

@@ -96,6 +96,13 @@ public class RecyclingTaskManager {
     }
 
     /**
+     * 获取所有原始任务记录（用于去重校验，仅暴露查询，不允许外部修改）
+     */
+    public List<RecyclingTaskRecord> getExecutedTaskRecords() {
+        return new ArrayList<>(executedTaskRecords); // 返回新列表，避免外部修改原数据
+    }
+
+    /**
      * 清空任务记录（回桩完成后重置）
      */
     public void clearAllTaskRecords() {

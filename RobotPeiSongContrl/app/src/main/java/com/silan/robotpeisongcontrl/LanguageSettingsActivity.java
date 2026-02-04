@@ -7,6 +7,7 @@ import android.os.Bundle;
 
 import android.widget.ArrayAdapter;
 
+import android.widget.ImageButton;
 import android.widget.ListView;
 
 
@@ -21,6 +22,9 @@ public class LanguageSettingsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_language_settings);
+
+        ImageButton btnBack = findViewById(R.id.btn_back);
+        btnBack.setOnClickListener(v -> finish());
 
         initLanguagesMap();
 

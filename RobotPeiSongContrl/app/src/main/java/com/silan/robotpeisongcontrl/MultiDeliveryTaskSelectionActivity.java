@@ -27,6 +27,7 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.RobotController;
+import com.silan.robotpeisongcontrl.utils.SoundPlayerManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -49,13 +50,13 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
     private int taskCount = 0;
     private ProgressDialog closeDoorDialog;
 
-    // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
     private boolean isDropdownMode = true;
     private Button btnSwitchInputMode;
     private LinearLayout llDropdownMode;
     private LinearLayout llKeyboardMode;
+    private SoundPlayerManager soundPlayerManager;
 
 
     @Override
@@ -63,6 +64,7 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multi_delivery_task_selection);
 
+        soundPlayerManager = SoundPlayerManager.getInstance(this);
         // 初始化关闭仓门弹窗
         closeDoorDialog = new ProgressDialog(this);
         closeDoorDialog.setMessage("正在关闭仓门，请稍候...");
@@ -96,7 +98,8 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
 
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
         btnStart.setOnClickListener(v -> {
-            lockAllButtons(); // 新增：锁定按钮
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_CLICK_START);
+            lockAllButtons();
             startMultiDelivery();
         });
 
@@ -115,7 +118,6 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
             Type type = new TypeToken<ArrayList<Poi>>() {
             }.getType();
             poiList = gson.fromJson(poiListJson, type);
-            // 新增：初始化任务点位下拉菜单
             initTaskPoiSpinner();
         }
 
@@ -495,12 +497,13 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
 
         timer.cancel();
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_AFTER_START);
             Intent intent = new Intent(this, MovingActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             startActivity(intent);
             unlockAllButtons(); // 延迟执行后解锁
             finish();
-        }, 10000);
+        }, 5000);
     }
 
     private void showTaskDetails(Poi poi, List<Integer> selectedDoorHardwareIds) {
@@ -588,6 +591,9 @@ public class MultiDeliveryTaskSelectionActivity extends BaseActivity implements 
         }
         if (doorStateManager != null) {
             doorStateManager.closeAllOpenedDoors();
+        }
+        if (soundPlayerManager != null) {
+            soundPlayerManager.stopSound();
         }
     }
 

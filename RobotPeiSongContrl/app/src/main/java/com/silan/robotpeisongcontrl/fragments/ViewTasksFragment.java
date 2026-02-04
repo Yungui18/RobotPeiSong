@@ -29,6 +29,7 @@ import java.util.Locale;
 
 public class ViewTasksFragment extends Fragment {
 
+    private static final String TAG = "ViewTasksFragment";
     private ListView listView;
     private ScheduledTaskAdapter adapter;
     private List<ScheduledDeliveryTask> taskList = new ArrayList<>();
@@ -41,20 +42,29 @@ public class ViewTasksFragment extends Fragment {
 
         listView = view.findViewById(R.id.list_tasks);
 
+        if (getActivity() == null) {
+            return view;
+        }
+
         // 加载全局启用状态
-        SharedPreferences prefs = requireActivity().getSharedPreferences(
+        SharedPreferences prefs = getActivity().getSharedPreferences(
                 "scheduled_delivery_prefs", Context.MODE_PRIVATE);
         isDeliveryEnabled = prefs.getBoolean("scheduled_delivery_enabled", false);
 
-        // 加载任务列表
+        // 加载任务列表 - 增加完整的异常捕获
         try {
-            taskList = ScheduledDeliveryManager.loadAllTasks(requireContext());
+            taskList = ScheduledDeliveryManager.loadAllTasks(getActivity());
+            if (taskList == null) {
+                taskList = new ArrayList<>();
+                Toast.makeText(getActivity(), "暂无定时任务", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
-            Log.e("ViewTasks", "Failed to load tasks", e);
-            Toast.makeText(getContext(), "加载任务失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Failed to load tasks", e);
+            taskList = new ArrayList<>(); // 确保列表不为null
+            Toast.makeText(getActivity(), "加载任务失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
 
-        adapter = new ScheduledTaskAdapter(requireContext(), taskList, isDeliveryEnabled);
+        adapter = new ScheduledTaskAdapter(getActivity(), taskList, isDeliveryEnabled);
         listView.setAdapter(adapter);
 
         return view;
@@ -63,19 +73,28 @@ public class ViewTasksFragment extends Fragment {
     private class ScheduledTaskAdapter extends ArrayAdapter<ScheduledDeliveryTask> {
 
         private final boolean isGlobalEnabled;
+        private final Context mContext;
 
         public ScheduledTaskAdapter(Context context, List<ScheduledDeliveryTask> tasks,
                                     boolean isGlobalEnabled) {
             super(context, 0, tasks);
+            this.mContext = context;
             this.isGlobalEnabled = isGlobalEnabled;
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
+            if (position < 0 || position >= getCount()) {
+                return convertView == null ? new View(mContext) : convertView;
+            }
+
             ScheduledDeliveryTask task = getItem(position);
+            if (task == null) {
+                return convertView == null ? new View(mContext) : convertView;
+            }
 
             if (convertView == null) {
-                convertView = LayoutInflater.from(getContext())
+                convertView = LayoutInflater.from(mContext)
                         .inflate(R.layout.item_scheduled_task, parent, false);
             }
 
@@ -84,13 +103,18 @@ public class ViewTasksFragment extends Fragment {
             Button btnEdit = convertView.findViewById(R.id.btn_edit);
             Button btnDelete = convertView.findViewById(R.id.btn_delete);
 
+            String poiName = "未知点位";
+            if (task.getPoi() != null && task.getPoi().getDisplayName() != null) {
+                poiName = task.getPoi().getDisplayName();
+            }
+
             // 设置任务信息
             String info = String.format(Locale.getDefault(),
                     "%02d:%02d | %s : %s | 仓门: %s",
                     task.getHour(), task.getMinute(),
                     task.getTaskType() == ScheduledDeliveryTask.TYPE_POINT ?
                             "点位配送" : "路线配送",
-                    task.getPoi().getDisplayName(),
+                    poiName,
                     getSelectedDoorsString(task.getSelectedDoors()));
 
             tvInfo.setText(info);
@@ -99,13 +123,20 @@ public class ViewTasksFragment extends Fragment {
             switchEnable.setChecked(task.isEnabled());
             switchEnable.setEnabled(isGlobalEnabled);
             switchEnable.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                task.setEnabled(isChecked);
-                ScheduledDeliveryManager.saveTask(getContext(), task);
+                if (mContext == null) return;
 
-                if (isChecked) {
-                    ScheduledDeliveryManager.scheduleTask(getContext(), task);
-                } else {
-                    ScheduledDeliveryManager.cancelTask(getContext(), task.getId());
+                task.setEnabled(isChecked);
+                try {
+                    ScheduledDeliveryManager.saveTask(mContext, task);
+
+                    if (isChecked) {
+                        ScheduledDeliveryManager.scheduleTask(mContext, task);
+                    } else {
+                        ScheduledDeliveryManager.cancelTask(mContext, task.getId());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to update task status", e);
+                    Toast.makeText(mContext, "更新任务状态失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -117,13 +148,20 @@ public class ViewTasksFragment extends Fragment {
 
             // 删除按钮
             btnDelete.setOnClickListener(v -> {
-                new AlertDialog.Builder(getContext())
+                if (mContext == null) return;
+
+                new AlertDialog.Builder(mContext)
                         .setTitle("删除任务")
                         .setMessage("确定要删除此定时配送任务吗？")
                         .setPositiveButton("删除", (dialog, which) -> {
-                            ScheduledDeliveryManager.deleteTask(getContext(), task.getId());
-                            taskList.remove(position);
-                            notifyDataSetChanged();
+                            try {
+                                ScheduledDeliveryManager.deleteTask(mContext, task.getId());
+                                taskList.remove(position);
+                                notifyDataSetChanged();
+                            } catch (Exception e) {
+                                Log.e(TAG, "Failed to delete task", e);
+                                Toast.makeText(mContext, "删除任务失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
                         })
                         .setNegativeButton("取消", null)
                         .show();
@@ -133,6 +171,10 @@ public class ViewTasksFragment extends Fragment {
         }
 
         private String getSelectedDoorsString(boolean[] selectedDoors) {
+            if (selectedDoors == null) {
+                return "";
+            }
+
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < selectedDoors.length; i++) {
                 if (selectedDoors[i]) {
@@ -145,25 +187,49 @@ public class ViewTasksFragment extends Fragment {
     }
 
     private void editTask(ScheduledDeliveryTask task) {
+        if (task == null || getActivity() == null) {
+            return;
+        }
+
         boolean wasEnabled = task.isEnabled();
         // 打开编辑界面
         TimePickerDialog timePickerDialog = new TimePickerDialog(
-                requireContext(),
+                getActivity(),
                 (view, hourOfDay, minute) -> {
+                    if (isDetached() || getActivity() == null) {
+                        return;
+                    }
+
                     String originalId = task.getId();
                     task.setHour(hourOfDay);
                     task.setMinute(minute);
-                    ScheduledDeliveryManager.saveTask(requireContext(), task);
-                    if (wasEnabled) {
-                        ScheduledDeliveryManager.cancelTask(requireContext(), task.getId());
-                        ScheduledDeliveryManager.scheduleTask(requireContext(), task);
+                    try {
+                        ScheduledDeliveryManager.saveTask(getActivity(), task);
+                        if (wasEnabled) {
+                            ScheduledDeliveryManager.cancelTask(getActivity(), task.getId());
+                            ScheduledDeliveryManager.scheduleTask(getActivity(), task);
+                        }
+                        adapter.notifyDataSetChanged();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to edit task", e);
+                        Toast.makeText(getActivity(), "编辑任务失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
-                    adapter.notifyDataSetChanged();
                 },
                 task.getHour(),
                 task.getMinute(),
                 true
         );
         timePickerDialog.show();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // 清空列表引用，防止内存泄漏
+        if (taskList != null) {
+            taskList.clear();
+        }
+        listView = null;
+        adapter = null;
     }
 }

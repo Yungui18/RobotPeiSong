@@ -9,61 +9,70 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 路线选择 -->
+        <!-- 新建方案按钮 -->
+        <Button
+            android:id="@+id/btn_create_plan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="新建路线方案"
+            android:background="@drawable/button_sky_blue_rect"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"/>
+
+        <!-- 路线方案选择 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="选择配送路线"
+            android:text="选择路线方案"
             android:textSize="18sp"
-            android:layout_marginBottom="8dp"/>
+            android:textColor="@android:color/black"/>
 
         <Spinner
-            android:id="@+id/spinner_routes"
+            android:id="@+id/spinner_plans"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"/>
+            android:background="@drawable/edittext_white_rect"
+            android:padding="8dp"/>
 
-        <!-- 仓门选择 -->
+        <!-- 方案详情展示 -->
         <TextView
+            android:id="@+id/tv_plan_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="选择配送仓门"
-            android:textSize="18sp"
-            android:layout_marginBottom="8dp"/>
+            android:text="请选择或新建路线方案"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:background="@drawable/edittext_white_rect"
+            android:padding="12dp"
+            android:minHeight="100dp"/>
 
-        <!-- 仓门按钮容器 - 动态加载 -->
-        <LinearLayout
-            android:id="@+id/door_buttons_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" />
-
-        <!-- 时间选择 -->
+        <!-- 配送时间选择 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="选择配送时间"
             android:textSize="18sp"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"/>
+            android:textColor="@android:color/black"/>
 
         <TimePicker
             android:id="@+id/time_picker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:numbersBackgroundColor="@color/skyblue"
-            android:numbersTextColor="@color/white"
-            android:numbersSelectorColor="@color/seablue"
-            android:layout_marginBottom="16dp"/>
+            android:numbersTextColor="@android:color/white"
+            android:numbersSelectorColor="@color/seablue"/>
 
-        <!-- 确认按钮 -->
+        <!-- 确认创建定时任务按钮 -->
         <Button
-            android:id="@+id/btn_confirm"
-            android:layout_width="match_parent"
+            android:id="@+id/btn_confirm_task"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
-            android:text="确认"
-            android:background="@drawable/button_sky_blue_rect"
-            android:textColor="@color/white"/>
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:text="确认创建定时任务"
+            android:background="@drawable/button_sea_blue_rect"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"/>
 
     </LinearLayout>
 </ScrollView>

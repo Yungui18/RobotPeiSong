@@ -22,16 +22,17 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.silan.robotpeisongcontrl.utils.NavBarManager;
+import com.silan.robotpeisongcontrl.utils.RobotEventSoundManager;
 
 import java.util.Locale;
 
 public class BaseActivity extends AppCompatActivity {
 
     protected NavBarManager mNavBarManager;
-    // ===== 新增：灰化逻辑相关 =====
     protected boolean isButtonLocked = false; // 按钮锁定状态
     protected View mRootView; // 页面根布局
     protected Handler mMainHandler = new Handler(Looper.getMainLooper()); // 全局Handler
+    protected RobotEventSoundManager mRobotEventSoundManager;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -46,8 +47,8 @@ public class BaseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         // 初始化导航栏管理器
         mNavBarManager = NavBarManager.getInstance(getApplicationContext());
+        mRobotEventSoundManager = RobotEventSoundManager.getInstance(this);
 
-        // ===== 新增：延迟获取根布局（确保布局加载完成）=====
         mMainHandler.post(() -> {
             mRootView = findViewById(android.R.id.content);
         });
@@ -72,6 +73,11 @@ public class BaseActivity extends AppCompatActivity {
                 mNavBarManager.hideSystemBars(this);
             }
         });
+
+        // 启动机器人事件轮询
+        if (!mRobotEventSoundManager.isPolling()) {
+            mRobotEventSoundManager.startEventPolling();
+        }
     }
 
     // 原有清除沉浸式Flag逻辑
@@ -96,6 +102,7 @@ public class BaseActivity extends AppCompatActivity {
         if (isAdminPage() && isFinishing()) {
             mNavBarManager.hideSystemBars(this);
         }
+        mRobotEventSoundManager.stopEventPolling();
     }
 
     // 原有管理员页面标记方法
@@ -208,15 +215,15 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
-    // ===== 新增：生命周期兜底（防止按钮永久锁定）=====
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unlockAllButtons(); // 页面销毁时强制解锁
         mMainHandler.removeCallbacksAndMessages(null); // 清空Handler回调
+        mRobotEventSoundManager.stopEventPolling();
     }
 
-    // ===== 新增：Fragment适配方法（如果需要）=====
+
     public static void lockButtonsInFragment(BaseActivity activity) {
         if (activity != null) activity.lockAllButtons();
     }

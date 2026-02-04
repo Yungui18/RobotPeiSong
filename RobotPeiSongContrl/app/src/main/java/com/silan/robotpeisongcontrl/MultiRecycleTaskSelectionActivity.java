@@ -32,6 +32,7 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.RobotController;
+import com.silan.robotpeisongcontrl.utils.SoundPlayerManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -53,12 +54,10 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
     private List<BasicSettingsFragment.DoorInfo> enabledDoors;
     private ProgressDialog closeDoorDialog;
 
-    // 回收点位相关
     private Spinner spRecyclePoint;
     private String selectedRecyclePointId;
     private String currentDepartPointId;
 
-    // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
     private boolean isDropdownMode = true;
@@ -66,11 +65,14 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
     private LinearLayout llDropdownMode;
     private LinearLayout llKeyboardMode;
 
+    private SoundPlayerManager soundPlayerManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multi_recycle_task_selection);
 
+        soundPlayerManager = SoundPlayerManager.getInstance(this);
         // 初始化关闭仓门弹窗
         closeDoorDialog = new ProgressDialog(this);
         closeDoorDialog.setMessage("正在关闭仓门，请稍候...");
@@ -103,7 +105,8 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
 
         Button btnStart = findViewById(R.id.btn_start_multi_delivery);
         btnStart.setOnClickListener(v -> {
-            lockAllButtons(); // 新增：锁定按钮
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_CLICK_START);
+            lockAllButtons();
             startMultiRecycle();
         });
 
@@ -541,6 +544,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
 
         timer.cancel();
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
+//            soundPlayerManager.playSound(SoundPlayerManager.KEY_AFTER_START);
             Intent intent = new Intent(this, MovingActivity.class);
             intent.putExtra("poi_list", new Gson().toJson(poiList));
             intent.putExtra("is_recycle", true); // 标记为回收任务
@@ -548,7 +552,7 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
             startActivity(intent);
             unlockAllButtons(); // 延迟执行后解锁
             finish();
-        }, 1000);
+        }, 5000);
     }
 
     private void showTaskDetails(Poi poi, List<Integer> selectedDoorHardwareIds) {
@@ -636,6 +640,9 @@ public class MultiRecycleTaskSelectionActivity extends BaseActivity implements M
         }
         if (doorStateManager != null) {
             doorStateManager.closeAllOpenedDoors();
+        }
+        if (soundPlayerManager != null) {
+            soundPlayerManager.stopSound();
         }
     }
 

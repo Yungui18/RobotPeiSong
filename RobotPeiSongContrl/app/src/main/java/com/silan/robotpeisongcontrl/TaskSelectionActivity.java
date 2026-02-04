@@ -26,6 +26,7 @@ import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.LoadingDialogUtil;
 import com.silan.robotpeisongcontrl.utils.OkHttpUtils;
 import com.silan.robotpeisongcontrl.utils.RobotController;
+import com.silan.robotpeisongcontrl.utils.SoundPlayerManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 
 import java.lang.reflect.Type;
@@ -50,20 +51,20 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
     private List<Integer> doorNumbers;
     private List<BasicSettingsFragment.DoorInfo> enabledDoors;
     private ProgressDialog closeDoorDialog;
-
-    // 新增：任务点位选择下拉菜单（显示全名）
     private Spinner spTaskPoi;
     private TextView tvDisplay;
     private boolean isDropdownMode = true;
     private Button btnSwitchInputMode;
     private LinearLayout llDropdownMode;
     private LinearLayout llKeyboardMode;
+    private SoundPlayerManager soundPlayerManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_selection);
 
+        soundPlayerManager = SoundPlayerManager.getInstance(this);
         // 初始化关闭仓门弹窗
         closeDoorDialog = new ProgressDialog(this);
         closeDoorDialog.setMessage("正在关闭仓门，请稍候...");
@@ -78,7 +79,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         taskAssigned = new boolean[doorCount];
 
         doorStateManager = DoorStateManager.getInstance(this);
-        // ===== 新增1：设置仓门状态监听（单点配送）=====
+
         setDoorStateListener();
 
         taskButtonsContainer = findViewById(R.id.task_buttons_container);
@@ -89,7 +90,6 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             return;
         }
 
-        // 新增：绑定输入显示框和下拉菜单
         tvDisplay = findViewById(R.id.tv_display);
         spTaskPoi = findViewById(R.id.sp_task_poi);
         btnSwitchInputMode = findViewById(R.id.btn_switch_input_mode);
@@ -108,7 +108,6 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             }.getType();
             poiList = gson.fromJson(poiListJson, type);
             poiCount = poiList.size();
-            // 新增：初始化任务点位下拉菜单
             initTaskPoiSpinner();
         } else {
             loadPoiList();
@@ -117,6 +116,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         countdownText = findViewById(R.id.tv_countdown);
         Button btnStart = findViewById(R.id.btn_start);
         btnStart.setOnClickListener(v -> {
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_CLICK_START);
             lockAllButtons(); // 新增：锁定按钮
             startTasks();
         });
@@ -336,6 +336,8 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
                     return;
                 }
 
+                soundPlayerManager.playSound(SoundPlayerManager.KEY_DOOR_OPEN);
+
                 currentSelectedButtonIndex = index;
                 Log.d("TaskSelection", "点击仓门：" + buttonText + "，硬件ID：" + currentHardwareId + "，选中索引：" + currentSelectedButtonIndex);
             });
@@ -495,56 +497,14 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         taskManager.addPointWithDoors(poi, doorIds);
         Log.d("TaskSelection", "单点任务添加成功，点位：" + poi.getDisplayName() + "，关联仓门ID列表：" + doorIds);
 
-        taskManager.addTask(poi);
+        // ########### 核心删除：移除多余的addTask(poi)，避免覆盖仓门绑定 ###########
+        // taskManager.addTask(poi); 这行直接删除！
+
         taskButtons[selectedIndex].setText(poi.getDisplayName());
         taskButtons[selectedIndex].setBackgroundResource(R.drawable.button_green_rect); // 保持绿色
         taskAssigned[selectedIndex] = true;
         return true;
-    }
 
-    // 改造：支持通过数字部分验证点位
-    private void validatePoint(String numberPart) {
-        if (currentSelectedButtonIndex == -1) {
-            Toast.makeText(this, "请先选择一个任务按钮", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (poiCount <= 0) {
-            Toast.makeText(this, "点位数据未加载完成，请稍后再试", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (taskManager.taskCount() >= poiCount) {
-            Toast.makeText(this, "任务数量已达上限（最多" + poiCount + "个）", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // 根据数字部分查找匹配的点位
-        Poi poi = getPoiByNumberPart(numberPart);
-
-        if (poi != null) {
-            int selectedDoorId = doorNumbers.get(currentSelectedButtonIndex);
-
-            if (taskManager.isPointAssigned(poi.getDisplayName())) {
-                Toast.makeText(this, "该点位已分配任务，不可重复分配", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            List<Integer> doorIds = new ArrayList<>();
-            doorIds.add(selectedDoorId);
-
-            taskManager.addPointWithDoors(poi, doorIds);
-            Log.d("TaskSelection", "单点任务添加成功，点位：" + poi.getDisplayName() + "，关联仓门ID列表：" + doorIds);
-
-            taskManager.addTask(poi);
-
-            taskButtons[currentSelectedButtonIndex].setText(poi.getDisplayName());
-            taskButtons[currentSelectedButtonIndex].setBackgroundResource(R.drawable.button_green_rect); // 保持绿色
-            taskAssigned[currentSelectedButtonIndex] = true;
-            currentSelectedButtonIndex = -1;
-        } else {
-            Toast.makeText(this, "点位不存在（数字部分不匹配）", Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void selectTask(int index) {
@@ -592,6 +552,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
             Toast.makeText(this, "等待仓门关闭...", Toast.LENGTH_SHORT).show();
 
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                soundPlayerManager.playSound(SoundPlayerManager.KEY_AFTER_START);
                 Intent intent = new Intent(this, MovingActivity.class);
                 intent.putExtra("poi_list", new Gson().toJson(poiList));
                 startActivity(intent);
@@ -602,7 +563,7 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
                 }
                 unlockAllButtons(); // 延迟执行后解锁
                 finish();
-            }, 10000);
+            }, 5000);
         } else {
             unlockAllButtons(); // 无任务时解锁
             Toast.makeText(this, "请先创建任务", Toast.LENGTH_SHORT).show();
@@ -646,6 +607,9 @@ public class TaskSelectionActivity extends BaseActivity implements MainActivity.
         }
         if (closeDoorDialog != null && closeDoorDialog.isShowing()) {
             closeDoorDialog.dismiss();
+        }
+        if (soundPlayerManager != null) {
+            soundPlayerManager.stopSound();
         }
     }
 

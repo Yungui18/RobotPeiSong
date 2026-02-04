@@ -1,5 +1,6 @@
 package com.silan.robotpeisongcontrl.utils;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -81,7 +82,7 @@ public class RobotController {
     }
 
     // 创建移动任务 - 根据新的API格式修改
-    public static void createMoveAction(Poi poi, OkHttpUtils.ResponseCallback callback) {
+    public static void createMoveAction(Context context, Poi poi, OkHttpUtils.ResponseCallback callback) {
         String url = BASE_URL + "/api/core/motion/v1/actions";
 
         // 构建JSON但不转换为字符串
@@ -96,13 +97,15 @@ public class RobotController {
         options.add("target", target);
 
         JsonObject moveOptions = new JsonObject();
-        moveOptions.addProperty("mode", 2);// 自由导航模式
+        int navMode = MotionConfigSPUtils.getNavMode(context);
+        moveOptions.addProperty("mode", navMode);
         JsonArray flags = new JsonArray();
         flags.add("precise"); // 精确到点模式
         flags.add("with_yaw"); // 启用精确朝向
         moveOptions.add("flags", flags);
         moveOptions.addProperty("yaw", poi.getYaw());// 目标朝向角
-        moveOptions.addProperty("acceptable_precision", 0.1);// 可接受的精度
+        float acceptablePrecision = MotionConfigSPUtils.getAcceptablePrecision(context);
+        moveOptions.addProperty("acceptable_precision", acceptablePrecision);
         moveOptions.addProperty("fail_retry_count", 3);// 失败重试次数
         moveOptions.addProperty("speed_ratio", 1.0); // 速度比例
         options.add("move_options", moveOptions);
@@ -286,6 +289,29 @@ public class RobotController {
         OkHttpUtils.delete(url, callback);
     }
 
+    // 持久化保存接口
+    public static void persistMapSave(OkHttpUtils.ResponseCallback callback) {
+        String url = BASE_URL + "/api/multi-floor/map/v1/stcm/:sync";
+        // 调用POST接口（无请求体）
+        OkHttpUtils.post(url, "", new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String response = responseData.string(StandardCharsets.UTF_8);
+                    Log.d(TAG, "持久化保存成功: " + response);
+                    callback.onSuccess(responseData);
+                } catch (Exception e) {
+                    callback.onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.e(TAG, "持久化保存失败", e);
+                callback.onFailure(e);
+            }
+        });
+    }
 
     // 解析POI列表
     public static List<Poi> parsePoiList(String jsonResponse) {
@@ -339,5 +365,101 @@ public class RobotController {
             }
         }
         return null;
+    }
+
+    /**
+     * 机器人事件实体类（对接/api/platform/v1/events接口响应）
+     */
+    public static class RobotEvent {
+        private String type;
+        private String timestamp;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(String timestamp) {
+            this.timestamp = timestamp;
+        }
+    }
+
+    /**
+     * 机器人事件回调接口
+     */
+    public interface RobotEventCallback {
+        void onEventReceived(List<RobotEvent> events); // 事件接收成功
+        void onEventFailure(Exception e);              // 事件请求失败
+    }
+
+    /**
+     * 获取机器人事件列表（GET /api/platform/v1/events）
+     */
+    public static void getRobotEvents(RobotEventCallback callback) {
+        String url = BASE_URL + "/api/platform/v1/events";
+        OkHttpUtils.get(url, new OkHttpUtils.ResponseCallback() {
+            @Override
+            public void onSuccess(ByteString responseData) {
+                try {
+                    String json = responseData.string(StandardCharsets.UTF_8);
+                    // 解析事件列表
+                    Type eventListType = new TypeToken<List<RobotEvent>>() {}.getType();
+                    List<RobotEvent> events = gson.fromJson(json, eventListType);
+                    callback.onEventReceived(events);
+                } catch (Exception e) {
+                    callback.onEventFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                callback.onEventFailure(e);
+            }
+        });
+    }
+
+    /**
+     * 启动机器人事件轮询（持续监听设备状态）
+     * @param interval 轮询间隔（毫秒）
+     * @param callback 事件回调
+     * @return 轮询Runnable（用于停止轮询）
+     */
+    public static Runnable startRobotEventPolling(long interval, RobotEventCallback callback) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        // 核心修复：用数组包装Runnable变量，数组为final（引用不可变），数组内元素可修改
+        final Runnable[] pollingRunnableArr = new Runnable[1];
+        // 初始化数组内的Runnable元素，解决编译器初始化检查问题
+        pollingRunnableArr[0] = new Runnable() {
+            @Override
+            public void run() {
+                getRobotEvents(new RobotEventCallback() {
+                    @Override
+                    public void onEventReceived(List<RobotEvent> events) {
+                        callback.onEventReceived(events);
+                        // 引用数组内的Runnable，满足内部类引用规则
+                        handler.postDelayed(pollingRunnableArr[0], interval);
+                    }
+
+                    @Override
+                    public void onEventFailure(Exception e) {
+                        Log.e(TAG, "获取机器人事件失败，将重试", e);
+                        callback.onEventFailure(e);
+                        // 引用数组内的Runnable，满足内部类引用规则
+                        handler.postDelayed(pollingRunnableArr[0], interval);
+                    }
+                });
+            }
+        };
+        // 立即启动第一次轮询
+        handler.post(pollingRunnableArr[0]);
+        // 返回实际的Runnable对象，供外部停止轮询使用
+        return pollingRunnableArr[0];
     }
 }

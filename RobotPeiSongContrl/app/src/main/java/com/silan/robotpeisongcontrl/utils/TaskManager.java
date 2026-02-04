@@ -81,7 +81,7 @@ public class TaskManager {
         taskQueue.remove(poi);
         String pointName = poi.getDisplayName();
         assignedPointNames.remove(pointName);
-        pointToDoorsMap.remove(pointName);
+//        pointToDoorsMap.remove(pointName);
     }
 
     public Poi getNextTask() {

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.silan.robotpeisongcontrl.fragments.AdminPasswordSettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliverySettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.DeliveryVerificationFragment;
+import com.silan.robotpeisongcontrl.fragments.NavigationSettingsFragment;
 import com.silan.robotpeisongcontrl.fragments.PersonalizationSettingsFragment;
 
 /**
@@ -55,6 +56,12 @@ public class GeneralSettingsMainActivity extends BaseActivity {
         findViewById(R.id.btn_delivery_verification).setOnClickListener(v -> {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.content_frame, new DeliveryVerificationFragment())
+                    .commit();
+        });
+
+        findViewById(R.id.btn_navigation_settings).setOnClickListener(v -> {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.content_frame, new NavigationSettingsFragment())
                     .commit();
         });
 

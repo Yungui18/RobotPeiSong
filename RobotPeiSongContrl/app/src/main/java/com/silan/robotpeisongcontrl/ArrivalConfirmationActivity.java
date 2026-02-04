@@ -33,6 +33,7 @@ import com.silan.robotpeisongcontrl.model.Poi;
 import com.silan.robotpeisongcontrl.utils.DeliveryFailureManager;
 import com.silan.robotpeisongcontrl.utils.DoorStateManager;
 import com.silan.robotpeisongcontrl.utils.RecyclingTaskManager;
+import com.silan.robotpeisongcontrl.utils.SoundPlayerManager;
 import com.silan.robotpeisongcontrl.utils.TaskManager;
 import com.silan.robotpeisongcontrl.utils.TaskSuccessManager;
 
@@ -69,13 +70,17 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     private Button btnComplete;
     private Button btnPickup;
     private boolean isRecycleTask = false;
-
+    private SoundPlayerManager soundPlayerManager;
+    private boolean isRouteDelivery = false;
+    private CountDownTimer completeBtnCountDown;
+    private boolean isCompleteBtnAble = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_arrival_confirmation);
 
+        soundPlayerManager = SoundPlayerManager.getInstance(this);
         enabledDoors = BasicSettingsFragment.getEnabledDoors(this);
         int dynamicDoorCount = (enabledDoors != null) ? enabledDoors.size() : 0;
         Intent intent = getIntent();
@@ -87,18 +92,22 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             poiList = gson.fromJson(poiListJson, type);
         }
 
+        // 接收关键标记
         isRecycleTask = intent.getBooleanExtra("is_recycle", false);
-        Log.d("ArrivalConfirmation", "是否为回收任务：" + isRecycleTask);
+        isRouteDelivery = intent.getBooleanExtra("is_route_delivery", false); // 路线配送
+        Log.d("ArrivalConfirmation", "是否为回收任务：" + isRecycleTask + "  是否路线配送：" + isRouteDelivery);
 
         TextView countdownText = findViewById(R.id.tv_countdown);
         btnPickup = findViewById(R.id.btn_pickup);
         btnComplete = findViewById(R.id.btn_complete);
 
+        // ========== 修复：强制初始状态只显示取物，隐藏完成 ==========
+        btnPickup.setVisibility(View.VISIBLE);
         btnComplete.setVisibility(View.GONE);
 
         doorStateManager = DoorStateManager.getInstance(this);
 
-        // 原有倒计时逻辑
+        // 倒计时
         timer = new CountDownTimer(60000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -108,43 +117,91 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             @Override
             public void onFinish() {
                 isDeliveryFailed = true;
-                recordDeliveryFailure();
-                doorStateManager.closeAllOpenedDoors();
-                proceedToNextTask();
+                if (soundPlayerManager != null) {
+                    soundPlayerManager.playSound(SoundPlayerManager.KEY_TIME_OUT);
+                }
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    recordDeliveryFailure();
+                    doorStateManager.closeAllOpenedDoors();
+                    proceedToNextTask();
+                }, 4000);
             }
         }.start();
+
         isScheduledTask = getIntent().getBooleanExtra("scheduled_task", false);
         selectedDoors = getIntent().getBooleanArrayExtra("selected_doors");
         if (selectedDoors == null || selectedDoors.length != dynamicDoorCount) {
             selectedDoors = new boolean[dynamicDoorCount];
         }
 
-        if (isScheduledTask) {
-            // ===== 修改：定时任务执行取物时加灰化 =====
+        // 获取当前点位与仓门
+        Poi currentPoi = TaskManager.getInstance().getCurrentPoi();
+        if (currentPoi != null) {
+            List<Integer> temp = TaskManager.getInstance().getDoorIdsForPoint(currentPoi.getDisplayName());
+            currentTaskDoorIds = temp == null ? new ArrayList<>() : temp;
+            Log.d("ArrivalConfirmation", "当前任务关联的所有仓门ID：" + currentTaskDoorIds);
+        } else {
+            currentTaskDoorIds = new ArrayList<>();
+            Log.e("ArrivalConfirmation", "当前任务点位为空，无仓门ID");
+        }
+
+            if (isScheduledTask && !isRouteDelivery && !isRecycleTask) {
             lockAllButtons();
             performPickupAction();
             btnComplete.setVisibility(View.VISIBLE);
+            btnPickup.setVisibility(View.GONE);
+            initCompleteBtnCountDown();
+            startCompleteBtnCountDown();
             unlockAllButtons();
         }
 
-        Poi currentPoi = TaskManager.getInstance().getCurrentPoi();
-        if (currentPoi != null) {
-            currentTaskDoorIds = TaskManager.getInstance().getDoorIdsForPoint(currentPoi.getDisplayName());
-            Log.d("ArrivalConfirmation", "当前任务关联的所有仓门ID：" + currentTaskDoorIds);
-        }
-
-        // ===== 核心修改1：取物按钮点击加灰化 =====
+        // 取物按钮（手动点击才开门）
         btnPickup.setOnClickListener(v -> {
-            lockAllButtons(); // 锁定所有按钮，防止连续点击
+            lockAllButtons();
             handlePickupAction();
         });
 
-        // ===== 核心修改2：完成按钮点击加灰化 =====
+        // 完成按钮
         btnComplete.setOnClickListener(v -> {
-            lockAllButtons(); // 锁定所有按钮，防止连续点击
+            lockAllButtons();
             handleCompleteAction();
         });
+
         currentDoorTask = getIntent().getIntExtra("current_door_task", 0);
+
+        TextView tvPointName = findViewById(R.id.tv_point_name);
+        TextView tvDoorInfo = findViewById(R.id.tv_door_info);
+        TextView tvCurrentDoor = findViewById(R.id.tv_current_door);
+
+        // 点位信息
+        if (currentPoi != null) {
+            tvPointName.setText("当前点位：" + currentPoi.getDisplayName());
+
+            List<Integer> doorIds = TaskManager.getInstance().getDoorIdsForPoint(currentPoi.getDisplayName());
+            List<String> doorNames = new ArrayList<>();
+            if (doorIds != null && !doorIds.isEmpty()) {
+                for (int id : doorIds) {
+                    for (BasicSettingsFragment.DoorInfo info : enabledDoors) {
+                        if (info.getHardwareId() == id) {
+                            doorNames.add(BasicSettingsFragment.getStandardDoorButtonText(info));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (doorNames.isEmpty()) {
+                tvDoorInfo.setText("绑定仓门：无");
+                tvCurrentDoor.setText("当前操作：无可用仓门");
+            } else {
+                tvDoorInfo.setText("绑定仓门：" + String.join("、", doorNames));
+                tvCurrentDoor.setText("当前操作：" + doorNames.get(0));
+            }
+        } else {
+            tvPointName.setText("当前点位：未知");
+            tvDoorInfo.setText("绑定仓门：无");
+            tvCurrentDoor.setText("当前操作：无");
+        }
     }
 
     private void recordDeliveryFailure() {
@@ -205,35 +262,91 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         boolean verificationEnabled = prefs.getBoolean("verification_enabled", false);
 
         if (verificationEnabled) {
-            unlockAllButtons(); // 密码弹窗需要解锁按钮输入
+            unlockAllButtons();
             showPickupPasswordDialog();
         } else {
             performPickupAction();
-            btnComplete.setVisibility(View.VISIBLE);
             btnPickup.setVisibility(View.GONE);
-            saveRecyclingTaskRecord();
-            unlockAllButtons(); // 执行完取物逻辑后解锁
+            btnComplete.setVisibility(View.VISIBLE);
+            initCompleteBtnCountDown();
+            startCompleteBtnCountDown();
+            unlockAllButtons();
         }
     }
 
     private void handleCompleteAction() {
         try {
+            soundPlayerManager.playSound(SoundPlayerManager.KEY_COMPLETE_TAKE);
             doorStateManager.closeAllOpenedDoors();
             Toast.makeText(this, "等待仓门关闭...", Toast.LENGTH_SHORT).show();
             TaskManager taskManager = TaskManager.getInstance();
             Poi currentPoi = taskManager.getCurrentPoi();
-            if (currentPoi != null) {
-                taskManager.removeTask(currentPoi);
-                TaskSuccessManager.addSuccess(getApplicationContext(), currentPoi.getDisplayName());
-            }
+            // 移除：提前执行的removeTask()，避免删除仓门映射
+
             saveRecyclingTaskRecord();
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                // 新增：延迟执行removeTask()，确保关门指令完成
+                if (currentPoi != null) {
+                    taskManager.removeTask(currentPoi);
+                    TaskSuccessManager.addSuccess(getApplicationContext(), currentPoi.getDisplayName());
+                }
                 proceedToNextTask();
-                unlockAllButtons(); // 延迟执行后解锁
+                unlockAllButtons();
             }, 10000);
         } catch (Exception e) {
-            unlockAllButtons(); // 异常时也解锁
+            unlockAllButtons();
             Toast.makeText(this, "完成操作失败：" + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("ArrivalConfirmation", "完成操作异常", e);
+        }
+    }
+
+    /**
+     * 初始化完成按钮4秒倒计时器（设置倒计时逻辑：更新文字+控制可用状态）
+     */
+    private void initCompleteBtnCountDown() {
+        // 先取消原有倒计时，防止重复创建
+        if (completeBtnCountDown != null) {
+            completeBtnCountDown.cancel();
+        }
+        // 初始化4秒倒计时（总时长4000ms，间隔1000ms刷新一次）
+        completeBtnCountDown = new CountDownTimer(4000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // 倒计时中：禁用按钮，更新文字显示剩余秒数
+                isCompleteBtnAble = false;
+                btnComplete.setEnabled(false);
+                btnComplete.setText("完成（" + millisUntilFinished / 1000 + "s）");
+                // 可选：修改禁用状态下的按钮颜色，提升视觉区分
+                btnComplete.setBackgroundResource(R.drawable.button_gray_rect); // 灰色背景（需新增资源）
+            }
+
+            @Override
+            public void onFinish() {
+                // 倒计时结束：启用按钮，恢复原有文字和样式
+                isCompleteBtnAble = true;
+                btnComplete.setEnabled(true);
+                btnComplete.setText(R.string.complete);
+                btnComplete.setBackgroundResource(R.drawable.button_white_rect); // 恢复原有白色背景
+            }
+        };
+    }
+
+    /**
+     * 启动完成按钮倒计时
+     */
+    private void startCompleteBtnCountDown() {
+        if (completeBtnCountDown != null) {
+            completeBtnCountDown.start();
+        }
+    }
+
+    /**
+     * 取消完成按钮倒计时（生命周期销毁时调用，防止内存泄漏）
+     */
+    private void cancelCompleteBtnCountDown() {
+        if (completeBtnCountDown != null) {
+            completeBtnCountDown.cancel();
+            completeBtnCountDown = null;
         }
     }
 
@@ -305,15 +418,18 @@ public class ArrivalConfirmationActivity extends BaseActivity {
 
             if (enteredPickupPassword.length() == 4) {
                 if (validatePickupPassword(enteredPickupPassword)) {
-                    lockAllButtons(); // 验证通过后锁定按钮执行取物
+                    lockAllButtons();
                     performPickupAction();
                     if (passwordDialog != null && passwordDialog.isShowing()) {
                         passwordDialog.dismiss();
                     }
-                    saveRecyclingTaskRecord();
-                    btnComplete.setVisibility(View.VISIBLE);
+                    // ========== 原有逻辑：切换按钮 ==========
                     btnPickup.setVisibility(View.GONE);
-                    unlockAllButtons(); // 取物完成后解锁
+                    btnComplete.setVisibility(View.VISIBLE);
+                    // ========== 新增核心：禁用完成按钮+启动4秒倒计时 ==========
+                    initCompleteBtnCountDown();
+                    startCompleteBtnCountDown();
+                    unlockAllButtons();
                 } else {
                     Toast.makeText(ArrivalConfirmationActivity.this, "密码错误", Toast.LENGTH_SHORT).show();
                     enteredPickupPassword = "";
@@ -385,6 +501,7 @@ public class ArrivalConfirmationActivity extends BaseActivity {
     }
 
     private void performPickupAction() {
+        soundPlayerManager.playSound(SoundPlayerManager.KEY_AFTER_START);
         List<Integer> enabledHardwareIds = new ArrayList<>();
         if (enabledDoors != null) {
             for (BasicSettingsFragment.DoorInfo doorInfo : enabledDoors) {
@@ -398,15 +515,25 @@ public class ArrivalConfirmationActivity extends BaseActivity {
             if (doorsToOpen[i] && i < enabledHardwareIds.size()) {
                 int hardwareId = enabledHardwareIds.get(i);
                 doorsToOpenList.add(hardwareId);
-                Log.d("ArrivalConfirmation", "待打开仓门：硬件ID=" + hardwareId);
+                Log.d("ArrivalConfirmation", "待下发开门指令的仓门：硬件ID=" + hardwareId);
             }
         }
 
+        // 新增：空列表保护，避免无指令下发
+        if (doorsToOpenList.isEmpty()) {
+            Log.e("ArrivalConfirmation", "执行取物失败：无任何可用仓门可打开");
+            Toast.makeText(this, "取物失败：未找到可用仓门", Toast.LENGTH_SHORT).show();
+            unlockAllButtons();
+            return;
+        }
+
+        // 延迟下发开门指令（保留原有逻辑，增加日志）
         for (int i = 0; i < doorsToOpenList.size(); i++) {
             final int hardwareId = doorsToOpenList.get(i);
             doorHandler.postDelayed(() -> {
+                Log.d("ArrivalConfirmation", "开始下发开门指令 → 硬件ID=" + hardwareId);
                 doorStateManager.openDoor(hardwareId);
-                Log.d("ArrivalConfirmation", "已发送打开指令：硬件ID=" + hardwareId);
+                Log.d("ArrivalConfirmation", "开门指令下发完成 → 硬件ID=" + hardwareId);
             }, i * DOOR_OPEN_DELAY);
         }
 
@@ -415,17 +542,39 @@ public class ArrivalConfirmationActivity extends BaseActivity {
 
     private void proceedToNextTask() {
         timer.cancel();
+        TaskManager taskManager = TaskManager.getInstance();
+        Intent intent = new Intent(this, MovingActivity.class);
 
-        if (TaskManager.getInstance().hasTasks()) {
-            Intent intent = new Intent(this, MovingActivity.class);
-            intent.putExtra("poi_list", new Gson().toJson(poiList));
+        // 透传基础参数（回收任务+POI列表+路线配送标记）
+        intent.putExtra("is_recycle", isRecycleTask);
+        intent.putExtra("recycle_point_id", getIntent().getStringExtra("recycle_point_id"));
+        intent.putExtra("poi_list", getIntent().getStringExtra("poi_list"));
+        intent.putExtra("is_route_delivery", isRouteDelivery); // 透传路线配送标记
+        intent.putExtra("scheduled_task", isScheduledTask);
+        intent.putExtra("selected_doors", selectedDoors);
+
+        if (taskManager.hasTasks()) {
+            // 有剩余任务：路线配送/普通任务都跳转MovingActivity执行下一个
+            intent.putExtra("poi_list", new Gson().toJson(taskManager.getTasks()));
+            Log.d("ArrivalConfirmation", isRouteDelivery ? "路线配送有剩余点位，跳转至下一个" : "有剩余配送任务，跳转至下一个点位");
             startActivity(intent);
+            finish();
         } else {
-            Intent intent = new Intent(this, MovingActivity.class);
-            intent.putExtra("poi_list", new Gson().toJson(poiList));
-            startActivity(intent);
+            if (isRouteDelivery) {
+                // ================ 路线配送专属：无剩余点位，直接回桩 ================
+                Log.d("ArrivalConfirmation", "路线配送所有点位完成，执行回桩逻辑");
+                intent.putExtra("is_back_dock", true);
+                startActivity(intent);
+                finish();
+                // ===================================================================
+            } else {
+                // 普通任务：无剩余任务标记回桩
+                intent.putExtra("is_back_dock", true);
+                Log.d("ArrivalConfirmation", "无剩余配送任务，执行回桩逻辑");
+                startActivity(intent);
+                finish();
+            }
         }
-        finish();
     }
 
     @Override
@@ -433,6 +582,10 @@ public class ArrivalConfirmationActivity extends BaseActivity {
         super.onDestroy();
         if (timer != null) {
             timer.cancel();
+        }
+        cancelCompleteBtnCountDown();
+        if (soundPlayerManager != null && !isDeliveryFailed) {
+            soundPlayerManager.stopSound();
         }
     }
 }

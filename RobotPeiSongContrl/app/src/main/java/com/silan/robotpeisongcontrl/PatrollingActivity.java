@@ -158,7 +158,7 @@ public class PatrollingActivity extends BaseActivity {
         PatrolPoint nextPoint = patrolPoints.get(currentPointIndex);
         updateStatus("前往: " + nextPoint.toString());
 
-        RobotController.createMoveAction(nextPoint.getPoi(), new OkHttpUtils.ResponseCallback() {
+        RobotController.createMoveAction(this, nextPoint.getPoi(), new OkHttpUtils.ResponseCallback() {
             @Override
             public void onSuccess(ByteString responseData) {
                 try {

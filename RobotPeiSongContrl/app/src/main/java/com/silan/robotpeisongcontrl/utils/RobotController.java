@@ -100,7 +100,7 @@ public class RobotController {
         int navMode = MotionConfigSPUtils.getNavMode(context);
         moveOptions.addProperty("mode", navMode);
         JsonArray flags = new JsonArray();
-        flags.add("precise"); // 精确到点模式
+//        flags.add("precise"); // 精确到点模式
         flags.add("with_yaw"); // 启用精确朝向
         moveOptions.add("flags", flags);
         moveOptions.addProperty("yaw", poi.getYaw());// 目标朝向角
@@ -126,13 +126,32 @@ public class RobotController {
             @Override
             public void onSuccess(ByteString responseData) {
                 try {
-                    String jsonStr = responseData.string(StandardCharsets.UTF_8);
-                    JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
-                    double x = json.get("x").getAsDouble();
-                    double y = json.get("y").getAsDouble();
-                    double yaw = json.get("yaw").getAsDouble();
+                    // 1. 强制使用 UTF-8 并 trim 掉可能的不可见字符
+                    String jsonStr = responseData.string(StandardCharsets.UTF_8).trim();
+                    JsonObject root = JsonParser.parseString(jsonStr).getAsJsonObject();
+
+                    JsonObject data;
+                    // 2. 自动处理两种常见的 JSON 结构：
+                    // A. 直接在根部 {"x":0.1, "y":0.2, "yaw":0}
+                    // B. 嵌套在 pose 里 {"pose": {"x":0.1, "y":0.2, "yaw":0}}
+                    if (root.has("pose") && root.get("pose").isJsonObject()) {
+                        data = root.getAsJsonObject("pose");
+                    } else {
+                        data = root;
+                    }
+
+                    // 3. 安全解析字段，若不存在则抛出异常进入 catch
+                    if (!data.has("x") || !data.has("y") || !data.has("yaw")) {
+                        throw new Exception("JSON中缺少坐标字段 x/y/yaw: " + jsonStr);
+                    }
+
+                    double x = data.get("x").getAsDouble();
+                    double y = data.get("y").getAsDouble();
+                    double yaw = data.get("yaw").getAsDouble();
+
                     callback.onSuccess(new RobotPose(x, y, yaw));
                 } catch (Exception e) {
+                    Log.e(TAG, "解析位姿失败: " + e.getMessage());
                     callback.onFailure(e);
                 }
             }

@@ -1,6 +1,7 @@
 package com.silan.robotpeisongcontrl;
 
 
+import static android.content.ContentValues.TAG;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.animation.Animator;
@@ -13,6 +14,12 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import okio.ByteString; // 必须与 Manager 统一
 
 import android.net.Uri;
 import android.os.Build;
@@ -87,6 +94,7 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     private MediaController mediaController;
     private boolean isMainActivityActive = false;
     private TextView tvDebugInfo;
+    private Button btnFollowMode;
 
     // 监控面板UI元素
     private LinearLayout debugContainer;
@@ -255,44 +263,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         // 初始化待机检测
         initStandbyDetection();
 
-        // 初始化跟随模式管理器
-        followModeManager = new FollowModeManager(this, new FollowModeManager.FollowModeListener() {
-            // 保留原有跟随模式监听实现
-            @Override
-            public void onUwbDataUpdate(double distance, double azimuth, double elevation) {
-                updateUwbDataDisplay(distance, azimuth, elevation);
-            }
+        followModeManager = new FollowModeManager(this);
 
-            @Override
-            public void onMoveStatusUpdate(String status) {
-                updateMoveStatus(status);
-            }
-
-            @Override
-            public void onTargetUpdate(double globalX, double globalY) {
-                updateTargetDisplay(globalX, globalY);
-            }
-
-            @Override
-            public void onRobotPoseUpdate(double x, double y, double yaw) {
-                updateRobotPoseDisplay(x, y, yaw);
-            }
-
-            @Override
-            public void onCoordTransformUpdate(double baseX, double baseY, double robotX, double robotY) {
-                updateCoordTransformDisplay(baseX, baseY, robotX, robotY);
-            }
-
-            @Override
-            public void onBaseStationUpdate(long anchorId, boolean isActive) {
-                updateBaseStationIndicator(anchorId, isActive);
-            }
-
-            @Override
-            public void onPacketStatsUpdate(int count, float rate) {
-                updatePacketStats(count, rate);
-            }
-        });
+        btnFollowMode = findViewById(R.id.btn_follow_mode); // 添加这一行
 
         // 初始化电机串口
         SerialPortManager serialPortManager = SerialPortManager.getInstance();
@@ -420,18 +393,19 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     // 更新基站状态指示器
     private void updateBaseStationIndicator(long anchorId, boolean isActive) {
         runOnUiThread(() -> {
-            // 使用FollowModeManager提供的基站配置
-            FollowModeManager.BaseStationConfig config = followModeManager.getBaseStationConfig(anchorId);
-            if (config != null) {
-                TextView indicator = findViewById(config.indicatorViewId);
-                if (indicator != null) {
-                    int bgRes = isActive ? R.drawable.indicator_green : R.drawable.indicator_gray;
-                    indicator.setBackgroundResource(bgRes);
+            int viewId = -1;
+            // 直接硬编码匹配逻辑，不再依赖 Manager 内部复杂的 Config 类
+            if (anchorId == 0x2DC) viewId = R.id.tv_front_base;
+            else if (anchorId == 0x2DB) viewId = R.id.tv_rear_base;
+            else if (anchorId == 0x2DD) viewId = R.id.tv_left_base;
+            else if (anchorId == 0x2DE) viewId = R.id.tv_right_base;
 
-                    // 添加闪烁动画
+            if (viewId != -1) {
+                TextView indicator = findViewById(viewId);
+                if (indicator != null) {
+                    indicator.setBackgroundResource(isActive ? R.drawable.indicator_green : R.drawable.indicator_gray);
                     if (isActive) {
-                        Animation blink = AnimationUtils.loadAnimation(this, R.anim.blink);
-                        indicator.startAnimation(blink);
+                        indicator.startAnimation(AnimationUtils.loadAnimation(this, R.anim.blink));
                     } else {
                         indicator.clearAnimation();
                     }
@@ -592,30 +566,69 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
     // 切换跟随模式
     private void toggleFollowMode() {
         if (followModeManager.isFollowing()) {
-            followModeManager.stopFollowing();
-            // 更新按钮状态
-            Button btn = findViewById(R.id.btn_follow_mode);
-            btn.setBackgroundResource(R.drawable.button_blue_rect);
-            btn.setText("开始跟随");
-
-            // 隐藏监控面板
-            if (debugContainer != null) {
-                debugContainer.setVisibility(View.GONE);
-            }
+            followModeManager.stop();
+            stopPoseSyncTimer();
+            btnFollowMode.setText("开始跟随");
+            updateMoveStatus("跟随已停止");
         } else {
-            followModeManager.startFollowing();
-            // 更新按钮状态
-            Button btn = findViewById(R.id.btn_follow_mode);
-            btn.setBackgroundResource(R.drawable.button_red_rect);
-            btn.setText("停止跟随");
+            updateMoveStatus("正在获取初始位姿...");
+            // ✅ 修改：开启跟随前使用正确解析的 getRobotPose
+            RobotController.getRobotPose(new RobotController.RobotPoseCallback() {
+                @Override
+                public void onSuccess(RobotController.RobotPose pose) {
+                    mMainHandler.post(() -> {
+                        followModeManager.start(pose);
+                        startPoseSyncTimer();
+                        btnFollowMode.setText("停止跟随");
+                        updateMoveStatus("跟随模式已启动");
+                    });
+                }
 
-            // 显示监控面板
-            if (debugContainer != null) {
-                debugContainer.setVisibility(View.VISIBLE);
-            }
+                @Override
+                public void onFailure(Exception e) {
+                    mMainHandler.post(() -> updateMoveStatus("启动失败：无法获取机器人位姿"));
+                }
+            });
         }
     }
 
+    private ScheduledExecutorService poseTimer;
+
+    private void startPoseSyncTimer() {
+        // 确保不会重复创建
+        if (poseTimer != null) {
+            poseTimer.shutdownNow();
+        }
+        poseTimer = Executors.newSingleThreadScheduledExecutor();
+        poseTimer.scheduleAtFixedRate(() -> {
+            if (!followModeManager.isFollowing()) return;
+
+            // ✅ 修改：核心修复点。不再使用 getRobotStatus 手动解析，
+            // 而是使用 RobotController 中修复好的 getRobotPose 解析逻辑。
+            RobotController.getRobotPose(new RobotController.RobotPoseCallback() {
+                @Override
+                public void onSuccess(RobotController.RobotPose pose) {
+                    // 1. 更新 Manager 内部的位姿快照（确保计算目标点的基准不再是 0,0）
+                    followModeManager.updatePose(pose);
+
+                    // 2. 更新 UI 界面上的机器人位姿显示
+                    mMainHandler.post(() -> updateRobotPoseDisplay(pose.x, pose.y, pose.yaw));
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    // 忽略单次失败
+                }
+            });
+        }, 0, 200, TimeUnit.MILLISECONDS); // 稍微调低频率至 5Hz 左右，保证稳定性
+    }
+
+    private void stopPoseSyncTimer() {
+        if (poseTimer != null) {
+            poseTimer.shutdownNow();
+            poseTimer = null;
+        }
+    }
     private void loadStandbySettings() {
         SharedPreferences prefs = getSharedPreferences("standby_prefs", MODE_PRIVATE);
         boolean newEnabled = prefs.getBoolean("enabled", true);
@@ -1069,8 +1082,9 @@ public class MainActivity extends BaseActivity implements StandbySettingsFragmen
         if (standbyAnimationView != null) {
             standbyAnimationView.stopPlayback();  // 停止播放并释放资源
         }
+        stopPoseSyncTimer();
         if (followModeManager != null) {
-            followModeManager.cleanup();
+            followModeManager.stop();
         }
         if (timeHandler != null && timeUpdaterRunnable != null) {
             timeHandler.removeCallbacks(timeUpdaterRunnable);

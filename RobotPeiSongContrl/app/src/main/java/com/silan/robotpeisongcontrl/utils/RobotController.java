@@ -107,7 +107,7 @@ public class RobotController {
         float acceptablePrecision = MotionConfigSPUtils.getAcceptablePrecision(context);
         moveOptions.addProperty("acceptable_precision", acceptablePrecision);
         moveOptions.addProperty("fail_retry_count", 3);// 失败重试次数
-        moveOptions.addProperty("speed_ratio", 1.0); // 速度比例
+        moveOptions.addProperty("speed_ratio", 2.0); // 速度比例
         options.add("move_options", moveOptions);
 
         json.add("options", options);
